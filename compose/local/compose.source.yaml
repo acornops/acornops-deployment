@@ -1,7 +1,7 @@
 services:
   management-console:
     build:
-      context: ../../../management-console-playground
+      context: ../../../management-console
       dockerfile: Dockerfile
       target: dev
       args:
@@ -17,7 +17,7 @@ services:
       VITE_APP_DATA_MODE: ${VITE_APP_DATA_MODE:-control-plane}
       VITE_CONTROL_PLANE_API_BASE_URL: ${VITE_CONTROL_PLANE_API_BASE_URL:-}
     volumes:
-      - ../../../management-console-playground:/app
+      - ../../../management-console:/app
       - management-console-node-modules:/app/node_modules
     healthcheck:
       disable: true
@@ -39,7 +39,7 @@ services:
 
   control-plane:
     build:
-      context: ../../../control-plane-playground
+      context: ../../../control-plane
       dockerfile: Dockerfile
       target: dev
     image: acornops/control-plane:local
@@ -106,12 +106,12 @@ services:
     ports:
       - "${CONTROL_PLANE_PORT:-8081}:8081"
     volumes:
-      - ../../../control-plane-playground:/app
+      - ../../../control-plane:/app
       - control-plane-node-modules:/app/node_modules
 
   control-plane-init:
     build:
-      context: ../../../control-plane-playground
+      context: ../../../control-plane
       dockerfile: Dockerfile
       target: dev
     image: acornops/control-plane:local
@@ -119,12 +119,12 @@ services:
     environment:
       DATABASE_URL: postgresql://${CP_DB_USER:-acornops}:${CP_DB_PASSWORD:-acornops}@cp-postgres:5432/${CP_DB_NAME:-acornops_control_plane}
     volumes:
-      - ../../../control-plane-playground:/app
+      - ../../../control-plane:/app
       - control-plane-node-modules:/app/node_modules
 
   execution-engine:
     build:
-      context: ../../../execution-engine-playground
+      context: ../../../execution-engine
       dockerfile: Dockerfile
       target: test
     image: acornops/execution-engine:local
@@ -156,11 +156,11 @@ services:
     ports:
       - "${EXECUTION_ENGINE_PORT:-8080}:8080"
     volumes:
-      - ../../../execution-engine-playground:/app
+      - ../../../execution-engine:/app
 
   llm-gateway:
     build:
-      context: ../../../llm-gateway-playground
+      context: ../../../llm-gateway
       dockerfile: deployments/Dockerfile.gateway
     image: acornops/llm-gateway:local
     command:
@@ -200,11 +200,11 @@ services:
     ports:
       - "${LLM_GATEWAY_PORT:-8001}:8001"
     volumes:
-      - ../../../llm-gateway-playground:/app
+      - ../../../llm-gateway:/app
 
   llm-gateway-init:
     build:
-      context: ../../../llm-gateway-playground
+      context: ../../../llm-gateway
       dockerfile: deployments/Dockerfile.gateway
     image: acornops/llm-gateway:local
     environment:
@@ -219,11 +219,11 @@ services:
       mock-mcp:
         condition: service_started
     volumes:
-      - ../../../llm-gateway-playground:/app
+      - ../../../llm-gateway:/app
 
   mock-mcp:
     build:
-      context: ../../../llm-gateway-playground
+      context: ../../../llm-gateway
       dockerfile: deployments/Dockerfile.mock-mcp
     command:
       [
@@ -243,7 +243,7 @@ services:
     networks:
       - acornops
     volumes:
-      - ../../../llm-gateway-playground/test:/app
+      - ../../../llm-gateway/test:/app
 
   keycloak:
     profiles:
@@ -262,7 +262,7 @@ services:
       keycloak-postgres:
         condition: service_healthy
     volumes:
-      - ../../../control-plane-playground/deploy/keycloak/realm-acornops.json:/opt/keycloak/data/import/realm-acornops.json:ro
+      - ../../../control-plane/deploy/keycloak/realm-acornops.json:/opt/keycloak/data/import/realm-acornops.json:ro
     ports:
       - "${KEYCLOAK_PORT:-8082}:8080"
     restart: unless-stopped
@@ -318,7 +318,7 @@ services:
 
   k8s-agent:
     build:
-      context: ../../../k8s-agent-playground
+      context: ../../../k8s-agent
       dockerfile: Dockerfile
       target: dev
     image: acornops/k8s-agent:local
@@ -341,7 +341,7 @@ services:
       control-plane:
         condition: service_healthy
     volumes:
-      - ../../../k8s-agent-playground:/app
+      - ../../../k8s-agent:/app
       - k8s-agent-node-modules:/app/node_modules
       - ${LOCAL_K8S_RUNTIME_DIR:-/tmp/acornops-local-kube}:/root/.kube:ro
     extra_hosts:
@@ -352,7 +352,7 @@ services:
 
   vm-agent:
     build:
-      context: ../../../vm-agent-playground
+      context: ../../../vm-agent
       dockerfile: Dockerfile
       target: dev
     image: acornops/vm-agent:local
@@ -374,7 +374,7 @@ services:
       control-plane:
         condition: service_healthy
     volumes:
-      - ../../../vm-agent-playground:/app
+      - ../../../vm-agent:/app
       - vm-agent-node-modules:/app/node_modules
     restart: unless-stopped
     networks:

@@ -45,14 +45,14 @@ function expectFile(repoName, repoPath, relativePath) {
 const services = [
   {
     name: 'llm-gateway',
-    repoDir: 'llm-gateway-playground',
+    repoDir: 'llm-gateway',
     dockerfile: 'deployments/Dockerfile.gateway',
     ciFile: '.github/workflows/ci.yaml',
     firstParty: 'app'
   },
   {
     name: 'execution-engine',
-    repoDir: 'execution-engine-playground',
+    repoDir: 'execution-engine',
     dockerfile: 'Dockerfile',
     ciFile: '.github/workflows/ci.yml',
     firstParty: 'execution_engine'

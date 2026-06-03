@@ -5,7 +5,7 @@
 <h1 align="center">AcornOps Deployment Repository</h1>
 
 <p align="center">
-  <a href="https://github.com/acornops/acornops-deployment-playground/actions/workflows/ci.yml"><img src="https://github.com/acornops/acornops-deployment-playground/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/acornops/acornops-deployment/actions/workflows/ci.yml"><img src="https://github.com/acornops/acornops-deployment/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="docs/index.md"><img src="https://img.shields.io/badge/deployment-orchestration-blue.svg" alt="Deployment orchestration" /></a>
   <img src="https://img.shields.io/badge/coverage-not_applicable-lightgrey.svg" alt="Coverage not applicable" />
   <a href="docs/contracts/README.md"><img src="https://img.shields.io/badge/contracts-checked-blue.svg" alt="Contracts checked" /></a>

@@ -7,7 +7,7 @@ export function controlPlaneInternalWsUrl(config) {
 }
 
 export function localAgentChart() {
-  const candidate = path.resolve('../k8s-agent-playground/charts/acornops-k8s-agent');
+  const candidate = path.resolve('../k8s-agent/charts/acornops-k8s-agent');
   return fs.existsSync(candidate)
     ? candidate
     : env('ACORNOPS_K8S_HA_SMOKE_AGENT_CHART', 'oci://ghcr.io/acornops/charts/acornops-k8s-agent');

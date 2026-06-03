@@ -32,11 +32,11 @@ setup_terminal_colors() {
 
 required_workspace_repos() {
   printf '%s\n' \
-    "management-console-playground" \
-    "control-plane-playground" \
-    "execution-engine-playground" \
-    "llm-gateway-playground" \
-    "k8s-agent-playground"
+    "management-console" \
+    "control-plane" \
+    "execution-engine" \
+    "llm-gateway" \
+    "k8s-agent"
 }
 
 command_exists() {

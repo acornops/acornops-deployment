@@ -60,11 +60,11 @@ flowchart TD
     end
 
     subgraph Managed[Managed Services]
-        Console[management-console-playground]
-        CP[control-plane-playground]
-        EE[execution-engine-playground]
-        GW[llm-gateway-playground]
-        Agent[k8s-agent-playground]
+        Console[management-console]
+        CP[control-plane]
+        EE[execution-engine]
+        GW[llm-gateway]
+        Agent[k8s-agent]
     end
 
     Taskfile --> Scripts

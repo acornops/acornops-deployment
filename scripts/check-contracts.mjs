@@ -68,12 +68,12 @@ expect(
 );
 
 const repoManifests = {
-  'control-plane': 'control-plane-playground/docs/contracts/manifest.json',
-  'management-console': 'management-console-playground/docs/contracts/manifest.json',
-  'execution-engine': 'execution-engine-playground/docs/contracts/manifest.json',
-  'llm-gateway': 'llm-gateway-playground/docs/contracts/manifest.json',
-  'k8s-agent': 'k8s-agent-playground/docs/contracts/manifest.json',
-  'vm-agent': 'vm-agent-playground/docs/contracts/manifest.json'
+  'control-plane': 'control-plane/docs/contracts/manifest.json',
+  'management-console': 'management-console/docs/contracts/manifest.json',
+  'execution-engine': 'execution-engine/docs/contracts/manifest.json',
+  'llm-gateway': 'llm-gateway/docs/contracts/manifest.json',
+  'k8s-agent': 'k8s-agent/docs/contracts/manifest.json',
+  'vm-agent': 'vm-agent/docs/contracts/manifest.json'
 };
 
 const missing = Object.values(repoManifests).filter((relativePath) => {
@@ -100,8 +100,7 @@ if (missing.length === 0) {
   }
 
   for (const [repoName, manifest] of Object.entries(manifests)) {
-    const expectedManifestRepo = repoName === 'vm-agent' ? 'vm-agent-playground' : repoName;
-    expect(manifest.repo === expectedManifestRepo, `Manifest repo mismatch for ${repoName}`);
+    expect(manifest.repo === repoName, `Manifest repo mismatch for ${repoName}`);
     expect(manifest.version === 1, `Manifest version mismatch for ${repoName}`);
   }
 

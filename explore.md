@@ -354,7 +354,7 @@ export AO_GATEWAY_TOKEN=$(echo "$BOOTSTRAP_JSON" | jq -r '.llm.gateway.token')
 
 ### 9.1 MCP Tool Call Through llm-gateway
 
-Call seeded tool (`get_weather`) in llm-gateway (`llm-gateway-playground/scripts/seed_db.py`):
+Call seeded tool (`get_weather`) in llm-gateway (`llm-gateway/scripts/seed_db.py`):
 
 ```bash
 curl -sS -H "Authorization: Bearer $AO_GATEWAY_TOKEN" \
