@@ -10,7 +10,7 @@ if [[ ! -f "${COMPOSE_FILE}" ]]; then
   exit 1
 fi
 
-semver_tag='[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?(\+[0-9A-Za-z][0-9A-Za-z.-]*)?'
+semver_tag='[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?'
 
 for component in MANAGEMENT_CONSOLE_IMAGE CONTROL_PLANE_IMAGE EXECUTION_ENGINE_IMAGE LLM_GATEWAY_IMAGE; do
   if grep -Eq "\\$\\{${component}:-[^}]+:latest\\}" "${COMPOSE_FILE}"; then
