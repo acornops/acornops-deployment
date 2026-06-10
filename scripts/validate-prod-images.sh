@@ -10,12 +10,14 @@ if [[ ! -f "${COMPOSE_FILE}" ]]; then
   exit 1
 fi
 
+semver_tag='[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?(\+[0-9A-Za-z][0-9A-Za-z.-]*)?'
+
 for component in MANAGEMENT_CONSOLE_IMAGE CONTROL_PLANE_IMAGE EXECUTION_ENGINE_IMAGE LLM_GATEWAY_IMAGE; do
   if grep -Eq "\\$\\{${component}:-[^}]+:latest\\}" "${COMPOSE_FILE}"; then
     echo "Production compose default for ${component} must not use :latest" >&2
     exit 1
   fi
-  if ! grep -Eq "\\$\\{${component}:-ghcr\\.io/acornops/[^}]+:0\\.1\\.0\\}" "${COMPOSE_FILE}"; then
+  if ! grep -Eq "\\$\\{${component}:-ghcr\\.io/acornops/[^}]+:${semver_tag}\\}" "${COMPOSE_FILE}"; then
     echo "Production compose default for ${component} must use a pinned ghcr.io/acornops image" >&2
     exit 1
   fi
