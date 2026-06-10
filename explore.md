@@ -413,7 +413,7 @@ curl -sS -N -H "Authorization: Bearer $AO_GATEWAY_TOKEN" \
   }"
 ```
 
-If `GEMINI_API_KEY` is not set before local seed, API keys are fake and you will typically get an `error` stream event from provider SDK.
+If `ACORNOPS_DEV_SEED_GEMINI_API_KEY` is not set before local seed, and no workspace key is configured later, API keys are fake and you will typically get an `error` stream event from the provider SDK.
 
 ## 10. Execution Engine Direct Exploration
 

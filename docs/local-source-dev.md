@@ -21,7 +21,7 @@ On macOS, automated command installs use Homebrew. On Linux, `task install` supp
 ## Environment
 
 1. `task install` creates `env/local/.env.local` and `env/local/.env.agent` from the example files when missing.
-2. Configure provider keys as needed (`GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`). By default, the local stack uses real provider responses. Set `LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES=true` only for providerless smoke runs that need deterministic tool-backed completion.
+2. Configure dev seed provider keys as needed (`ACORNOPS_DEV_SEED_GEMINI_API_KEY`, `ACORNOPS_DEV_SEED_OPENAI_API_KEY`, `ACORNOPS_DEV_SEED_ANTHROPIC_API_KEY`) or add keys later in AI Settings. By default, the local stack uses real provider responses. Set `LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES=true` only for providerless smoke runs that need deterministic tool-backed completion.
 3. Keep full-stack runtime configuration here. Component repository `.env.example` files are for standalone service runs; they should not be copied into each component when using `task local-up`.
 4. Tune AI agent behavior with the `AGENT_*` settings in `env/local/.env.local`, including `AGENT_SYSTEM_INSTRUCTION`, bootstrap limits, temperature, and tool timeout.
 

@@ -55,10 +55,9 @@ Optional SMTP and Vault keys:
 - `SMTP_PASSWORD`
 - `VAULT_TOKEN`
 
-Provider API keys are not injected into runtime pods. Load target-scoped
-provider secrets such as `openai_api_key`, `anthropic_api_key`, and
-`gemini_api_key` into the llm-gateway secret backend before enabling real
-inference.
+Provider API keys are not injected into runtime pods. Configure workspace-owned
+AI provider credentials from AI Settings before enabling real inference
+for a workspace.
 
 Use real production values. Runtime validators reject placeholder service
 tokens, weak database passwords, and invalid encryption keys.
