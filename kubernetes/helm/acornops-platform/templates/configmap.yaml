@@ -73,6 +73,9 @@ data:
   LLM_DEFAULT_MODEL: {{ .Values.ai.defaultModel | quote }}
   LLM_ALLOWED_PROVIDERS: {{ .Values.ai.allowedProviders | quote }}
   LLM_ALLOWED_MODELS: {{ .Values.ai.allowedModels | quote }}
+  LLM_REASONING_SUMMARIES_ENABLED: {{ .Values.ai.reasoningSummariesEnabled | quote }}
+  LLM_ALLOWED_REASONING_SUMMARY_MODES: {{ .Values.ai.allowedReasoningSummaryModes | quote }}
+  LLM_ALLOWED_REASONING_EFFORTS: {{ .Values.ai.allowedReasoningEfforts | quote }}
   WORKSPACE_ROLES_CONFIG_JSON: {{ toJson (default dict .Values.workspaceRoles) | quote }}
   WORKSPACE_PLANS_CONFIG_JSON: {{ toJson .Values.workspacePlans | quote }}
   CONTROL_PLANE_ADMIN_API_ENABLED: {{ .Values.adminApi.enabled | quote }}

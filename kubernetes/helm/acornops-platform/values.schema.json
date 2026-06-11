@@ -184,6 +184,17 @@
         "defaultModel": { "type": "string", "minLength": 1 },
         "allowedProviders": { "type": "string", "minLength": 1 },
         "allowedModels": { "type": "string", "minLength": 1 },
+        "reasoningSummariesEnabled": { "type": "boolean" },
+        "allowedReasoningSummaryModes": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(off|auto|concise|detailed)(,(off|auto|concise|detailed))*$"
+        },
+        "allowedReasoningEfforts": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(default|low|medium|high)(,(default|low|medium|high))*$"
+        },
         "gatewayTimeoutMs": { "type": "integer", "minimum": 1 }
       }
     },
