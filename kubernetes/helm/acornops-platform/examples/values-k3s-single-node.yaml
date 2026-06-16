@@ -4,6 +4,7 @@ platform:
 
 exposure:
   ingress:
+    className: traefik
     apiHost: acornops.local
     consoleHost: console.acornops.local
     tls:
@@ -17,6 +18,19 @@ agent:
 auth:
   oidc:
     issuerUrl: https://identity.acornops.local/realms/acornops
+
+ai:
+  defaultProvider: openai
+  defaultModel: gpt-5.5
+  allowedProviders: openai,anthropic,gemini
+  allowedModels: gpt-5.5,gpt-5.4,gpt-5.4-mini,gpt-5.4-nano,gpt-5,gpt-5-mini,gpt-5-nano,claude-3-5-sonnet-latest,gemini-2.0-flash
+
+networkPolicies:
+  ingressController:
+    from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
 
 components:
   managementConsole:

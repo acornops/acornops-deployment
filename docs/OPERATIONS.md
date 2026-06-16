@@ -88,6 +88,8 @@ Install:
 helm upgrade --install acornops kubernetes/helm/acornops-platform \
   --namespace acornops \
   --create-namespace \
+  --atomic \
+  --cleanup-on-fail \
   -f kubernetes/helm/acornops-platform/examples/values-production.yaml
 ```
 
@@ -97,6 +99,9 @@ NetworkPolicies are enabled by default. Before installing or upgrading, set
 allow any private Postgres, Redis, OIDC, Vault, webhook, or MCP destinations in
 `networkPolicies.postgres.to`, `networkPolicies.redis.to`, `networkPolicies.vault.to`,
 or `networkPolicies.extraEgress.*`.
+
+The default Kubernetes and VM deployment policy uses OpenAI with `gpt-5.5`.
+Provider API keys are workspace-owned and configured from AI Settings.
 
 Optional internal service-to-service HTTPS/mTLS is configured under
 `internalTransport.tls`. It is disabled by default and uses operator-supplied

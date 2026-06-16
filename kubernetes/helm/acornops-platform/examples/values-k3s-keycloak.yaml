@@ -1,0 +1,102 @@
+# Example overlay for a single-node k3s deployment that uses Traefik and an
+# in-cluster Keycloak issuer exposed publicly on a separate identity hostname.
+# This chart still expects Postgres, Redis, Keycloak, and cert-manager to be
+# installed outside the acornops-platform release.
+
+platform:
+  publicUrl: https://api.demo.acornops.dev
+  consoleUrl: https://console.demo.acornops.dev
+
+exposure:
+  ingress:
+    enabled: true
+    className: traefik
+    apiHost: api.demo.acornops.dev
+    consoleHost: console.demo.acornops.dev
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    tls:
+      enabled: true
+      secretName: acornops-demo-tls
+
+auth:
+  oidc:
+    issuerUrl: http://acornops-keycloak.acornops-identity.svc.cluster.local/realms/acornops
+    publicIssuerUrl: https://identity.demo.acornops.dev/realms/acornops
+    clientId: acornops-control-plane
+    authorizationEndpointOverride: https://identity.demo.acornops.dev/realms/acornops/protocol/openid-connect/auth
+    tokenEndpointOverride: http://acornops-keycloak.acornops-identity.svc.cluster.local/realms/acornops/protocol/openid-connect/token
+    userinfoEndpointOverride: http://acornops-keycloak.acornops-identity.svc.cluster.local/realms/acornops/protocol/openid-connect/userinfo
+    jwksUriOverride: http://acornops-keycloak.acornops-identity.svc.cluster.local/realms/acornops/protocol/openid-connect/certs
+  password:
+    enabled: false
+    signupEnabled: false
+
+email:
+  deliveryMode: disabled
+
+ai:
+  defaultProvider: openai
+  defaultModel: gpt-5.5
+  allowedProviders: openai,anthropic,gemini
+  allowedModels: gpt-5.5,gpt-5.4,gpt-5.4-mini,gpt-5.4-nano,gpt-5,gpt-5-mini,gpt-5-nano,claude-3-5-sonnet-latest,gemini-2.0-flash
+
+agent:
+  routing:
+    distributedEnabled: false
+
+networkPolicies:
+  ingressController:
+    from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+  postgres:
+    to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: acornops-data
+    ports:
+      - protocol: TCP
+        port: 5432
+  redis:
+    to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: acornops-data
+    ports:
+      - protocol: TCP
+        port: 6379
+  extraEgress:
+    controlPlane:
+      - to:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: acornops-identity
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/name: keycloak
+                app.kubernetes.io/instance: acornops-keycloak
+        ports:
+          - protocol: TCP
+            port: 80
+          - protocol: TCP
+            port: 8080
+
+components:
+  managementConsole:
+    replicas: 1
+    podDisruptionBudget:
+      enabled: false
+  controlPlane:
+    replicas: 1
+    podDisruptionBudget:
+      enabled: false
+  executionEngine:
+    replicas: 1
+    podDisruptionBudget:
+      enabled: false
+  llmGateway:
+    replicas: 1
+    podDisruptionBudget:
+      enabled: false

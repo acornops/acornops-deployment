@@ -92,10 +92,10 @@ workspacePlans:
 
 ai:
   # Global defaults used when workspaces do not override model policy.
-  defaultProvider: gemini
-  defaultModel: gemini-2.0-flash
+  defaultProvider: openai
+  defaultModel: gpt-5.5
   allowedProviders: openai,anthropic,gemini
-  allowedModels: gpt-4.1-mini,claude-3-5-sonnet-latest,gemini-2.0-flash
+  allowedModels: gpt-5.5,gpt-5.4,gpt-5.4-mini,gpt-5.4-nano,gpt-5,gpt-5-mini,gpt-5-nano,claude-3-5-sonnet-latest,gemini-2.0-flash
   gatewayTimeoutMs: 120000
 
 agent:

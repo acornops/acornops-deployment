@@ -141,11 +141,14 @@ Use this for central platform deployment into Kubernetes. The platform chart dep
 
 - chart: `kubernetes/helm/acornops-platform`
 - single-node test values: `kubernetes/helm/acornops-platform/examples/values-k3s-single-node.yaml`
+- single-node k3s + Keycloak values: `kubernetes/helm/acornops-platform/examples/values-k3s-keycloak.yaml`
 - production baseline values: `kubernetes/helm/acornops-platform/examples/values-production.yaml`
 - default platform Secret name: `acornops-platform-secrets`
 - public hosts: `console.acornops.dev` for the management console, `api.acornops.dev` for `/api`, and `docs.acornops.dev` for Mintlify docs
 
 The production baseline runs the management console, control-plane, execution-engine, and llm-gateway with three replicas. Control-plane HA depends on external Redis for agent ownership, cross-pod command routing, run event fanout, and renewed scheduler leases. Agent-backed commands in flight on a restarting owner pod can fail; the agent reconnects and later calls recover through the new owner.
+
+Deployment defaults use OpenAI with `gpt-5.5`; OpenAI 4.x models are not in the default allow list.
 
 Write confirmations for agent write tools are enabled by default in the platform chart through `agent.runtime.writeConfirmationRequired` and `agent.runtime.writeConfirmationTimeoutSeconds`, which render to `AGENT_WRITE_CONFIRMATION_REQUIRED` and `AGENT_WRITE_CONFIRMATION_TIMEOUT_SECONDS`. The setting is the deployment default; clusters can inherit it or set a per-cluster override in the control plane.
 

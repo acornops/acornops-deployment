@@ -22,6 +22,7 @@ kubernetes/
       values.schema.json
       examples/
         values-k3s-single-node.yaml
+        values-k3s-keycloak.yaml
         values-production.yaml
       templates/
   examples/
@@ -76,7 +77,20 @@ Install into a single-node k3s-style test cluster:
 helm upgrade --install acornops kubernetes/helm/acornops-platform \
   --namespace acornops \
   --create-namespace \
+  --atomic \
+  --cleanup-on-fail \
   -f kubernetes/helm/acornops-platform/examples/values-k3s-single-node.yaml
+```
+
+For k3s with an in-cluster Keycloak issuer, start from the Keycloak overlay:
+
+```bash
+helm upgrade --install acornops kubernetes/helm/acornops-platform \
+  --namespace acornops \
+  --create-namespace \
+  --atomic \
+  --cleanup-on-fail \
+  -f kubernetes/helm/acornops-platform/examples/values-k3s-keycloak.yaml
 ```
 
 Install with the production baseline values:
@@ -85,6 +99,8 @@ Install with the production baseline values:
 helm upgrade --install acornops kubernetes/helm/acornops-platform \
   --namespace acornops \
   --create-namespace \
+  --atomic \
+  --cleanup-on-fail \
   -f kubernetes/helm/acornops-platform/examples/values-production.yaml
 ```
 
@@ -108,6 +124,22 @@ Override at least:
 - `networkPolicies.vault.to` if using a private Vault backend
 - `networkPolicies.extraEgress.*` for private OIDC providers, webhook targets, MCP targets, or other approved private egress
 - `secrets.existingSecretName` if using a non-default Secret name
+
+The default AI policy uses OpenAI with `gpt-5.5`, and the default OpenAI allow
+list contains only GPT-5.x models. Provider credentials are still workspace-owned
+and must be configured through AI Settings.
+
+Use `--atomic --cleanup-on-fail` for direct Helm installs and upgrades. If Helm
+reports `another operation (install/upgrade/rollback) is in progress`, inspect
+`helm -n acornops history acornops` and the failed hook Jobs before retrying.
+Only disposable demo environments should automatically delete stuck pending
+release metadata.
+
+When Keycloak runs inside the same cluster but browsers reach it through a public
+identity hostname, use a private `auth.oidc.issuerUrl`, a browser-visible
+`auth.oidc.publicIssuerUrl`, public authorization endpoint override, and internal
+token/userinfo/JWKS endpoint overrides. Also allow control-plane egress to the
+Keycloak namespace with `networkPolicies.extraEgress.controlPlane`.
 
 ## Internal service TLS/mTLS
 
@@ -313,7 +345,9 @@ in-flight work, while later work can be picked up by another pod.
 `components.executionEngine.maxConcurrentRuns` is per pod.
 
 For single-node k3s testing, use `examples/values-k3s-single-node.yaml`; it sets
-all replicas to `1` and disables PDBs.
+Traefik ingress, all replicas to `1`, and disables PDBs. Use
+`examples/values-k3s-keycloak.yaml` when Keycloak also runs in-cluster behind a
+public identity hostname.
 
 ## Migration Jobs
 

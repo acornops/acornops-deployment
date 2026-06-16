@@ -6,6 +6,7 @@ import { ownerPodLogArgs } from './lib/k8s-ha-smoke/platform.mjs';
 
 const chart = 'kubernetes/helm/acornops-platform';
 const k3sValues = `${chart}/examples/values-k3s-single-node.yaml`;
+const k3sKeycloakValues = `${chart}/examples/values-k3s-keycloak.yaml`;
 const productionValues = `${chart}/examples/values-production.yaml`;
 const staleAgentChartRefPattern = /oci:\/\/ghcr\.io\/acornops\/charts\/acornops-agent(?:\s|$|["'}`])/;
 
@@ -128,7 +129,8 @@ for (const file of [
   'kubernetes/README.md',
   'docs/OPERATIONS.md',
   `${chart}/examples/values-production.yaml`,
-  `${chart}/examples/values-k3s-single-node.yaml`
+  `${chart}/examples/values-k3s-single-node.yaml`,
+  `${chart}/examples/values-k3s-keycloak.yaml`
 ]) {
   const content = fs.readFileSync(file, 'utf8');
   const stalePaths = [
@@ -307,6 +309,14 @@ assertIncludes(defaultRender, 'EMAIL_PUBLIC_BASE_URL: "https://console.acornops.
 assertIncludes(defaultRender, 'key: SMTP_PASSWORD', 'SMTP password should be read from the platform secret');
 assertExcludes(defaultRender, 'SMTP_PASSWORD:', 'SMTP password must not render into ConfigMaps');
 assertIncludes(defaultRender, 'PASSWORD_AUTH_IDENTIFIER_MAX_ATTEMPTS: "50"', 'identifier-wide password limit should render');
+assertIncludes(defaultRender, 'LLM_DEFAULT_PROVIDER: "openai"', 'OpenAI should be the default LLM provider');
+assertIncludes(defaultRender, 'LLM_DEFAULT_MODEL: "gpt-5.5"', 'GPT-5.5 should be the default LLM model');
+assertIncludes(
+  defaultRender,
+  'LLM_ALLOWED_MODELS: "gpt-5.5,gpt-5.4,gpt-5.4-mini,gpt-5.4-nano,gpt-5,gpt-5-mini,gpt-5-nano,claude-3-5-sonnet-latest,gemini-2.0-flash"',
+  'default LLM allow list should include GPT-5 OpenAI models'
+);
+assertExcludes(defaultRender, 'gpt-4.1-mini', 'default chart policy should not allow GPT-4 OpenAI models');
 assertExcludes(defaultRender, 'CSRF_COOKIE_NAME:', 'CSRF cookie name is a fixed browser contract and should not be chart-configurable');
 assertExcludes(defaultRender, 'CSRF_HEADER_NAME:', 'CSRF header name is a fixed browser contract and should not be chart-configurable');
 assertIncludes(defaultRender, 'key: CSRF_SECRET', 'control-plane should read CSRF secret from platform secret');
@@ -336,7 +346,20 @@ assertIncludes(
   'CONTROL_PLANE_DISTRIBUTED_ROUTING_ENABLED: "false"',
   'single-node k3s values should disable control-plane distributed routing'
 );
+assertIncludes(k3sRender, 'ingressClassName: "traefik"', 'single-node k3s values should use Traefik ingress');
+assertExcludes(k3sRender, 'kubernetes.io/metadata.name: ingress-nginx', 'single-node k3s values should not allow ingress-nginx by default');
 assertExcludes(k3sRender, 'kind: PodDisruptionBudget', 'single-node k3s values should disable PDBs');
+
+const k3sKeycloakRender = helmTemplate(['-f', k3sKeycloakValues]);
+assertIncludes(k3sKeycloakRender, 'host: "console.demo.acornops.dev"', 'k3s Keycloak example should render demo console host');
+assertIncludes(k3sKeycloakRender, 'host: "api.demo.acornops.dev"', 'k3s Keycloak example should render demo API host');
+assertIncludes(k3sKeycloakRender, 'ingressClassName: "traefik"', 'k3s Keycloak example should use Traefik ingress');
+assertIncludes(k3sKeycloakRender, 'OIDC_ISSUER_URL: "http://acornops-keycloak.acornops-identity.svc.cluster.local/realms/acornops"', 'k3s Keycloak example should use the in-cluster issuer URL');
+assertIncludes(k3sKeycloakRender, 'OIDC_PUBLIC_ISSUER_URL: "https://identity.demo.acornops.dev/realms/acornops"', 'k3s Keycloak example should expose the browser-visible issuer URL');
+assertIncludes(k3sKeycloakRender, 'OIDC_AUTHORIZATION_ENDPOINT_OVERRIDE: "https://identity.demo.acornops.dev/realms/acornops/protocol/openid-connect/auth"', 'k3s Keycloak example should route browser authorization to the public identity host');
+assertIncludes(k3sKeycloakRender, 'OIDC_TOKEN_ENDPOINT_OVERRIDE: "http://acornops-keycloak.acornops-identity.svc.cluster.local/realms/acornops/protocol/openid-connect/token"', 'k3s Keycloak example should route token exchange internally');
+assertIncludes(k3sKeycloakRender, 'kubernetes.io/metadata.name: acornops-identity', 'k3s Keycloak example should allow control-plane egress to the identity namespace');
+assertIncludes(k3sKeycloakRender, 'PASSWORD_AUTH_ENABLED: "false"', 'k3s Keycloak example should be OIDC-only by default');
 
 const productionRender = helmTemplate(['-f', productionValues]);
 if (deploymentReplicas(productionRender, `${defaultPrefix}-management-console`) !== 3) {
@@ -363,6 +386,9 @@ assertIncludes(productionRender, 'PASSWORD_EMAIL_VERIFICATION_REQUIRED: "true"',
 assertIncludes(productionRender, 'PASSWORD_RESET_ENABLED: "true"', 'production should keep password reset enabled');
 assertIncludes(productionRender, 'OIDC_REQUIRE_VERIFIED_EMAIL: "true"', 'production should keep OIDC verified email enforcement enabled');
 assertIncludes(productionRender, 'OIDC_HTTP_TIMEOUT_MS: "10000"', 'production should render OIDC outbound timeout');
+assertIncludes(productionRender, 'LLM_DEFAULT_PROVIDER: "openai"', 'production should default to OpenAI provider');
+assertIncludes(productionRender, 'LLM_DEFAULT_MODEL: "gpt-5.5"', 'production should default to GPT-5.5');
+assertExcludes(productionRender, 'gpt-4.1-mini', 'production should not allow GPT-4 OpenAI models by default');
 assertIncludes(productionRender, 'SECRETS_CACHE_TTL_SEC: "0"', 'production should keep llm-gateway plaintext secret caching disabled');
 
 const tlsRender = helmTemplate([

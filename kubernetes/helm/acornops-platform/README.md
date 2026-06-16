@@ -26,6 +26,7 @@ and cache endpoints through the existing Secret configured by
 - public docs: `docs.acornops.dev/` is hosted by Mintlify and is not rendered by this chart
 - migration Jobs: enabled as Helm pre-install/pre-upgrade hooks
 - NetworkPolicies: enabled by default with namespace-wide default-deny ingress and egress for chart pods
+- AI policy: OpenAI is the default provider, `gpt-5.5` is the default model, and the default OpenAI allow list contains only GPT-5.x models
 
 ## Values Layout
 
@@ -59,6 +60,11 @@ service ports; private databases, private Redis, custom ingress
 controllers, Vault, and private OIDC providers must be added under
 `networkPolicies.postgres.to`, `networkPolicies.redis.to`, `networkPolicies.vault.to`,
 or `networkPolicies.extraEgress.*` before deployment.
+
+For k3s, override `exposure.ingress.className` to `traefik` and set
+`networkPolicies.ingressController.from` to the namespace/pod selectors used by
+the k3s Traefik controller. The included single-node k3s examples assume
+Traefik runs in `kube-system`.
 
 Write confirmation defaults are controlled by:
 
@@ -106,7 +112,20 @@ Single-node k3s-style test:
 helm upgrade --install acornops ./kubernetes/helm/acornops-platform \
   --namespace acornops \
   --create-namespace \
+  --atomic \
+  --cleanup-on-fail \
   -f ./kubernetes/helm/acornops-platform/examples/values-k3s-single-node.yaml
+```
+
+Single-node k3s with an in-cluster Keycloak issuer:
+
+```bash
+helm upgrade --install acornops ./kubernetes/helm/acornops-platform \
+  --namespace acornops \
+  --create-namespace \
+  --atomic \
+  --cleanup-on-fail \
+  -f ./kubernetes/helm/acornops-platform/examples/values-k3s-keycloak.yaml
 ```
 
 Production baseline:
@@ -115,6 +134,8 @@ Production baseline:
 helm upgrade --install acornops ./kubernetes/helm/acornops-platform \
   --namespace acornops \
   --create-namespace \
+  --atomic \
+  --cleanup-on-fail \
   -f ./kubernetes/helm/acornops-platform/examples/values-production.yaml
 ```
 
