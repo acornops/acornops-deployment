@@ -124,7 +124,9 @@ data:
   INTERNAL_TRANSPORT_TLS_CA_FILE: {{ ternary (include "acornops-platform.internalTlsCaFile" .) "" .Values.internalTransport.tls.enabled | quote }}
   INTERNAL_TRANSPORT_TLS_CERT_FILE: {{ ternary (include "acornops-platform.internalTlsCertFile" (dict "root" . "component" "execution-engine" "certKey" .Values.internalTransport.tls.certificates.executionEngine.certKey)) "" .Values.internalTransport.tls.enabled | quote }}
   INTERNAL_TRANSPORT_TLS_KEY_FILE: {{ ternary (include "acornops-platform.internalTlsKeyFile" (dict "root" . "component" "execution-engine" "keyKey" .Values.internalTransport.tls.certificates.executionEngine.keyKey)) "" .Values.internalTransport.tls.enabled | quote }}
+  {{- if .Values.internalTransport.tls.enabled }}
   INTERNAL_TRANSPORT_HEALTH_PORT: {{ ternary (toString .Values.internalTransport.tls.health.executionEnginePort) "" .Values.internalTransport.tls.enabled | quote }}
+  {{- end }}
   MAX_CONCURRENT_RUNS: {{ .Values.components.executionEngine.maxConcurrentRuns | quote }}
   EXECUTION_DURABILITY_KEY_PREFIX: {{ .Values.components.executionEngine.durability.keyPrefix | quote }}
   TERMINAL_RUN_TTL_SECONDS: {{ .Values.components.executionEngine.durability.terminalRunTtlSeconds | quote }}
@@ -163,7 +165,9 @@ data:
   INTERNAL_TRANSPORT_TLS_CA_FILE: {{ ternary (include "acornops-platform.internalTlsCaFile" .) "" .Values.internalTransport.tls.enabled | quote }}
   INTERNAL_TRANSPORT_TLS_CERT_FILE: {{ ternary (include "acornops-platform.internalTlsCertFile" (dict "root" . "component" "llm-gateway" "certKey" .Values.internalTransport.tls.certificates.llmGateway.certKey)) "" .Values.internalTransport.tls.enabled | quote }}
   INTERNAL_TRANSPORT_TLS_KEY_FILE: {{ ternary (include "acornops-platform.internalTlsKeyFile" (dict "root" . "component" "llm-gateway" "keyKey" .Values.internalTransport.tls.certificates.llmGateway.keyKey)) "" .Values.internalTransport.tls.enabled | quote }}
+  {{- if .Values.internalTransport.tls.enabled }}
   INTERNAL_TRANSPORT_HEALTH_PORT: {{ ternary (toString .Values.internalTransport.tls.health.llmGatewayPort) "" .Values.internalTransport.tls.enabled | quote }}
+  {{- end }}
   AUTH_ISSUER: {{ .Values.components.llmGateway.auth.issuer | quote }}
   AUTH_AUDIENCE: {{ .Values.components.llmGateway.auth.audience | quote }}
   JWKS_CACHE_TTL_SECONDS: {{ .Values.components.llmGateway.auth.jwksCacheTtlSeconds | quote }}
