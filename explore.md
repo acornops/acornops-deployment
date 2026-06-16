@@ -395,7 +395,7 @@ NDJSON stream call:
 ```bash
 curl -sS -N -H "Authorization: Bearer $AO_GATEWAY_TOKEN" \
   -H 'content-type: application/json' \
-  -X POST "$AO_GW/api/v1/llm/chat-completions:stream" \
+  -X POST "$AO_GW/api/v1/llm/generations:stream" \
   -d "{
     \"run_id\":\"$AO_RUN_ID\",
     \"workspace_id\":\"4b930d98-add9-4924-ab26-3c16d96ec373\",

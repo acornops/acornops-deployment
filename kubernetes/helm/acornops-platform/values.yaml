@@ -134,6 +134,10 @@ ai:
   # Comma-separated allow lists enforced by the control plane.
   allowedProviders: openai,anthropic,gemini
   allowedModels: gpt-4.1-mini,claude-3-5-sonnet-latest,gemini-2.0-flash
+  # Deployment policy ceiling for workspace opt-in reasoning summaries.
+  reasoningSummariesEnabled: true
+  allowedReasoningSummaryModes: off,auto,concise,detailed
+  allowedReasoningEfforts: default,low,medium,high
   gatewayTimeoutMs: 120000
 
 workspaceRoles:

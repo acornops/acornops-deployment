@@ -9,6 +9,7 @@ This repository owns deployment and compatibility contracts rather than service 
 - Mintlify public docs host (`docs.acornops.dev`)
 - Admin API enablement, token Secret wiring, and API-host-only `/admin` routing
 - Workspace plan and quota config rendered into control-plane runtime env
+- AI provider/model and reasoning summary policy rendered into control-plane runtime env
 - Deployment-track environment templates
 - Helm `internalTransport.tls` values for optional operator-supplied internal HTTPS/mTLS
 - Password email verification/reset and SMTP environment wiring
@@ -57,6 +58,13 @@ are `read_write`, `write_only`, and `disabled`, with `read_write` as the
 default. The chart renders `auditLogging.retentionDays` to
 `WORKSPACE_AUDIT_RETENTION_DAYS`; it must be a positive integer and defaults to
 `365`.
+
+AI provider/model policy is configured by Helm `ai.*` values or the matching
+Compose environment variables. The chart renders reasoning summary policy to
+`LLM_REASONING_SUMMARIES_ENABLED`,
+`LLM_ALLOWED_REASONING_SUMMARY_MODES`, and
+`LLM_ALLOWED_REASONING_EFFORTS`. These values are a deployment ceiling only;
+workspace admins still opt in per workspace through AI Settings.
 
 ## Validation
 
