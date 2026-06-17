@@ -306,7 +306,7 @@ assertIncludes(defaultRender, 'PASSWORD_RESET_TOKEN_TTL_SECONDS: "3600"', 'passw
 assertIncludes(defaultRender, 'PASSWORD_RESET_REQUEST_WINDOW_SECONDS: "300"', 'password reset request window should render');
 assertIncludes(defaultRender, 'EMAIL_DELIVERY_MODE: "smtp"', 'email delivery should default to SMTP for the production chart');
 assertIncludes(defaultRender, 'EMAIL_PUBLIC_BASE_URL: "https://console.acornops.dev"', 'email public base URL should default to the console URL');
-assertIncludes(defaultRender, 'MANAGEMENT_CONSOLE_BASE_URL: "https://console.acornops.dev"', 'Mattermost link base URL should default to the console URL');
+assertIncludes(defaultRender, 'MANAGEMENT_CONSOLE_BASE_URL: "https://console.acornops.dev"', 'external integration link base URL should default to the console URL');
 assertIncludes(defaultRender, 'key: SMTP_PASSWORD', 'SMTP password should be read from the platform secret');
 assertExcludes(defaultRender, 'SMTP_PASSWORD:', 'SMTP password must not render into ConfigMaps');
 assertIncludes(defaultRender, 'PASSWORD_AUTH_IDENTIFIER_MAX_ATTEMPTS: "50"', 'identifier-wide password limit should render');
@@ -326,8 +326,8 @@ assertIncludes(
   'key: GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64',
   'control-plane should read gateway signing key from platform secret'
 );
-assertIncludes(defaultRender, 'name: MATTERMOST_CHAT_SERVICE_TOKEN', 'control-plane should render Mattermost chat service token env');
-assertIncludes(defaultRender, 'key: MATTERMOST_CHAT_SERVICE_TOKEN', 'Mattermost chat service token should be read from platform secret');
+assertIncludes(defaultRender, 'name: EXTERNAL_INTEGRATION_SERVICE_TOKEN', 'control-plane should render external integration service token env');
+assertIncludes(defaultRender, 'key: EXTERNAL_INTEGRATION_SERVICE_TOKEN', 'external integration service token should be read from platform secret');
 assertIncludes(defaultRender, 'GATEWAY_VERIFICATION_JWKS_JSON: ""', 'gateway verification keyring should render');
 assertIncludes(defaultRender, 'OIDC_REQUIRE_VERIFIED_EMAIL: "true"', 'OIDC verified email enforcement should default to enabled');
 assertIncludes(defaultRender, 'OIDC_HTTP_TIMEOUT_MS: "10000"', 'OIDC outbound timeout should render');

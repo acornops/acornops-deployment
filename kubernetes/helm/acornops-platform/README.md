@@ -75,10 +75,10 @@ The default is confirmation required. Individual clusters can inherit this value
 
 Target chat coordination warnings are controlled by `components.controlPlane.recentActivity.windowSeconds`, which renders to `TARGET_CHAT_RECENT_ACTIVITY_WINDOW_SECONDS`. The default is `300` seconds.
 
-Mattermost account linking uses `MATTERMOST_CHAT_SERVICE_TOKEN` from the
+External integration account linking uses `EXTERNAL_INTEGRATION_SERVICE_TOKEN` from the
 existing platform Secret. The key name is configured with
-`secrets.keys.controlPlane.mattermostChatServiceToken`; the default key is
-`MATTERMOST_CHAT_SERVICE_TOKEN`.
+`secrets.keys.controlPlane.externalIntegrationServiceToken`; the default key is
+`EXTERNAL_INTEGRATION_SERVICE_TOKEN`.
 
 Management-console runtime languages can be customized without rebuilding the
 console image by setting `components.managementConsole.locales.existingConfigMap`

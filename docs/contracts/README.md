@@ -11,7 +11,7 @@ This repository owns deployment and compatibility contracts rather than service 
 - Workspace plan and quota config rendered into control-plane runtime env
 - AI provider/model and reasoning summary policy rendered into control-plane runtime env
 - Deployment-track environment templates
-- Mattermost chat account-link token wiring for VM Compose and Helm
+- External integration account-link token wiring for VM Compose and Helm
 - Helm `internalTransport.tls` values for optional operator-supplied internal HTTPS/mTLS
 - Password email verification/reset and SMTP environment wiring
 - Release image compatibility metadata
@@ -67,15 +67,15 @@ Compose environment variables. The chart renders reasoning summary policy to
 `LLM_ALLOWED_REASONING_EFFORTS`. These values are a deployment ceiling only;
 workspace admins still opt in per workspace through AI Settings.
 
-## Mattermost Chat Account Linking
+## External integration account linking
 
-The deployment contract for Mattermost chat account linking is:
+The deployment contract for external integration account linking is:
 
-- VM Compose passes `MATTERMOST_CHAT_SERVICE_TOKEN` to the control plane from
+- VM Compose passes `EXTERNAL_INTEGRATION_SERVICE_TOKEN` to the control plane from
   the env file.
-- Helm loads `MATTERMOST_CHAT_SERVICE_TOKEN` from the existing platform Secret
-  through `secrets.keys.controlPlane.mattermostChatServiceToken`.
-- The token is scoped to the Mattermost chat link and resolve endpoints. It is
+- Helm loads `EXTERNAL_INTEGRATION_SERVICE_TOKEN` from the existing platform Secret
+  through `secrets.keys.controlPlane.externalIntegrationServiceToken`.
+- The token is scoped to the external integration link and resolve endpoints. It is
   not a public control-plane API token and must not authorize general user
   actions.
 

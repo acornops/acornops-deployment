@@ -74,7 +74,7 @@
                 "csrfSecret": { "type": "string", "minLength": 1 },
                 "gatewaySigningPrivateKeyPemB64": { "type": "string", "minLength": 1 },
                 "orchestrationServiceToken": { "type": "string", "minLength": 1 },
-                "mattermostChatServiceToken": { "type": "string", "minLength": 1 },
+                "externalIntegrationServiceToken": { "type": "string", "minLength": 1 },
                 "webhookSecretEncryptionKey": { "type": "string", "minLength": 1 },
                 "smtpUsername": { "type": "string", "minLength": 1 },
                 "smtpPassword": { "type": "string", "minLength": 1 }

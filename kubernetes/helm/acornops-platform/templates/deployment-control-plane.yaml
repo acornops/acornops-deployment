@@ -99,11 +99,11 @@ spec:
                 secretKeyRef:
                   name: {{ include "acornops-platform.secretName" . }}
                   key: {{ .Values.secrets.keys.controlPlane.orchestrationServiceToken }}
-            - name: MATTERMOST_CHAT_SERVICE_TOKEN
+            - name: EXTERNAL_INTEGRATION_SERVICE_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ include "acornops-platform.secretName" . }}
-                  key: {{ .Values.secrets.keys.controlPlane.mattermostChatServiceToken }}
+                  key: {{ .Values.secrets.keys.controlPlane.externalIntegrationServiceToken }}
             - name: EXECUTION_ENGINE_DISPATCH_TOKEN
               valueFrom:
                 secretKeyRef:
