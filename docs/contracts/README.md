@@ -64,7 +64,8 @@ Compose environment variables. The chart renders reasoning summary policy to
 `LLM_REASONING_SUMMARIES_ENABLED`,
 `LLM_ALLOWED_REASONING_SUMMARY_MODES`, and
 `LLM_ALLOWED_REASONING_EFFORTS`. These values are a deployment ceiling only;
-workspace admins still opt in per workspace through AI Settings.
+new workspaces default to `auto` when summaries are enabled and allowed, and
+workspace admins can tune or disable summaries through AI Settings.
 
 ## Validation
 

@@ -125,9 +125,10 @@ Override at least:
 - `networkPolicies.extraEgress.*` for private OIDC providers, webhook targets, MCP targets, or other approved private egress
 - `secrets.existingSecretName` if using a non-default Secret name
 
-The default AI policy uses OpenAI with `gpt-5.5`, and the default OpenAI allow
-list contains only GPT-5.x models. Provider credentials are still workspace-owned
-and must be configured through AI Settings.
+The default AI policy uses OpenAI with `gpt-5.5`, the default OpenAI allow list
+contains only GPT-5.x models, and workspace reasoning summaries default to
+`auto` when enabled by deployment policy. Provider credentials are still
+workspace-owned and must be configured through AI Settings.
 
 Use `--atomic --cleanup-on-fail` for direct Helm installs and upgrades. If Helm
 reports `another operation (install/upgrade/rollback) is in progress`, inspect

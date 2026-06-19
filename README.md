@@ -148,7 +148,7 @@ Use this for central platform deployment into Kubernetes. The platform chart dep
 
 The production baseline runs the management console, control-plane, execution-engine, and llm-gateway with three replicas. Control-plane HA depends on external Redis for agent ownership, cross-pod command routing, run event fanout, and renewed scheduler leases. Agent-backed commands in flight on a restarting owner pod can fail; the agent reconnects and later calls recover through the new owner.
 
-Deployment defaults use OpenAI with `gpt-5.5`; OpenAI 4.x models are not in the default allow list.
+Deployment defaults use OpenAI with `gpt-5.5`; OpenAI 4.x models are not in the default allow list. Workspace reasoning summaries default to `auto` when enabled by deployment policy.
 
 Write confirmations for agent write tools are enabled by default in the platform chart through `agent.runtime.writeConfirmationRequired` and `agent.runtime.writeConfirmationTimeoutSeconds`, which render to `AGENT_WRITE_CONFIRMATION_REQUIRED` and `AGENT_WRITE_CONFIRMATION_TIMEOUT_SECONDS`. The setting is the deployment default; clusters can inherit it or set a per-cluster override in the control plane.
 
@@ -218,6 +218,7 @@ Notes:
 
 - default local OIDC profile is Dex (`LOCAL_OIDC_PROFILE=oidc-dex`)
 - switch to Keycloak with `task local-up LOCAL_OIDC_PROFILE=oidc-keycloak`
+- local OIDC test users are `dev@acornops.local / devpass` as workspace owner and `operator@acornops.local / devpass` as workspace operator
 - optional Vault profile: `SECRETS_BACKEND=vault task local-up LOCAL_EXTRA_PROFILES=local-vault`
 - local Kubernetes bootstrap defaults to `LOCAL_K3D_CLUSTER_NAME=acornops-demo-cluster`
 - set `LOCAL_K3D_AUTO_CREATE=false` to skip k3d bootstrap and use an existing kubeconfig instead
