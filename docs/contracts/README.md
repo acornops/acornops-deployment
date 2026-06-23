@@ -71,13 +71,14 @@ workspace admins still opt in per workspace through AI Settings.
 
 The deployment contract for external integration account linking is:
 
-- VM Compose passes `EXTERNAL_INTEGRATION_SERVICE_TOKEN` to the control plane from
+- VM Compose passes `EXTERNAL_INTEGRATION_CLIENTS_JSON` to the control plane from
   the env file.
-- Helm loads `EXTERNAL_INTEGRATION_SERVICE_TOKEN` from the existing platform Secret
-  through `secrets.keys.controlPlane.externalIntegrationServiceToken`.
-- The token is scoped to the external integration link and resolve endpoints. It is
-  not a public control-plane API token and must not authorize general user
-  actions.
+- Helm loads `EXTERNAL_INTEGRATION_CLIENTS_JSON` from the existing platform Secret
+  through `secrets.keys.controlPlane.externalIntegrationClientsJson`.
+- The JSON contains installed integration client descriptors with SHA-256 token
+  hashes only. Raw bearer tokens are generated and distributed out of band, are
+  never committed, and only authorize the external integration link, resolve,
+  revoke, and linked-user bot endpoints.
 
 ## Validation
 

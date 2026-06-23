@@ -37,7 +37,7 @@ openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 | base64 | tr -d '\
 openssl rand -base64 24
 ```
 
-Required production values include `OIDC_CLIENT_SECRET`, `CSRF_SECRET`, `GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64`, `ORCH_SERVICE_TOKEN`, `EXTERNAL_INTEGRATION_SERVICE_TOKEN`, `EXECUTION_ENGINE_DISPATCH_TOKEN`, `LLM_GATEWAY_ADMIN_TOKEN`, `WEBHOOK_SECRET_ENCRYPTION_KEY`, `CP_DB_PASSWORD`, `GATEWAY_DB_PASSWORD`, `SECRETS_KEK_BASE64`, `SECRETS_CACHE_TTL_SEC=0`, and Vault settings when `SECRETS_BACKEND=vault`.
+Required production values include `OIDC_CLIENT_SECRET`, `CSRF_SECRET`, `GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64`, `ORCH_SERVICE_TOKEN`, `EXTERNAL_INTEGRATION_CLIENTS_JSON`, `EXECUTION_ENGINE_DISPATCH_TOKEN`, `LLM_GATEWAY_ADMIN_TOKEN`, `WEBHOOK_SECRET_ENCRYPTION_KEY`, `CP_DB_PASSWORD`, `GATEWAY_DB_PASSWORD`, `SECRETS_KEK_BASE64`, `SECRETS_CACHE_TTL_SEC=0`, and Vault settings when `SECRETS_BACKEND=vault`.
 
 Production application images must be pinned to immutable release tags. The
 compose defaults follow `release/stack-versions.yaml`; do not use mutable tags

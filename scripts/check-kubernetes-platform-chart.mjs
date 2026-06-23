@@ -326,8 +326,8 @@ assertIncludes(
   'key: GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64',
   'control-plane should read gateway signing key from platform secret'
 );
-assertIncludes(defaultRender, 'name: EXTERNAL_INTEGRATION_SERVICE_TOKEN', 'control-plane should render external integration service token env');
-assertIncludes(defaultRender, 'key: EXTERNAL_INTEGRATION_SERVICE_TOKEN', 'external integration service token should be read from platform secret');
+assertIncludes(defaultRender, 'name: EXTERNAL_INTEGRATION_CLIENTS_JSON', 'control-plane should render external integration clients env');
+assertIncludes(defaultRender, 'key: EXTERNAL_INTEGRATION_CLIENTS_JSON', 'external integration client descriptors should be read from platform secret');
 assertIncludes(defaultRender, 'GATEWAY_VERIFICATION_JWKS_JSON: ""', 'gateway verification keyring should render');
 assertIncludes(defaultRender, 'OIDC_REQUIRE_VERIFIED_EMAIL: "true"', 'OIDC verified email enforcement should default to enabled');
 assertIncludes(defaultRender, 'OIDC_HTTP_TIMEOUT_MS: "10000"', 'OIDC outbound timeout should render');

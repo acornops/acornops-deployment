@@ -30,7 +30,7 @@ secrets:
       csrfSecret: CSRF_SECRET
       gatewaySigningPrivateKeyPemB64: GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64
       orchestrationServiceToken: ORCH_SERVICE_TOKEN
-      externalIntegrationServiceToken: EXTERNAL_INTEGRATION_SERVICE_TOKEN
+      externalIntegrationClientsJson: EXTERNAL_INTEGRATION_CLIENTS_JSON
       webhookSecretEncryptionKey: WEBHOOK_SECRET_ENCRYPTION_KEY
       smtpUsername: SMTP_USERNAME
       smtpPassword: SMTP_PASSWORD
