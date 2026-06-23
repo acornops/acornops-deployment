@@ -63,6 +63,10 @@ expect(
 expect(localCompose.includes('ACORNOPS_VM_ALLOWED_LOG_SOURCES'), 'Local vm-agent env should expose VM log-source configuration');
 expect(localCompose.includes('LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES'), 'Local llm-gateway env should expose opt-in deterministic dev responses for smoke tests');
 expect(
+  localCompose.includes('LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES: ${LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES:-false}'),
+  'Local llm-gateway init should receive deterministic smoke env so providerless seed keys are available'
+);
+expect(
   deploymentManifest.contractSurfaces?.localDeterministicLlmEnv?.includes('LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES'),
   'Deployment manifest should expose opt-in deterministic local LLM smoke env'
 );
