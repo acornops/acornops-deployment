@@ -11,6 +11,7 @@ This repository owns deployment and compatibility contracts rather than service 
 - Workspace plan and quota config rendered into control-plane runtime env
 - AI provider/model and reasoning summary policy rendered into control-plane runtime env
 - Deployment-track environment templates
+- External integration account-link token wiring for VM Compose and Helm
 - Helm `internalTransport.tls` values for optional operator-supplied internal HTTPS/mTLS
 - Password email verification/reset and SMTP environment wiring
 - Release image compatibility metadata
@@ -66,6 +67,19 @@ Compose environment variables. The chart renders reasoning summary policy to
 `LLM_ALLOWED_REASONING_EFFORTS`. These values are a deployment ceiling only;
 new workspaces default to `auto` when summaries are enabled and allowed, and
 workspace admins can tune or disable summaries through AI Settings.
+
+## External integration account linking
+
+The deployment contract for external integration account linking is:
+
+- VM Compose passes `EXTERNAL_INTEGRATION_CLIENTS_JSON` to the control plane from
+  the env file.
+- Helm loads `EXTERNAL_INTEGRATION_CLIENTS_JSON` from the existing platform Secret
+  through `secrets.keys.controlPlane.externalIntegrationClientsJson`.
+- The JSON contains installed integration client descriptors with SHA-256 token
+  hashes only. Raw bearer tokens are generated and distributed out of band, are
+  never committed, and only authorize the external integration link, resolve,
+  revoke, and linked-user bot endpoints.
 
 ## Validation
 

@@ -99,6 +99,11 @@ spec:
                 secretKeyRef:
                   name: {{ include "acornops-platform.secretName" . }}
                   key: {{ .Values.secrets.keys.controlPlane.orchestrationServiceToken }}
+            - name: EXTERNAL_INTEGRATION_CLIENTS_JSON
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "acornops-platform.secretName" . }}
+                  key: {{ .Values.secrets.keys.controlPlane.externalIntegrationClientsJson }}
             - name: EXECUTION_ENGINE_DISPATCH_TOKEN
               valueFrom:
                 secretKeyRef:
