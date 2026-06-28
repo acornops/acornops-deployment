@@ -194,7 +194,7 @@
         "allowedReasoningEfforts": {
           "type": "string",
           "minLength": 1,
-          "pattern": "^(default|low|medium|high)(,(default|low|medium|high))*$"
+          "pattern": "^(off|low|medium|high)(,(off|low|medium|high))*$"
         },
         "gatewayTimeoutMs": { "type": "integer", "minimum": 1 }
       }

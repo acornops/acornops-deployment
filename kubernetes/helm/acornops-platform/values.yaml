@@ -138,7 +138,7 @@ ai:
   # Deployment policy ceiling for workspace-level reasoning summaries.
   reasoningSummariesEnabled: true
   allowedReasoningSummaryModes: off,auto,concise,detailed
-  allowedReasoningEfforts: default,low,medium,high
+  allowedReasoningEfforts: off,low,medium,high
   gatewayTimeoutMs: 120000
 
 workspaceRoles:
