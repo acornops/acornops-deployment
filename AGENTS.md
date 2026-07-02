@@ -59,7 +59,7 @@ For work that touches multiple AcornOps repositories, start the agent from the `
 - Edge proxy routing, SPA fallback, and API path forwarding
 - Production env templates, generated secrets, and service tokens
 - Compose profile wiring and migration job ordering
-- k8s-agent deployment and removal scripts
+- agentk deployment and removal scripts
 
 ## Documentation Hygiene
 

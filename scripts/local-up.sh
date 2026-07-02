@@ -98,7 +98,7 @@ ao_heading "Running control-plane migrations..."
 
 ao_heading "Starting local stack..."
 "${COMPOSE_CMD[@]}" up -d --build
-"${COMPOSE_CMD[@]}" up -d --force-recreate --no-deps k8s-agent vm-agent edge-proxy
+"${COMPOSE_CMD[@]}" up -d --force-recreate --no-deps agentk agentv edge-proxy
 
 kctl() {
   local_k8s_kubectl "$@"

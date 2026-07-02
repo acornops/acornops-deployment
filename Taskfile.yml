@@ -125,12 +125,12 @@ tasks:
       - docker compose -f compose/vm-prod/compose.yaml --profile prod --env-file {{.ENV_PROD}} ps
 
   agent-deploy:
-    desc: Deploy k8s-agent to a target cluster
+    desc: Deploy agentk to a target cluster
     cmds:
       - ./scripts/agent-deploy.sh {{.ENV_AGENT}}
 
   agent-remove:
-    desc: Remove k8s-agent from a target cluster
+    desc: Remove agentk from a target cluster
     cmds:
       - ./scripts/agent-remove.sh {{.ENV_AGENT}}
 

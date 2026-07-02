@@ -78,7 +78,7 @@ const expectedK8sImages = {
   llmGateway: componentLine(k8sPlatformStack, 'llmGateway')
 };
 const expectedPlatformChart = splitVersionedOciRef(chartLine(k8sPlatformStack, 'acornopsPlatform'));
-const expectedAgentChart = splitVersionedOciRef(chartLine(k8sPlatformStack, 'acornopsK8sAgent'));
+const expectedAgentChart = splitVersionedOciRef(chartLine(k8sPlatformStack, 'acornopsAgentK'));
 
 expect(extractYamlString(chart, 'version') === expectedPlatformChart.version, `platform chart version should be ${expectedPlatformChart.version}`);
 expect(
@@ -102,11 +102,11 @@ for (const [component, image] of Object.entries(expectedK8sImages)) {
 }
 
 expect(
-  componentLine(localStack, 'k8sAgent') === 'acornops/k8s-agent:local',
-  'local-dev stack should keep k8sAgent local image metadata'
+  componentLine(localStack, 'agentK') === 'acornops/agentk:local',
+  'local-dev stack should keep agentK local image metadata'
 );
 expect(
-  stackVersions.includes('chartRef: oci://ghcr.io/acornops/charts/acornops-k8s-agent') === false,
+  stackVersions.includes('chartRef: oci://ghcr.io/acornops/charts/acornops-agentk') === false,
   'release matrix should track component images only; agent chart refs belong in deployment values'
 );
 
@@ -115,8 +115,8 @@ for (const image of Object.values(expectedK8sImages)) {
   expect(rendered.includes(`image: "${image}"`), `platform chart should render ${image}`);
 }
 expect(
-  rendered.includes('AGENT_HELM_CHART_REF: "oci://ghcr.io/acornops/charts/acornops-k8s-agent"'),
-  'platform chart should render the acornops-k8s-agent chart reference'
+  rendered.includes('AGENT_HELM_CHART_REF: "oci://ghcr.io/acornops/charts/acornops-agentk"'),
+  'platform chart should render the acornops-agentk chart reference'
 );
 
 if (process.env.ACORNOPS_CHECK_PUBLISHED_ARTIFACTS === 'true') {
@@ -124,7 +124,7 @@ if (process.env.ACORNOPS_CHECK_PUBLISHED_ARTIFACTS === 'true') {
     ...new Set([
       ...Object.values(expectedVmProdImages),
       ...Object.values(expectedK8sImages),
-      `ghcr.io/acornops/k8s-agent:${expectedAgentChart.version}`
+      `ghcr.io/acornops/agentk:${expectedAgentChart.version}`
     ])
   ];
   const expectedPublishedCharts = [expectedPlatformChart, expectedAgentChart];

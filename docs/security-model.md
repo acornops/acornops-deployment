@@ -8,7 +8,7 @@
   `/admin/v1` when explicitly enabled. The management console host must not
   route `/admin`.
 - Execution-engine and llm-gateway should remain internal to the deployment network.
-- k8s-agent uses cluster-scoped credentials and an agent key to connect back to the control plane.
+- agentk uses cluster-scoped credentials and an agent key to connect back to the control plane.
 
 ## Secrets
 

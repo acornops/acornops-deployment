@@ -34,7 +34,7 @@ cp -n env/local/.env.example env/local/.env.local
 
 ## 2. Start Full Stack
 
-Start all local services (edge proxy + management console + control-plane + execution-engine + llm-gateway + k8s-agent + dex + stateful dependencies):
+Start all local services (edge proxy + management console + control-plane + execution-engine + llm-gateway + agentk + dex + stateful dependencies):
 
 ```bash
 task local-up
@@ -448,10 +448,10 @@ curl -sS "$AO_EE/metrics" | rg 'active_runs|runs_started_total|runs_completed_to
 
 ## 11. Agent and Cluster Connectivity Exploration
 
-Check k8s-agent logs:
+Check agentk logs:
 
 ```bash
-docker compose -f compose/vm-prod/compose.yaml -f compose/local/compose.source.yaml --profile local --profile oidc-dex --env-file env/local/.env.local logs --tail=150 k8s-agent
+docker compose -f compose/vm-prod/compose.yaml -f compose/local/compose.source.yaml --profile local --profile oidc-dex --env-file env/local/.env.local logs --tail=150 agentk
 ```
 
 Check control-plane websocket logs:
@@ -567,7 +567,7 @@ docker compose -f compose/vm-prod/compose.yaml -f compose/local/compose.source.y
 
 docker compose -f compose/vm-prod/compose.yaml -f compose/local/compose.source.yaml --profile local --profile oidc-dex --env-file env/local/.env.local logs --tail=200 llm-gateway
 
-docker compose -f compose/vm-prod/compose.yaml -f compose/local/compose.source.yaml --profile local --profile oidc-dex --env-file env/local/.env.local logs --tail=200 k8s-agent
+docker compose -f compose/vm-prod/compose.yaml -f compose/local/compose.source.yaml --profile local --profile oidc-dex --env-file env/local/.env.local logs --tail=200 agentk
 
 docker compose -f compose/vm-prod/compose.yaml -f compose/local/compose.source.yaml --profile local --profile oidc-dex --env-file env/local/.env.local logs --tail=200 mock-mcp
 ```

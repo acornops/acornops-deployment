@@ -40,13 +40,13 @@ flowchart TD
     end
 
     subgraph Workloads[Workload Cluster Track]
-        AgentChart[acornops-k8s-agent Helm chart]
+        AgentChart[acornops-agentk Helm chart]
         AgentPod[Active or active-passive agent pod]
         WorkloadCluster[Kubernetes workloads]
     end
 
     subgraph VMTargets[VM Target Track]
-        VMAgentProcess[acornops-vm-agent systemd service]
+        VMAgentProcess[acornops-agentv systemd service]
         ManagedLinuxVM[Linux/systemd VM target]
     end
 
@@ -93,11 +93,11 @@ execution engine, and LLM gateway through the platform Helm chart. It expects
 operator-provided Postgres and Redis, pre-created secrets, and cluster ingress
 configuration.
 
-Workload-cluster agent rollout installs the k8s agent into target clusters. The
+Workload-cluster agent rollout installs the AgentK into target clusters. The
 agent connects outbound to the control plane and can run active-passive HA with
 Kubernetes Lease leader election.
 
-VM target rollout installs the VM agent as a Linux/systemd service. The agent
+VM target rollout installs the AgentV as a Linux/systemd service. The agent
 connects outbound to the control plane and reports read-only Linux/systemd
 snapshots and tool results for VM targets.
 
@@ -138,7 +138,7 @@ state services externally; VM Compose includes bundled state services.
   default to three Kubernetes replicas.
 - control-plane HA depends on external Redis for agent ownership, cross-pod
   command routing, run event fanout, and renewed scheduler leases.
-- k8s-agent supports active-passive HA through Kubernetes Lease leader election;
+- agentk supports active-passive HA through Kubernetes Lease leader election;
   it is not active-active.
-- VM agent availability is tied to the managed VM host and systemd service
+- AgentV availability is tied to the managed VM host and systemd service
   health.

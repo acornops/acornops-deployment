@@ -37,32 +37,32 @@ expect(
   'Deployment manifest should list the six runtime component dependencies'
 );
 expect(
-  deploymentManifest.contractSurfaces?.k8sAgentRolloutEnv?.includes('ACORNOPS_CLUSTER_ID'),
-  'Deployment manifest should expose k8s-agent cluster rollout env'
+  deploymentManifest.contractSurfaces?.agentKRolloutEnv?.includes('ACORNOPS_CLUSTER_ID'),
+  'Deployment manifest should expose agentk cluster rollout env'
 );
 
 const agentDeploy = readFileSync(path.join(root, 'scripts/agent-deploy.sh'), 'utf8');
 const localUp = readFileSync(path.join(root, 'scripts/local-up.sh'), 'utf8');
 const localCompose = readFileSync(path.join(root, 'compose/local/compose.source.yaml'), 'utf8');
 const taskfile = readFileSync(path.join(root, 'Taskfile.yml'), 'utf8');
-expect(!agentDeploy.includes('ACORNOPS_TARGET_ID'), 'Deployment k8s-agent env should not expose a separate target id');
-expect(agentDeploy.includes('ACORNOPS_CLUSTER_ID'), 'Deployment k8s-agent env should expose ACORNOPS_CLUSTER_ID');
-expect(localCompose.includes('ACORNOPS_CLUSTER_ID'), 'Local k8s-agent env should expose ACORNOPS_CLUSTER_ID');
-expect(localCompose.includes('ACORNOPS_TARGET_ID'), 'Local vm-agent env should expose ACORNOPS_TARGET_ID');
+expect(!agentDeploy.includes('ACORNOPS_TARGET_ID'), 'Deployment agentk env should not expose a separate target id');
+expect(agentDeploy.includes('ACORNOPS_CLUSTER_ID'), 'Deployment agentk env should expose ACORNOPS_CLUSTER_ID');
+expect(localCompose.includes('ACORNOPS_CLUSTER_ID'), 'Local agentk env should expose ACORNOPS_CLUSTER_ID');
+expect(localCompose.includes('ACORNOPS_TARGET_ID'), 'Local agentv env should expose ACORNOPS_TARGET_ID');
 expect(localCompose.includes('ACORNOPS_AGENT_ALLOW_INSECURE_TRANSPORT'), 'Local agents should opt into insecure local transport explicitly');
 expect(
   deploymentManifest.contractSurfaces?.localAgentInsecureTransportEnv?.includes('ACORNOPS_AGENT_ALLOW_INSECURE_TRANSPORT'),
   'Deployment manifest should expose local-only insecure agent transport env'
 );
 expect(
-  deploymentManifest.contractSurfaces?.vmAgentLocalEnv?.includes('ACORNOPS_AGENT_ALLOW_INSECURE_TRANSPORT'),
-  'Deployment manifest should expose VM agent local insecure transport env'
+  deploymentManifest.contractSurfaces?.agentVLocalEnv?.includes('ACORNOPS_AGENT_ALLOW_INSECURE_TRANSPORT'),
+  'Deployment manifest should expose AgentV local insecure transport env'
 );
 expect(
   localCompose.includes('ACORNOPS_AGENT_PLATFORM_URL: http://control-plane:8081'),
-  'Local vm-agent should use the HTTP control-plane base URL expected by vm-agent'
+  'Local agentv should use the HTTP control-plane base URL expected by agentv'
 );
-expect(localCompose.includes('ACORNOPS_VM_ALLOWED_LOG_SOURCES'), 'Local vm-agent env should expose VM log-source configuration');
+expect(localCompose.includes('ACORNOPS_VM_ALLOWED_LOG_SOURCES'), 'Local agentv env should expose VM log-source configuration');
 expect(localCompose.includes('LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES'), 'Local llm-gateway env should expose opt-in deterministic dev responses for smoke tests');
 expect(
   localCompose.includes('LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES: ${LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES:-false}'),
@@ -82,7 +82,7 @@ for (const envName of [
   expect(localUp.includes(`CLI_${envName}=`), `local-up.sh should capture ${envName} before sourcing env files`);
 }
 expect(
-  localUp.includes('up -d --force-recreate --no-deps k8s-agent vm-agent edge-proxy'),
+  localUp.includes('up -d --force-recreate --no-deps agentk agentv edge-proxy'),
   'local-up.sh should refresh local agents and edge-proxy after recreating upstream containers'
 );
 
@@ -91,8 +91,8 @@ const repoManifests = {
   'management-console': 'management-console/docs/contracts/manifest.json',
   'execution-engine': 'execution-engine/docs/contracts/manifest.json',
   'llm-gateway': 'llm-gateway/docs/contracts/manifest.json',
-  'k8s-agent': 'k8s-agent/docs/contracts/manifest.json',
-  'vm-agent': 'vm-agent/docs/contracts/manifest.json'
+  'agentk': 'agentk/docs/contracts/manifest.json',
+  'agentv': 'agentv/docs/contracts/manifest.json'
 };
 
 const missing = Object.values(repoManifests).filter((relativePath) => {
@@ -126,8 +126,8 @@ if (missing.length === 0) {
   expectCounterpart('control-plane', 'management-console', 'management-console', 'control-plane');
   expectCounterpart('control-plane', 'execution-engine', 'execution-engine', 'control-plane');
   expectCounterpart('control-plane', 'llm-gateway', 'llm-gateway', 'control-plane');
-  expectCounterpart('control-plane', 'k8s-agent', 'k8s-agent', 'control-plane');
-  expectCounterpart('control-plane', 'vm-agent', 'vm-agent', 'control-plane');
+  expectCounterpart('control-plane', 'agentk', 'agentk', 'control-plane');
+  expectCounterpart('control-plane', 'agentv', 'agentv', 'control-plane');
   expectCounterpart('execution-engine', 'llm-gateway', 'llm-gateway', 'execution-engine');
 } else {
   console.warn(`Skipping cross-repo manifest comparison; missing sibling manifests under ${workspaceRoot}`);

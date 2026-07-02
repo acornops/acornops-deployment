@@ -112,7 +112,7 @@ agent:
     writeConfirmationTimeoutSeconds: 300
   helm:
     releaseName: acornops-agent
-    chartRef: oci://ghcr.io/acornops/charts/acornops-k8s-agent
+    chartRef: oci://ghcr.io/acornops/charts/acornops-agentk
     namespace: acornops
 
 internalTransport:

@@ -68,7 +68,7 @@ It does **not** own application runtime code for:
 2. control-plane
 3. execution-engine
 4. llm-gateway
-5. k8s-agent
+5. agentk
 
 ## Repository Structure
 
@@ -262,11 +262,11 @@ task prod-ps
 task prod-down
 ```
 
-### Per-Cluster k8s-agent Rollout
+### Per-Cluster agentk Rollout
 
 This remains cluster-scoped and independent from central stack lifecycle.
 
-For the current VM deployment track, prepare the VM agent env file:
+For the current VM deployment track, prepare the AgentV env file:
 
 ```bash
 cp env/vm/.env.agent.example env/vm/.env.agent
@@ -305,7 +305,7 @@ Production public routes are narrower than local development. The default produc
 - Management console: `https://console.acornops.dev/`
 - Public documentation: `https://docs.acornops.dev/`
 - Public control-plane API: `https://api.acornops.dev/api/v1`
-- k8s-agent WebSocket: `wss://api.acornops.dev/api/v1/agent/connect`
+- agentk WebSocket: `wss://api.acornops.dev/api/v1/agent/connect`
 
 Mintlify owns `docs.acornops.dev`; execution-engine and llm-gateway are internal-only in production and should not have public DNS, edge proxy routes, or open firewall rules.
 

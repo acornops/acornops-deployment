@@ -15,7 +15,7 @@ This repository owns deployment and compatibility contracts rather than service 
 - Helm `internalTransport.tls` values for optional operator-supplied internal HTTPS/mTLS
 - Password email verification/reset and SMTP environment wiring
 - Release image compatibility metadata
-- k8s-agent rollout env expectations for Kubernetes cluster installs
+- agentk rollout env expectations for Kubernetes cluster installs
 
 ## Internal Transport TLS
 

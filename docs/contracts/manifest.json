@@ -6,8 +6,8 @@
     "control-plane",
     "execution-engine",
     "llm-gateway",
-    "k8s-agent",
-    "vm-agent"
+    "agentk",
+    "agentv"
   ],
   "contractSurfaces": {
     "composeProfiles": ["local", "prod", "oidc-dex", "oidc-keycloak", "local-vault"],
@@ -86,12 +86,12 @@
       "ai.allowedReasoningSummaryModes",
       "ai.allowedReasoningEfforts"
     ],
-    "k8sAgentRolloutEnv": [
+    "agentKRolloutEnv": [
       "ACORNOPS_AGENT_PLATFORM_URL",
       "ACORNOPS_CLUSTER_ID",
       "ACORNOPS_AGENT_KEY"
     ],
-    "vmAgentLocalEnv": [
+    "agentVLocalEnv": [
       "ACORNOPS_AGENT_PLATFORM_URL",
       "ACORNOPS_AGENT_ALLOW_INSECURE_TRANSPORT",
       "ACORNOPS_TARGET_ID",

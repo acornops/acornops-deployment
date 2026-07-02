@@ -199,7 +199,7 @@ agent:
   helm:
     # Defaults used when the control plane creates workload-cluster agent installs.
     releaseName: acornops-agent
-    chartRef: oci://ghcr.io/acornops/charts/acornops-k8s-agent
+    chartRef: oci://ghcr.io/acornops/charts/acornops-agentk
     namespace: acornops
   builtinMcpServer:
     name: acornops-cluster-agent

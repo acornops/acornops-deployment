@@ -7,7 +7,7 @@ The deployment repository is intentionally thin: it composes independently versi
 - Local development runs source-mounted services through Docker Compose.
 - Docker-on-VM production runs image-based services behind the edge proxy.
 - Kubernetes production deploys the platform through the `acornops-platform` Helm chart with operator-provided Postgres and Redis.
-- k8s-agent rollout remains cluster-scoped and independent from central stack lifecycle.
+- agentk rollout remains cluster-scoped and independent from central stack lifecycle.
 
 ## Design Constraints
 

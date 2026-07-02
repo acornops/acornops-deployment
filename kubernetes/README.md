@@ -8,7 +8,7 @@ llm-gateway. It does not deploy Postgres or Redis. Operators must provide those
 dependencies and expose their connection strings through an existing Kubernetes
 Secret.
 
-The per-cluster `acornops-k8s-agent` chart remains separate. Install that chart
+The per-cluster `acornops-agentk` chart remains separate. Install that chart
 into each workload cluster after the central platform is reachable.
 
 ## Chart Layout
@@ -367,7 +367,7 @@ Back up external databases before upgrades.
 
 Run `task k8s-ha-smoke` against a non-production Kubernetes context before
 release promotion. The smoke installs the platform chart with three
-control-plane replicas, registers a workload cluster, deploys the k8s-agent,
+control-plane replicas, registers a workload cluster, deploys the agentk,
 checks an agent-backed pod-log path, deletes the owning control-plane pod, and
 verifies the agent reconnects and the same path recovers.
 
@@ -394,6 +394,6 @@ file via `ACORNOPS_K8S_HA_SMOKE_VALUES`.
 - static assertions that NetworkPolicies render default-deny and required internal service flows
 - static assertions that API docs default to disabled
 - static assertions that migration Jobs are Helm hooks
-- static assertions that the platform chart uses `acornops-k8s-agent` as the agent chart ref
+- static assertions that the platform chart uses `acornops-agentk` as the agent chart ref
 - static assertions that default auth enables OIDC plus password login and keeps signup disabled
 - static assertions that OIDC verified-email enforcement is rendered for the control plane

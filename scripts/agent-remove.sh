@@ -26,12 +26,12 @@ set +a
 : "${K8S_NAMESPACE:=acornops}"
 : "${ACORNOPS_AGENT_LEASE_NAMESPACE:=${K8S_NAMESPACE}}"
 
-kubectl -n "${K8S_NAMESPACE}" delete deployment acornops-k8s-agent --ignore-not-found
-kubectl -n "${K8S_NAMESPACE}" delete secret acornops-k8s-agent-secret --ignore-not-found
-kubectl -n "${ACORNOPS_AGENT_LEASE_NAMESPACE}" delete rolebinding acornops-k8s-agent-leader-election --ignore-not-found
-kubectl -n "${ACORNOPS_AGENT_LEASE_NAMESPACE}" delete role acornops-k8s-agent-leader-election --ignore-not-found
-kubectl delete clusterrolebinding acornops-k8s-agent-binding --ignore-not-found
-kubectl delete clusterrole acornops-k8s-agent-role --ignore-not-found
-kubectl -n "${K8S_NAMESPACE}" delete serviceaccount acornops-k8s-agent --ignore-not-found
+kubectl -n "${K8S_NAMESPACE}" delete deployment acornops-agentk --ignore-not-found
+kubectl -n "${K8S_NAMESPACE}" delete secret acornops-agentk-secret --ignore-not-found
+kubectl -n "${ACORNOPS_AGENT_LEASE_NAMESPACE}" delete rolebinding acornops-agentk-leader-election --ignore-not-found
+kubectl -n "${ACORNOPS_AGENT_LEASE_NAMESPACE}" delete role acornops-agentk-leader-election --ignore-not-found
+kubectl delete clusterrolebinding acornops-agentk-binding --ignore-not-found
+kubectl delete clusterrole acornops-agentk-role --ignore-not-found
+kubectl -n "${K8S_NAMESPACE}" delete serviceaccount acornops-agentk --ignore-not-found
 
-echo "k8s-agent resources removed from namespace ${K8S_NAMESPACE}."
+echo "agentk resources removed from namespace ${K8S_NAMESPACE}."

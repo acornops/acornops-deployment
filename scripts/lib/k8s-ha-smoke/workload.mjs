@@ -7,10 +7,10 @@ export function controlPlaneInternalWsUrl(config) {
 }
 
 export function localAgentChart() {
-  const candidate = path.resolve('../k8s-agent/charts/acornops-k8s-agent');
+  const candidate = path.resolve('../agentk/charts/acornops-agentk');
   return fs.existsSync(candidate)
     ? candidate
-    : env('ACORNOPS_K8S_HA_SMOKE_AGENT_CHART', 'oci://ghcr.io/acornops/charts/acornops-k8s-agent');
+    : env('ACORNOPS_K8S_HA_SMOKE_AGENT_CHART', 'oci://ghcr.io/acornops/charts/acornops-agentk');
 }
 
 export function ensureSmokeLogPod(config, runtime) {

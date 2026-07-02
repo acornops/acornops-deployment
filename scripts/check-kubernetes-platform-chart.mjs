@@ -120,7 +120,7 @@ for (const file of [
 ]) {
   const content = fs.readFileSync(file, 'utf8');
   if (staleAgentChartRefPattern.test(content)) {
-    throw new Error(`${file} must reference the acornops-k8s-agent chart, not the release name`);
+    throw new Error(`${file} must reference the acornops-agentk chart, not the release name`);
   }
 }
 

@@ -12,7 +12,7 @@ stacks:
       controlPlane: acornops/control-plane:local
       executionEngine: acornops/execution-engine:local
       llmGateway: acornops/llm-gateway:local
-      k8sAgent: acornops/k8s-agent:local
+      agentK: acornops/agentk:local
 
   - name: vm-prod-v1
     description: Baseline Docker-on-VM production stack.
@@ -26,7 +26,7 @@ stacks:
     description: Kubernetes platform stack deployed with the acornops-platform Helm chart.
     chart:
       acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.3
-      acornopsK8sAgent: oci://ghcr.io/acornops/charts/acornops-k8s-agent:0.0.1-experimental.2
+      acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.2
     components:
       managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.1
       controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.2

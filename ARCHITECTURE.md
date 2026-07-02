@@ -23,7 +23,7 @@ flowchart LR
     Compose[Compose stacks + profiles]
     Env[Environment files]
     Stack[AcornOps services]
-    Agent[k8s-agent deployment]
+    Agent[agentk deployment]
     Runbooks[Docs / runbooks / release metadata]
 
     Operator --> Task
@@ -64,7 +64,7 @@ flowchart TD
         CP[control-plane]
         EE[execution-engine]
         GW[llm-gateway]
-        Agent[k8s-agent]
+        Agent[agentk]
     end
 
     Taskfile --> Scripts

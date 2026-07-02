@@ -64,7 +64,7 @@ services:
       CONTROL_PLANE_ADMIN_TOKENS_JSON: ${CONTROL_PLANE_ADMIN_TOKENS_JSON:-[]}
       SEED_DEVELOPMENT_DATA: "false"
       AGENT_HELM_RELEASE_NAME: ${AGENT_HELM_RELEASE_NAME:-acornops-agent}
-      AGENT_HELM_CHART_REF: ${AGENT_HELM_CHART_REF:-oci://ghcr.io/acornops/charts/acornops-k8s-agent}
+      AGENT_HELM_CHART_REF: ${AGENT_HELM_CHART_REF:-oci://ghcr.io/acornops/charts/acornops-agentk}
       AGENT_HELM_NAMESPACE: ${AGENT_HELM_NAMESPACE:-acornops}
       OIDC_PROVIDER_NAME: ${OIDC_PROVIDER_NAME:-keycloak}
       OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:-https://keycloak.${BASE_DOMAIN:-acornops.dev}/realms/acornops}

@@ -8,7 +8,7 @@
 - Own local bootstrap and doctor scripts.
 - Own VM production runbooks.
 - Own Kubernetes platform Helm chart and chart validation.
-- Own k8s-agent rollout scripts.
+- Own agentk rollout scripts.
 - Own stack compatibility metadata.
 
 ## Non-Goals

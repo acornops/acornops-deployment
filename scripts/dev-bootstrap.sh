@@ -36,7 +36,7 @@ required_workspace_repos() {
     "control-plane" \
     "execution-engine" \
     "llm-gateway" \
-    "k8s-agent"
+    "agentk"
 }
 
 command_exists() {

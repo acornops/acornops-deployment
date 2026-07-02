@@ -26,7 +26,7 @@ set +a
 
 : "${K8S_NAMESPACE:=acornops}"
 : "${K8S_AGENT_REPLICAS:=1}"
-: "${ACORNOPS_AGENT_IMAGE:=ghcr.io/acornops/k8s-agent:0.0.1-experimental.2}"
+: "${ACORNOPS_AGENT_IMAGE:=ghcr.io/acornops/agentk:0.0.1-experimental.2}"
 : "${ACORNOPS_AGENT_PLATFORM_URL:?ACORNOPS_AGENT_PLATFORM_URL is required}"
 : "${ACORNOPS_CLUSTER_ID:?ACORNOPS_CLUSTER_ID is required}"
 : "${ACORNOPS_AGENT_KEY:?ACORNOPS_AGENT_KEY is required}"
@@ -63,13 +63,13 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: acornops-k8s-agent
+  name: acornops-agentk
   namespace: ${K8S_NAMESPACE}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: acornops-k8s-agent-role
+  name: acornops-agentk-role
 rules:
   - apiGroups: [""]
     resources: ["pods", "pods/log", "services", "persistentvolumeclaims", "events", "nodes", "namespaces"]
@@ -93,14 +93,14 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: acornops-k8s-agent-binding
+  name: acornops-agentk-binding
 subjects:
   - kind: ServiceAccount
-    name: acornops-k8s-agent
+    name: acornops-agentk
     namespace: ${K8S_NAMESPACE}
 roleRef:
   kind: ClusterRole
-  name: acornops-k8s-agent-role
+  name: acornops-agentk-role
   apiGroup: rbac.authorization.k8s.io
 EOF
 
@@ -109,7 +109,7 @@ kubectl apply -f - <<EOF
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: acornops-k8s-agent-leader-election
+  name: acornops-agentk-leader-election
   namespace: ${ACORNOPS_AGENT_LEASE_NAMESPACE}
 rules:
   - apiGroups: ["coordination.k8s.io"]
@@ -119,20 +119,20 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: acornops-k8s-agent-leader-election
+  name: acornops-agentk-leader-election
   namespace: ${ACORNOPS_AGENT_LEASE_NAMESPACE}
 subjects:
   - kind: ServiceAccount
-    name: acornops-k8s-agent
+    name: acornops-agentk
     namespace: ${K8S_NAMESPACE}
 roleRef:
   kind: Role
-  name: acornops-k8s-agent-leader-election
+  name: acornops-agentk-leader-election
   apiGroup: rbac.authorization.k8s.io
 EOF
 fi
 
-kubectl -n "${K8S_NAMESPACE}" create secret generic acornops-k8s-agent-secret \
+kubectl -n "${K8S_NAMESPACE}" create secret generic acornops-agentk-secret \
   --from-literal=agent-key="${ACORNOPS_AGENT_KEY}" \
   --dry-run=client -o yaml | kubectl apply -f -
 
@@ -140,21 +140,21 @@ kubectl apply -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: acornops-k8s-agent
+  name: acornops-agentk
   namespace: ${K8S_NAMESPACE}
   labels:
-    app: acornops-k8s-agent
+    app: acornops-agentk
 spec:
   replicas: ${K8S_AGENT_REPLICAS}
   selector:
     matchLabels:
-      app: acornops-k8s-agent
+      app: acornops-agentk
   template:
     metadata:
       labels:
-        app: acornops-k8s-agent
+        app: acornops-agentk
     spec:
-      serviceAccountName: acornops-k8s-agent
+      serviceAccountName: acornops-agentk
       containers:
         - name: agent
           image: ${ACORNOPS_AGENT_IMAGE}
@@ -167,7 +167,7 @@ spec:
             - name: ACORNOPS_AGENT_KEY
               valueFrom:
                 secretKeyRef:
-                  name: acornops-k8s-agent-secret
+                  name: acornops-agentk-secret
                   key: agent-key
             - name: ACORNOPS_AGENT_WRITE_ENABLED
               value: "${ACORNOPS_AGENT_WRITE_ENABLED}"
@@ -206,4 +206,4 @@ spec:
               memory: 128Mi
 EOF
 
-echo "k8s-agent deployed to namespace ${K8S_NAMESPACE}."
+echo "agentk deployed to namespace ${K8S_NAMESPACE}."

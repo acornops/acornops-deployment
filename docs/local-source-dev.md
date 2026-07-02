@@ -32,10 +32,10 @@ task local-up
 ```
 
 `local-up` always executes `llm-gateway-init` first (`alembic upgrade head` + seed) and then `control-plane-init` (`npm run db:migrate`) so local DB schemas stay aligned with service code.
-It also creates the local k3d cluster named by `LOCAL_K3D_CLUSTER_NAME` when `LOCAL_K3D_AUTO_CREATE=true`, then writes a dedicated kubeconfig for the `k8s-agent` container and demo workload seeding.
+It also creates the local k3d cluster named by `LOCAL_K3D_CLUSTER_NAME` when `LOCAL_K3D_AUTO_CREATE=true`, then writes a dedicated kubeconfig for the `agentk` container and demo workload seeding.
 The Compose-managed local agents explicitly set `ACORNOPS_AGENT_ALLOW_INSECURE_TRANSPORT=true` because the local control plane uses plain HTTP/WebSocket transport inside the Docker network; production agent deployments must keep secure transport enabled.
 
-The local source overlay also starts `vm-agent` as `vm-agent`. It uses the seeded `LOCAL_VM_TARGET_ID` and `LOCAL_VM_AGENT_KEY` values, connects outbound to the control plane WebSocket, and runs the real VM agent process with mock Linux/systemd collectors. This gives local development a deterministic VM target without requiring a privileged host install.
+The local source overlay also starts `agentv` as `agentv`. It uses the seeded `LOCAL_VM_TARGET_ID` and `LOCAL_VM_AGENT_KEY` values, connects outbound to the control plane WebSocket, and runs the real AgentV process with mock Linux/systemd collectors. This gives local development a deterministic VM target without requiring a privileged host install.
 
 Optional profiles:
 
