@@ -139,9 +139,11 @@ The deployment contract for external integration account linking is:
 - Helm loads `EXTERNAL_INTEGRATION_CLIENTS_JSON` from the existing platform Secret
   through `secrets.keys.controlPlane.externalIntegrationClientsJson`.
 - The JSON contains installed integration client descriptors with SHA-256 token
-  hashes only. Raw bearer tokens are generated and distributed out of band, are
-  never committed, and only authorize the external integration link, resolve,
-  revoke, and linked-user bot endpoints.
+  hashes only, plus optional `allowedCapabilities` entries that cap what that
+  registered client can ever receive from user-approved workspace grants. Raw
+  bearer tokens are generated and distributed out of band, are never committed,
+  and only authorize the external integration link, resolve, revoke, and
+  linked-user bot endpoints.
 
 ## Validation
 
