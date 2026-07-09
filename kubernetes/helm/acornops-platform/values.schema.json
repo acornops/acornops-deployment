@@ -534,6 +534,7 @@
                   { "required": ["toolResultArtifacts"] },
                   { "required": ["runEvents"] },
                   { "required": ["webhookEgress"] },
+                  { "required": ["webhookDelivery"] },
                   { "required": ["maxConcurrentRuns"] },
                   { "required": ["toolContext"] },
                   { "required": ["durability"] },
@@ -606,6 +607,20 @@
                       "maxItems": 100,
                       "items": { "type": "string", "minLength": 1 }
                     }
+                  }
+                },
+                "webhookDelivery": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "enabled": { "type": "boolean" },
+                    "batchSize": { "type": "integer", "minimum": 1, "maximum": 200 },
+                    "concurrency": { "type": "integer", "minimum": 1, "maximum": 100 },
+                    "perOriginConcurrency": { "type": "integer", "minimum": 1, "maximum": 20 },
+                    "maxAttempts": { "type": "integer", "minimum": 1, "maximum": 50 },
+                    "maxRetryAgeSeconds": { "type": "integer", "minimum": 60, "maximum": 604800 },
+                    "maxPayloadBytes": { "type": "integer", "minimum": 1024, "maximum": 1048576 },
+                    "maxSubscriptionsPerWorkspace": { "type": "integer", "minimum": 1, "maximum": 1000 }
                   }
                 }
               }
@@ -926,6 +941,7 @@
         "recentActivity": { "type": "object" },
         "runEvents": { "type": "object" },
         "webhookEgress": { "type": "object" },
+        "webhookDelivery": { "type": "object" },
         "maxConcurrentRuns": { "type": "integer" },
         "toolContext": { "type": "object" },
         "durability": { "type": "object" },

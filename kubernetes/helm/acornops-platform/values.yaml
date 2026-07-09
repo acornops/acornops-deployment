@@ -441,6 +441,15 @@ components:
       # Exact hosts and leading wildcards (for example, hooks.example.org and *.hooks.example.org).
       # Public webhook hosts remain allowed; this only permits listed hosts to resolve privately.
       allowedPrivateHosts: []
+    webhookDelivery:
+      enabled: true
+      batchSize: 50
+      concurrency: 20
+      perOriginConcurrency: 4
+      maxAttempts: 10
+      maxRetryAgeSeconds: 86400
+      maxPayloadBytes: 65536
+      maxSubscriptionsPerWorkspace: 100
     image:
       repository: ghcr.io/acornops/control-plane
       tag: 0.0.1-experimental.20

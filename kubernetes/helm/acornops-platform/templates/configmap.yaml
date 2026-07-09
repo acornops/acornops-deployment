@@ -36,6 +36,14 @@ data:
   TARGET_CHAT_RECENT_ACTIVITY_WINDOW_SECONDS: {{ .Values.components.controlPlane.recentActivity.windowSeconds | quote }}
   RUN_EVENT_BUFFER_SIZE: {{ .Values.components.controlPlane.runEvents.bufferSize | quote }}
   PERSIST_RUN_EVENTS: {{ .Values.components.controlPlane.runEvents.persist | quote }}
+  WEBHOOK_WORKER_ENABLED: {{ .Values.components.controlPlane.webhookDelivery.enabled | quote }}
+  WEBHOOK_WORKER_BATCH_SIZE: {{ .Values.components.controlPlane.webhookDelivery.batchSize | quote }}
+  WEBHOOK_WORKER_CONCURRENCY: {{ .Values.components.controlPlane.webhookDelivery.concurrency | quote }}
+  WEBHOOK_WORKER_PER_ORIGIN_CONCURRENCY: {{ .Values.components.controlPlane.webhookDelivery.perOriginConcurrency | quote }}
+  WEBHOOK_MAX_ATTEMPTS: {{ .Values.components.controlPlane.webhookDelivery.maxAttempts | quote }}
+  WEBHOOK_MAX_RETRY_AGE_SECONDS: {{ .Values.components.controlPlane.webhookDelivery.maxRetryAgeSeconds | quote }}
+  WEBHOOK_MAX_PAYLOAD_BYTES: {{ .Values.components.controlPlane.webhookDelivery.maxPayloadBytes | quote }}
+  WEBHOOK_MAX_SUBSCRIPTIONS_PER_WORKSPACE: {{ .Values.components.controlPlane.webhookDelivery.maxSubscriptionsPerWorkspace | quote }}
   SEED_DEVELOPMENT_DATA: "false"
   AGENT_HELM_RELEASE_NAME: {{ .Values.agent.helm.releaseName | quote }}
   AGENT_HELM_CHART_REF: {{ .Values.agent.helm.chartRef | quote }}
