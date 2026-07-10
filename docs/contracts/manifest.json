@@ -86,6 +86,12 @@
       "ai.allowedReasoningSummaryModes",
       "ai.allowedReasoningEfforts"
     ],
+    "oidcAdditionalCaHelmValues": [
+      "auth.oidc.tls.additionalCaBundle.configMapKeyRef.name",
+      "auth.oidc.tls.additionalCaBundle.configMapKeyRef.key",
+      "auth.oidc.tls.additionalCaBundle.secretKeyRef.name",
+      "auth.oidc.tls.additionalCaBundle.secretKeyRef.key"
+    ],
     "agentKRolloutEnv": [
       "ACORNOPS_AGENT_PLATFORM_URL",
       "ACORNOPS_CLUSTER_ID",

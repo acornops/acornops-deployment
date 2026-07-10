@@ -96,6 +96,11 @@ auth:
     # Keep true unless a trusted provider intentionally emits email_verified=false.
     requireVerifiedEmail: true
     httpTimeoutMs: 10000
+    tls:
+      # Optional namespace-local CA bundle used to extend Node.js trust for OIDC.
+      additionalCaBundle:
+        configMapKeyRef: null
+        secretKeyRef: null
   password:
     # Username/password auth can run alongside OIDC.
     enabled: true

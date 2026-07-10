@@ -1,3 +1,4 @@
+{{- $oidcAdditionalCaEnabled := include "acornops-platform.oidcAdditionalCaEnabled" . -}}
 {{- if .Values.components.controlPlane.enabled }}
 apiVersion: apps/v1
 kind: Deployment
@@ -55,6 +56,12 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            {{- if $oidcAdditionalCaEnabled }}
+            - name: oidc-additional-ca
+              mountPath: {{ include "acornops-platform.oidcAdditionalCaPath" . | quote }}
+              subPath: oidc-ca.pem
+              readOnly: true
+            {{- end }}
             {{- if .Values.internalTransport.tls.enabled }}
             - name: internal-transport-ca
               mountPath: {{ printf "%s/ca" (include "acornops-platform.internalTlsMountPath" .) | quote }}
@@ -143,6 +150,10 @@ spec:
                   name: {{ include "acornops-platform.secretName" . }}
                   key: {{ .Values.secrets.keys.controlPlane.smtpPassword }}
                   optional: true
+            {{- if $oidcAdditionalCaEnabled }}
+            - name: NODE_EXTRA_CA_CERTS
+              value: {{ include "acornops-platform.oidcAdditionalCaPath" . | quote }}
+            {{- end }}
             {{- with .Values.components.controlPlane.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -159,6 +170,22 @@ spec:
       volumes:
         - name: tmp
           emptyDir: {}
+        {{- with .Values.auth.oidc.tls.additionalCaBundle.configMapKeyRef }}
+        - name: oidc-additional-ca
+          configMap:
+            name: {{ .name | quote }}
+            items:
+              - key: {{ .key | quote }}
+                path: oidc-ca.pem
+        {{- end }}
+        {{- with .Values.auth.oidc.tls.additionalCaBundle.secretKeyRef }}
+        - name: oidc-additional-ca
+          secret:
+            secretName: {{ .name | quote }}
+            items:
+              - key: {{ .key | quote }}
+                path: oidc-ca.pem
+        {{- end }}
         {{- if .Values.internalTransport.tls.enabled }}
         - name: internal-transport-ca
           secret:

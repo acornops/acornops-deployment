@@ -41,6 +41,56 @@ expect(
   'Deployment manifest should expose agentk cluster rollout env'
 );
 
+const oidcAdditionalCaHelmValues = [
+  'auth.oidc.tls.additionalCaBundle.configMapKeyRef.name',
+  'auth.oidc.tls.additionalCaBundle.configMapKeyRef.key',
+  'auth.oidc.tls.additionalCaBundle.secretKeyRef.name',
+  'auth.oidc.tls.additionalCaBundle.secretKeyRef.key'
+];
+expect(
+  stable(deploymentManifest.contractSurfaces?.oidcAdditionalCaHelmValues) ===
+    stable(oidcAdditionalCaHelmValues),
+  'Deployment manifest should expose the exact OIDC additional CA Helm values contract'
+);
+
+const chartSchema = readJson(
+  path.join(root, 'kubernetes/helm/acornops-platform/values.schema.json')
+);
+const oidcAdditionalCaSchema =
+  chartSchema.properties?.auth?.properties?.oidc?.properties?.tls?.properties
+    ?.additionalCaBundle;
+expect(
+  oidcAdditionalCaSchema?.properties?.configMapKeyRef,
+  'Chart schema should expose the OIDC additional CA ConfigMap source'
+);
+expect(
+  oidcAdditionalCaSchema?.properties?.secretKeyRef,
+  'Chart schema should expose the OIDC additional CA Secret source'
+);
+
+const oidcAdditionalCaTemplateSource = [
+  readFileSync(
+    path.join(root, 'kubernetes/helm/acornops-platform/templates/_helpers.tpl'),
+    'utf8'
+  ),
+  readFileSync(
+    path.join(root, 'kubernetes/helm/acornops-platform/templates/deployment-control-plane.yaml'),
+    'utf8'
+  )
+].join('\n');
+for (const identifier of [
+  'configMapKeyRef',
+  'secretKeyRef',
+  'oidc-additional-ca',
+  '/etc/acornops/trust/oidc-ca.pem',
+  'NODE_EXTRA_CA_CERTS'
+]) {
+  expect(
+    oidcAdditionalCaTemplateSource.includes(identifier),
+    `Chart templates should preserve the OIDC additional CA identifier ${identifier}`
+  );
+}
+
 const agentDeploy = readFileSync(path.join(root, 'scripts/agent-deploy.sh'), 'utf8');
 const localUp = readFileSync(path.join(root, 'scripts/local-up.sh'), 'utf8');
 const localCompose = readFileSync(path.join(root, 'compose/local/compose.source.yaml'), 'utf8');

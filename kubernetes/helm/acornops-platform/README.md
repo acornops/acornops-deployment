@@ -36,6 +36,8 @@ The chart values are organized by operator concern:
 - `exposure`: Ingress hosts, class, annotations, and TLS
 - `secrets`: existing Secret name and grouped Secret key mappings
 - `auth`: session, OIDC, and password-auth settings
+- `auth.oidc.tls.additionalCaBundle`: optional existing ConfigMap or Secret with
+  additional CA trust for a private OIDC issuer
 - `ai`: default provider/model policy
 - `agent`: control-plane defaults for agent routing, runtime limits, and agent Helm installs
 - `internalTransport.tls`: optional operator-supplied internal HTTPS/mTLS for service-to-service traffic
@@ -86,6 +88,181 @@ console image by setting `components.managementConsole.locales.existingConfigMap
 to a ConfigMap containing `manifest.json` and any referenced locale JSON files.
 The chart mounts the ConfigMap at `/usr/share/nginx/html/locales`; when unset,
 the console uses its bundled English and Mandarin Chinese languages.
+
+## OIDC Additional CA Trust
+
+Use `auth.oidc.tls.additionalCaBundle` when the control plane must reach an OIDC
+issuer whose server certificate chains to an organization-private CA. The chart
+references an existing ConfigMap or Secret in the Helm release namespace; it
+does not create or copy the resource, and Kubernetes cannot mount a resource
+from another namespace. A ConfigMap is preferred because CA certificates are
+public trust anchors, while Secret support accommodates PKI systems that
+distribute all certificate material as Secrets.
+
+The selected key must contain one or more PEM-encoded CA certificates. Use a
+root CA or an intentionally managed CA bundle, not the OIDC server's private
+key, a client certificate/private-key pair, or a frequently replaced leaf
+certificate. The chart does not accept inline PEM content.
+
+ConfigMap source:
+
+```yaml
+auth:
+  oidc:
+    tls:
+      additionalCaBundle:
+        configMapKeyRef:
+          name: organization-trust-bundle
+          key: ca.crt
+```
+
+Secret source:
+
+```yaml
+auth:
+  oidc:
+    tls:
+      additionalCaBundle:
+        secretKeyRef:
+          name: organization-trust-bundle
+          key: ca.crt
+```
+
+Configure exactly one source. Both `name` and `key` are required for a selected
+source. When neither source is set, the chart renders no OIDC CA volume, mount,
+or environment variable. When one is set, the control-plane container receives:
+
+- a read-only `oidc-additional-ca` volume at
+  `/etc/acornops/trust/oidc-ca.pem`; and
+- chart-owned
+  `NODE_EXTRA_CA_CERTS=/etc/acornops/trust/oidc-ca.pem`.
+
+`NODE_EXTRA_CA_CERTS` adds the bundle to Node.js's normal public CA set; it does
+not replace public trust or disable certificate and hostname verification. It
+does apply the added trust process-wide to outbound TLS from the control plane.
+Do not override or duplicate `NODE_EXTRA_CA_CERTS` through
+`components.controlPlane.extraEnv` while the dedicated setting is enabled.
+
+The volume source is intentionally not optional. A missing resource or key
+prevents the pod from starting instead of silently falling back to a different
+trust policy. An unrelated or incorrect CA remains untrusted. This setting is
+also independent of `internalTransport.tls`: that feature owns AcornOps
+service-to-service HTTPS/mTLS certificates and private keys, while this feature
+adds CA-only trust for the external OIDC provider.
+
+Private OIDC endpoints also need an explicit control-plane egress allowance
+when `networkPolicies.enabled=true`. The default public HTTPS rule excludes
+private address ranges, so add the issuer destination under
+`networkPolicies.extraEgress.controlPlane` using selectors or CIDRs appropriate
+for the cluster. Supplying a CA bundle does not change NetworkPolicy behavior.
+
+### trust-manager compatibility
+
+The chart can consume the namespace-local ConfigMap produced by cert-manager
+trust-manager or an equivalent enterprise PKI distributor. AcornOps neither
+requires trust-manager nor creates its cluster-scoped `Bundle`. For example, a
+cluster administrator can select the AcornOps namespace and publish a target
+ConfigMap there:
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: acornops
+  labels:
+    acornops.io/trust-bundle: enabled
+---
+apiVersion: trust.cert-manager.io/v1alpha1
+kind: Bundle
+metadata:
+  name: organization-trust-bundle
+spec:
+  sources:
+    - configMap:
+        name: organization-root-ca
+        key: ca.crt
+  target:
+    configMap:
+      key: ca.crt
+    namespaceSelector:
+      matchLabels:
+        acornops.io/trust-bundle: enabled
+```
+
+Point `configMapKeyRef` at the resulting `organization-trust-bundle` ConfigMap
+and `ca.crt` key in the `acornops` namespace, as in the ConfigMap example above.
+The cluster administrator remains responsible for trust-manager source rules,
+the trust namespace, namespace selection, and distribution policy.
+
+### CA rotation and restarts
+
+Node.js reads `NODE_EXTRA_CA_CERTS` only at process startup, and the chart mounts
+the file with `subPath`. Updating the external ConfigMap or Secret therefore
+does not update trust in an already-running process. Rotate with an overlap:
+
+1. Publish a bundle containing both the old and new CA trust anchors.
+2. Restart the control-plane Deployment.
+3. Rotate the OIDC provider's serving certificate to the new CA.
+4. After the overlap window, remove the old CA from the bundle.
+5. Restart the control-plane Deployment again.
+
+Trigger each rollout explicitly, substituting the rendered Deployment name:
+
+```bash
+kubectl -n acornops rollout restart deployment/<control-plane-deployment>
+kubectl -n acornops rollout status deployment/<control-plane-deployment>
+```
+
+If the cluster already runs a reloader controller, pass its workload opt-in
+annotation through `global.commonAnnotations`. For example,
+[Stakater Reloader](https://docs.stakater.com/reloader/1.4/reference/annotations.html)
+recognizes this annotation on the rendered Deployment:
+
+```yaml
+global:
+  commonAnnotations:
+    reloader.stakater.com/auto: "true"
+```
+
+`global.commonAnnotations` applies to other rendered top-level objects too;
+controllers ignore unsupported resource kinds. Controllers that explicitly
+watch pod-template annotations can instead use
+`components.controlPlane.podAnnotations`. This is only an interoperability
+example. The chart does not install, require, or configure a reloader, and
+operators must verify that their controller restarts pods after updates to
+referenced resources. The chart deliberately avoids `lookup`-based content
+checksums because they are inconsistent across offline rendering, Helm
+upgrades, and GitOps renderers.
+
+### Troubleshooting OIDC discovery
+
+First confirm that the selected resource and key exist in the release namespace
+and inspect pod events for volume setup errors:
+
+```bash
+kubectl -n acornops get configmap organization-trust-bundle
+kubectl -n acornops describe pod <control-plane-pod>
+```
+
+Use `get secret` instead for a Secret source. Do not print PEM content or any
+private material into shared terminals or logs. In a running control-plane pod,
+verify discovery through the same Node.js trust configuration used by the
+application:
+
+```bash
+kubectl -n acornops exec deployment/<control-plane-deployment> -- \
+  node -e "fetch(process.env.OIDC_ISSUER_URL + '/.well-known/openid-configuration')
+    .then(async r => { console.log(r.status); console.log(await r.text()); })
+    .catch(e => { console.error(e); process.exit(1); })"
+```
+
+`unable to get local issuer certificate` usually means the configured bundle
+does not contain the issuer chain's required CA. A pod stuck before startup
+usually indicates a missing resource or key. A timeout to a private issuer may
+indicate that `networkPolicies.extraEgress.controlPlane` is incomplete. The API
+keeps certificate details out of browser responses; correlate the request ID
+with control-plane logs for the underlying TLS error without logging the
+certificate contents.
 
 ## Internal Transport TLS
 

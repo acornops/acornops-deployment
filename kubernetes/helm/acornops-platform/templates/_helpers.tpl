@@ -86,6 +86,32 @@ app.kubernetes.io/component: {{ .component }}
 {{- end -}}
 {{- end -}}
 
+{{/* Validate and report whether an additional OIDC CA bundle is configured. */}}
+{{- define "acornops-platform.oidcAdditionalCaEnabled" -}}
+{{- $bundle := .Values.auth.oidc.tls.additionalCaBundle -}}
+{{- $configMapRef := $bundle.configMapKeyRef -}}
+{{- $secretKeyRef := $bundle.secretKeyRef -}}
+{{- $hasConfigMapRef := kindIs "map" $configMapRef -}}
+{{- $hasSecretKeyRef := kindIs "map" $secretKeyRef -}}
+{{- if and $hasConfigMapRef $hasSecretKeyRef -}}
+{{- fail "auth.oidc.tls.additionalCaBundle must configure only one of configMapKeyRef or secretKeyRef" -}}
+{{- end -}}
+{{- if $hasConfigMapRef -}}
+{{- $_ := required "auth.oidc.tls.additionalCaBundle.configMapKeyRef.name is required when configMapKeyRef is configured" $configMapRef.name -}}
+{{- $_ := required "auth.oidc.tls.additionalCaBundle.configMapKeyRef.key is required when configMapKeyRef is configured" $configMapRef.key -}}
+true
+{{- else if $hasSecretKeyRef -}}
+{{- $_ := required "auth.oidc.tls.additionalCaBundle.secretKeyRef.name is required when secretKeyRef is configured" $secretKeyRef.name -}}
+{{- $_ := required "auth.oidc.tls.additionalCaBundle.secretKeyRef.key is required when secretKeyRef is configured" $secretKeyRef.key -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/* Fixed file path consumed by Node.js for the additional OIDC CA bundle. */}}
+{{- define "acornops-platform.oidcAdditionalCaPath" -}}
+/etc/acornops/trust/oidc-ca.pem
+{{- end -}}
+
 {{- define "acornops-platform.internalTlsEnabled" -}}
 {{- if .Values.internalTransport.tls.enabled }}true{{ else }}false{{ end -}}
 {{- end -}}

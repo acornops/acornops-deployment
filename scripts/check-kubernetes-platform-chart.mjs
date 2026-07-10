@@ -8,6 +8,37 @@ const chart = 'kubernetes/helm/acornops-platform';
 const k3sValues = `${chart}/examples/values-k3s-single-node.yaml`;
 const k3sKeycloakValues = `${chart}/examples/values-k3s-keycloak.yaml`;
 const productionValues = `${chart}/examples/values-production.yaml`;
+const exampleValues = fs
+  .readdirSync(`${chart}/examples`)
+  .filter((file) => /\.ya?ml$/.test(file))
+  .sort()
+  .map((file) => `${chart}/examples/${file}`);
+const oidcAdditionalCaValuesPath = 'auth.oidc.tls.additionalCaBundle';
+const oidcAdditionalCaPath = '/etc/acornops/trust/oidc-ca.pem';
+const configMapCaArgs = [
+  '--set-string',
+  `${oidcAdditionalCaValuesPath}.configMapKeyRef.name=organization-configmap-trust`,
+  '--set-string',
+  `${oidcAdditionalCaValuesPath}.configMapKeyRef.key=configmap-ca.crt`
+];
+const secretCaArgs = [
+  '--set-string',
+  `${oidcAdditionalCaValuesPath}.secretKeyRef.name=organization-secret-trust`,
+  '--set-string',
+  `${oidcAdditionalCaValuesPath}.secretKeyRef.key=secret-ca.pem`
+];
+const internalTlsArgs = [
+  '--set',
+  'internalTransport.tls.enabled=true',
+  '--set-string',
+  'internalTransport.tls.ca.secretName=acornops-internal-ca',
+  '--set-string',
+  'internalTransport.tls.certificates.controlPlane.secretName=control-plane-tls',
+  '--set-string',
+  'internalTransport.tls.certificates.executionEngine.secretName=execution-engine-tls',
+  '--set-string',
+  'internalTransport.tls.certificates.llmGateway.secretName=llm-gateway-tls'
+];
 const staleAgentChartRefPattern = /oci:\/\/ghcr\.io\/acornops\/charts\/acornops-agent(?:\s|$|["'}`])/;
 
 function runHelm(args) {
@@ -53,6 +84,35 @@ function assertMatch(output, pattern, message) {
   }
 }
 
+function manifestDocument(output, kind, name) {
+  const marker = `kind: ${kind}\nmetadata:\n  name: ${name}`;
+  const document = output.split(/^---\s*$/m).find((candidate) => candidate.includes(marker));
+  if (!document) {
+    throw new Error(`Could not find ${kind} manifest ${name}`);
+  }
+  return document;
+}
+
+function indentedNamedListItem(output, indentation, name) {
+  const lines = output.split('\n');
+  const prefix = ' '.repeat(indentation);
+  const start = lines.findIndex((line) => line === `${prefix}- name: ${name}`);
+  if (start === -1) {
+    throw new Error(`Could not find list item ${name} at indentation ${indentation}`);
+  }
+
+  let end = start + 1;
+  while (end < lines.length) {
+    const line = lines[end];
+    const leadingSpaces = line.length - line.trimStart().length;
+    if (line.trim() && leadingSpaces <= indentation) {
+      break;
+    }
+    end += 1;
+  }
+  return lines.slice(start, end).join('\n');
+}
+
 function deploymentReplicas(output, deploymentName) {
   const pattern = new RegExp(`kind: Deployment\\nmetadata:\\n  name: ${deploymentName}[\\s\\S]*?spec:\\n  replicas: (\\d+)`);
   const match = output.match(pattern);
@@ -62,7 +122,12 @@ function deploymentReplicas(output, deploymentName) {
   return Number(match[1]);
 }
 
-runHelm(['lint', chart]);
+runHelm(['lint', chart, '--strict']);
+for (const valuesFile of exampleValues) {
+  runHelm(['lint', chart, '--strict', '-f', valuesFile]);
+}
+runHelm(['lint', chart, '--strict', ...configMapCaArgs]);
+runHelm(['lint', chart, '--strict', ...secretCaArgs]);
 
 for (const [args, message] of [
   [['--set', 'ingress.enabled=false'], 'old top-level ingress values should be rejected by schema'],
@@ -93,6 +158,78 @@ for (const [args, message] of [
     'enabled internal transport TLS should require operator-supplied Secret names'
   ],
   [
+    [...configMapCaArgs, ...secretCaArgs],
+    'OIDC additional CA ConfigMap and Secret sources should be mutually exclusive'
+  ],
+  [
+    ['--set-string', `${oidcAdditionalCaValuesPath}.configMapKeyRef.key=ca.crt`],
+    'OIDC additional CA ConfigMap source should require a name'
+  ],
+  [
+    ['--set-string', `${oidcAdditionalCaValuesPath}.configMapKeyRef.name=organization-trust-bundle`],
+    'OIDC additional CA ConfigMap source should require a key'
+  ],
+  [
+    [
+      '--set-string',
+      `${oidcAdditionalCaValuesPath}.configMapKeyRef.name=`,
+      '--set-string',
+      `${oidcAdditionalCaValuesPath}.configMapKeyRef.key=ca.crt`
+    ],
+    'OIDC additional CA ConfigMap source should reject an empty name'
+  ],
+  [
+    [
+      '--set-string',
+      `${oidcAdditionalCaValuesPath}.configMapKeyRef.name=organization-trust-bundle`,
+      '--set-string',
+      `${oidcAdditionalCaValuesPath}.configMapKeyRef.key=`
+    ],
+    'OIDC additional CA ConfigMap source should reject an empty key'
+  ],
+  [
+    ['--set-string', `${oidcAdditionalCaValuesPath}.secretKeyRef.key=ca.crt`],
+    'OIDC additional CA Secret source should require a name'
+  ],
+  [
+    ['--set-string', `${oidcAdditionalCaValuesPath}.secretKeyRef.name=organization-trust-bundle`],
+    'OIDC additional CA Secret source should require a key'
+  ],
+  [
+    [
+      '--set-string',
+      `${oidcAdditionalCaValuesPath}.secretKeyRef.name=`,
+      '--set-string',
+      `${oidcAdditionalCaValuesPath}.secretKeyRef.key=ca.crt`
+    ],
+    'OIDC additional CA Secret source should reject an empty name'
+  ],
+  [
+    [
+      '--set-string',
+      `${oidcAdditionalCaValuesPath}.secretKeyRef.name=organization-trust-bundle`,
+      '--set-string',
+      `${oidcAdditionalCaValuesPath}.secretKeyRef.key=`
+    ],
+    'OIDC additional CA Secret source should reject an empty key'
+  ],
+  [
+    [
+      ...configMapCaArgs,
+      '--set-string',
+      `${oidcAdditionalCaValuesPath}.configMapKeyRef.namespace=other`
+    ],
+    'OIDC additional CA references should reject unknown fields'
+  ],
+  [
+    ['--set-string', `${oidcAdditionalCaValuesPath}.inlinePem=unsupported`],
+    'OIDC additional CA configuration should reject inline PEM fields'
+  ],
+  [
+    ['--set', 'auth.oidc.tls.skipTlsVerify=true'],
+    'OIDC additional CA configuration should reject TLS verification bypasses'
+  ],
+  [
     ['--set', 'auth.session.maxAgeSeconds=3600', '--set', 'auth.session.idleTimeoutSeconds=7200'],
     'browser session idle timeout must not exceed max age'
   ],
@@ -110,6 +247,76 @@ for (const [args, message] of [
 ]) {
   expectHelmFailure(args, message);
 }
+
+const ambiguousOidcAdditionalCaFailure = expectHelmFailure(
+  ['--skip-schema-validation', ...configMapCaArgs, ...secretCaArgs],
+  'template validation should reject ambiguous OIDC additional CA configuration'
+);
+assertIncludes(
+  ambiguousOidcAdditionalCaFailure,
+  'auth.oidc.tls.additionalCaBundle must configure only one of configMapKeyRef or secretKeyRef',
+  'ambiguous OIDC additional CA template failure should be actionable'
+);
+
+const disabledControlPlaneAmbiguousOidcAdditionalCaFailure = expectHelmFailure(
+  [
+    '--skip-schema-validation',
+    '--set',
+    'components.controlPlane.enabled=false',
+    ...configMapCaArgs,
+    ...secretCaArgs
+  ],
+  'template validation should reject ambiguous OIDC additional CA configuration when control-plane is disabled'
+);
+assertIncludes(
+  disabledControlPlaneAmbiguousOidcAdditionalCaFailure,
+  'auth.oidc.tls.additionalCaBundle must configure only one of configMapKeyRef or secretKeyRef',
+  'OIDC additional CA validation should not depend on rendering the control-plane Deployment'
+);
+
+const incompleteOidcAdditionalCaConfigMapFailure = expectHelmFailure(
+  [
+    '--skip-schema-validation',
+    '--set-string',
+    `${oidcAdditionalCaValuesPath}.configMapKeyRef.key=ca.crt`
+  ],
+  'template validation should reject an incomplete OIDC additional CA ConfigMap source'
+);
+assertIncludes(
+  incompleteOidcAdditionalCaConfigMapFailure,
+  'auth.oidc.tls.additionalCaBundle.configMapKeyRef.name is required when configMapKeyRef is configured',
+  'incomplete OIDC additional CA ConfigMap template failure should name the missing field'
+);
+
+const disabledControlPlaneIncompleteOidcAdditionalCaFailure = expectHelmFailure(
+  [
+    '--skip-schema-validation',
+    '--set',
+    'components.controlPlane.enabled=false',
+    '--set-string',
+    `${oidcAdditionalCaValuesPath}.configMapKeyRef.key=ca.crt`
+  ],
+  'template validation should reject incomplete OIDC additional CA configuration when control-plane is disabled'
+);
+assertIncludes(
+  disabledControlPlaneIncompleteOidcAdditionalCaFailure,
+  'auth.oidc.tls.additionalCaBundle.configMapKeyRef.name is required when configMapKeyRef is configured',
+  'incomplete OIDC additional CA validation should not depend on rendering the control-plane Deployment'
+);
+
+const incompleteOidcAdditionalCaSecretFailure = expectHelmFailure(
+  [
+    '--skip-schema-validation',
+    '--set-string',
+    `${oidcAdditionalCaValuesPath}.secretKeyRef.name=organization-trust-bundle`
+  ],
+  'template validation should reject an incomplete OIDC additional CA Secret source'
+);
+assertIncludes(
+  incompleteOidcAdditionalCaSecretFailure,
+  'auth.oidc.tls.additionalCaBundle.secretKeyRef.key is required when secretKeyRef is configured',
+  'incomplete OIDC additional CA Secret template failure should name the missing field'
+);
 
 for (const file of [
   'compose/local/compose.source.yaml',
@@ -215,6 +422,53 @@ assertMatch(
   'control-plane egress should allow internal calls only to execution-engine and llm-gateway service ports'
 );
 const defaultPrefix = 'acornops-acornops-platform';
+assertExcludes(defaultRender, 'oidc-additional-ca', 'default chart should not render an OIDC additional CA volume or mount');
+assertExcludes(defaultRender, 'NODE_EXTRA_CA_CERTS', 'default chart should not configure Node.js additional CA trust');
+assertExcludes(defaultRender, oidcAdditionalCaPath, 'default chart should not render the fixed OIDC additional CA path');
+assertExcludes(defaultRender, 'NODE_TLS_REJECT_UNAUTHORIZED', 'chart must not disable Node.js TLS verification');
+
+const configMapCaRender = helmTemplate(configMapCaArgs);
+const configMapControlPlane = manifestDocument(
+  configMapCaRender,
+  'Deployment',
+  `${defaultPrefix}-control-plane`
+);
+const configMapCaMount = indentedNamedListItem(configMapControlPlane, 12, 'oidc-additional-ca');
+assertIncludes(configMapCaMount, `mountPath: "${oidcAdditionalCaPath}"`, 'ConfigMap CA should use the fixed mount path');
+assertIncludes(configMapCaMount, 'subPath: oidc-ca.pem', 'ConfigMap CA should use the fixed mounted filename');
+assertIncludes(configMapCaMount, 'readOnly: true', 'ConfigMap CA mount should be read-only');
+const configMapCaEnv = indentedNamedListItem(configMapControlPlane, 12, 'NODE_EXTRA_CA_CERTS');
+assertIncludes(configMapCaEnv, `value: "${oidcAdditionalCaPath}"`, 'ConfigMap CA should configure Node.js with the fixed path');
+const configMapCaVolume = indentedNamedListItem(configMapControlPlane, 8, 'oidc-additional-ca');
+assertIncludes(configMapCaVolume, 'configMap:', 'ConfigMap CA should render a ConfigMap volume source');
+assertIncludes(configMapCaVolume, 'name: "organization-configmap-trust"', 'ConfigMap CA should reference the configured resource');
+assertIncludes(configMapCaVolume, 'key: "configmap-ca.crt"', 'ConfigMap CA should select the configured key');
+assertIncludes(configMapCaVolume, 'path: oidc-ca.pem', 'ConfigMap CA key should map to the fixed filename');
+assertExcludes(configMapCaVolume, 'secret:', 'ConfigMap CA should not render a Secret volume source');
+assertExcludes(configMapCaVolume, 'optional:', 'ConfigMap CA source should fail closed when the resource or key is missing');
+
+const secretCaRender = helmTemplate(secretCaArgs);
+const secretControlPlane = manifestDocument(secretCaRender, 'Deployment', `${defaultPrefix}-control-plane`);
+const secretCaMount = indentedNamedListItem(secretControlPlane, 12, 'oidc-additional-ca');
+assertIncludes(secretCaMount, `mountPath: "${oidcAdditionalCaPath}"`, 'Secret CA should use the fixed mount path');
+assertIncludes(secretCaMount, 'subPath: oidc-ca.pem', 'Secret CA should use the fixed mounted filename');
+assertIncludes(secretCaMount, 'readOnly: true', 'Secret CA mount should be read-only');
+const secretCaEnv = indentedNamedListItem(secretControlPlane, 12, 'NODE_EXTRA_CA_CERTS');
+assertIncludes(secretCaEnv, `value: "${oidcAdditionalCaPath}"`, 'Secret CA should configure Node.js with the fixed path');
+const secretCaVolume = indentedNamedListItem(secretControlPlane, 8, 'oidc-additional-ca');
+assertIncludes(secretCaVolume, 'secret:', 'Secret CA should render a Secret volume source');
+assertIncludes(secretCaVolume, 'secretName: "organization-secret-trust"', 'Secret CA should reference the configured resource');
+assertIncludes(secretCaVolume, 'key: "secret-ca.pem"', 'Secret CA should select the configured key');
+assertIncludes(secretCaVolume, 'path: oidc-ca.pem', 'Secret CA key should map to the fixed filename');
+assertExcludes(secretCaVolume, 'configMap:', 'Secret CA should not render a ConfigMap volume source');
+assertExcludes(secretCaVolume, 'optional:', 'Secret CA source should fail closed when the resource or key is missing');
+
+for (const caRender of [configMapCaRender, secretCaRender]) {
+  assertExcludes(caRender, 'NODE_TLS_REJECT_UNAUTHORIZED', 'OIDC additional CA trust must preserve TLS verification');
+  assertExcludes(caRender, 'BEGIN CERTIFICATE', 'chart must not render inline CA certificate material');
+  assertExcludes(caRender, 'BEGIN PRIVATE KEY', 'chart must not render private key material');
+}
+
 for (const component of ['management-console', 'control-plane', 'execution-engine', 'llm-gateway']) {
   assertMatch(
     defaultRender,
@@ -394,18 +648,7 @@ assertIncludes(productionRender, 'LLM_DEFAULT_MODEL: "gpt-5.5"', 'production sho
 assertExcludes(productionRender, 'gpt-4.1-mini', 'production should not allow GPT-4 OpenAI models by default');
 assertIncludes(productionRender, 'SECRETS_CACHE_TTL_SEC: "0"', 'production should keep llm-gateway plaintext secret caching disabled');
 
-const tlsRender = helmTemplate([
-  '--set',
-  'internalTransport.tls.enabled=true',
-  '--set',
-  'internalTransport.tls.ca.secretName=acornops-internal-ca',
-  '--set',
-  'internalTransport.tls.certificates.controlPlane.secretName=control-plane-tls',
-  '--set',
-  'internalTransport.tls.certificates.executionEngine.secretName=execution-engine-tls',
-  '--set',
-  'internalTransport.tls.certificates.llmGateway.secretName=llm-gateway-tls'
-]);
+const tlsRender = helmTemplate(internalTlsArgs);
 assertIncludes(
   tlsRender,
   'EXECUTION_ENGINE_BASE_URL: "https://acornops-acornops-platform-execution-engine.acornops.svc:8080"',
@@ -451,6 +694,28 @@ assertMatch(
 );
 assertExcludes(tlsRender, 'BEGIN PRIVATE KEY', 'rendered manifests must not include raw private key material');
 
+const tlsWithOidcAdditionalCaRender = helmTemplate([...internalTlsArgs, ...configMapCaArgs]);
+assertIncludes(
+  tlsWithOidcAdditionalCaRender,
+  'name: internal-transport-ca',
+  'internal mTLS CA volume should remain configured alongside OIDC additional CA trust'
+);
+assertIncludes(
+  tlsWithOidcAdditionalCaRender,
+  'name: oidc-additional-ca',
+  'OIDC additional CA volume should remain configured alongside internal mTLS'
+);
+assertIncludes(
+  tlsWithOidcAdditionalCaRender,
+  'name: NODE_EXTRA_CA_CERTS',
+  'OIDC additional CA environment should remain configured alongside internal mTLS'
+);
+assertIncludes(
+  tlsWithOidcAdditionalCaRender,
+  'INTERNAL_TRANSPORT_TLS_ENABLED: "true"',
+  'internal mTLS configuration should remain enabled alongside OIDC additional CA trust'
+);
+
 const extraValuesDir = fs.mkdtempSync(path.join(os.tmpdir(), 'acornops-platform-values-'));
 const extraValuesPath = path.join(extraValuesDir, 'extra-workload-values.yaml');
 fs.writeFileSync(
@@ -475,11 +740,13 @@ fs.writeFileSync(
         value: enabled
 `
 );
-const extraRender = helmTemplate(['-f', extraValuesPath]);
+const extraRender = helmTemplate(['-f', extraValuesPath, ...configMapCaArgs]);
 assertIncludes(extraRender, 'acornops.dev/test-label: control-plane', 'podLabels should render on component pods');
 assertIncludes(extraRender, 'priorityClassName: "platform-critical"', 'priorityClassName should render on component pods');
 assertIncludes(extraRender, 'topologySpreadConstraints:', 'topology spread constraints should render on component pods');
 assertIncludes(extraRender, 'name: control-plane-extra-env', 'extraEnvFrom should render on component containers');
 assertIncludes(extraRender, 'name: EXTRA_CONTROL_PLANE_ENV', 'extraEnv should render on component containers');
+assertIncludes(extraRender, 'name: NODE_EXTRA_CA_CERTS', 'dedicated OIDC CA environment should coexist with extraEnv');
+assertIncludes(extraRender, 'name: oidc-additional-ca', 'dedicated OIDC CA mount should coexist with extraEnvFrom');
 
 console.log('Kubernetes platform Helm chart checks passed.');

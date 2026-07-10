@@ -29,7 +29,17 @@ jobs:
         uses: azure/setup-helm@v4
 
       - name: Lint chart
-        run: helm lint "${CHART_DIR}"
+        run: |
+          helm lint "${CHART_DIR}" --strict
+          for values in "${CHART_DIR}"/examples/*.yaml; do
+            helm lint "${CHART_DIR}" --strict -f "${values}"
+          done
+          helm lint "${CHART_DIR}" --strict \
+            --set-string auth.oidc.tls.additionalCaBundle.configMapKeyRef.name=organization-trust-bundle \
+            --set-string auth.oidc.tls.additionalCaBundle.configMapKeyRef.key=ca.crt
+          helm lint "${CHART_DIR}" --strict \
+            --set-string auth.oidc.tls.additionalCaBundle.secretKeyRef.name=organization-trust-bundle \
+            --set-string auth.oidc.tls.additionalCaBundle.secretKeyRef.key=ca.crt
 
       - name: Render chart
         run: |

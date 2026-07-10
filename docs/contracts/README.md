@@ -12,6 +12,8 @@ This repository owns deployment and compatibility contracts rather than service 
 - AI provider/model and reasoning summary policy rendered into control-plane runtime env
 - Deployment-track environment templates
 - External integration account-link token wiring for VM Compose and Helm
+- Helm `auth.oidc.tls.additionalCaBundle` references for additional private OIDC
+  issuer CA trust
 - Helm `internalTransport.tls` values for optional operator-supplied internal HTTPS/mTLS
 - Password email verification/reset and SMTP environment wiring
 - Release image compatibility metadata
@@ -30,6 +32,32 @@ Application-layer credentials remain required in both modes:
 and run-scoped JWTs are still enforced. The control-plane public HTTP listener
 continues to serve Ingress traffic, while internal callbacks, JWKS, and the
 built-in MCP bridge use the separate internal HTTPS listener when TLS is enabled.
+
+## OIDC Additional CA Trust
+
+The Helm values contract for an OIDC provider signed by an organization-private
+CA is one of these two mutually exclusive, namespace-local references:
+
+- `auth.oidc.tls.additionalCaBundle.configMapKeyRef.name` and `.key`
+- `auth.oidc.tls.additionalCaBundle.secretKeyRef.name` and `.key`
+
+Both references default to `null`; a selected reference requires both of its
+fields. The chart accepts no inline PEM, private key, client certificate, custom
+mount path, or TLS-verification bypass. It maps the selected key from an
+existing resource in the Helm release namespace to the read-only
+`oidc-additional-ca` volume at `/etc/acornops/trust/oidc-ca.pem` and sets the
+chart-owned `NODE_EXTRA_CA_CERTS` variable to that fixed path. The source is not
+optional, so a missing resource or key fails pod startup. Node.js adds this file
+to its public CA trust rather than replacing that trust.
+
+This CA-only OIDC contract is independent of `internalTransport.tls`, which
+owns AcornOps service-to-service HTTPS/mTLS trust and identity material. It also
+does not grant NetworkPolicy egress to a private issuer. Operators must
+distribute the resource into the AcornOps namespace, configure any required
+`networkPolicies.extraEgress.controlPlane` rule, and restart control-plane pods
+after trust-bundle changes. Rotation uses an old/new CA overlap followed by a
+restart at each bundle transition because Node.js reads `NODE_EXTRA_CA_CERTS`
+only at process startup.
 
 ## Admin API And Workspace Plans
 
