@@ -25,7 +25,7 @@ stacks:
   - name: k8s-platform-v1
     description: Kubernetes platform stack deployed with the acornops-platform Helm chart.
     chart:
-      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.6
+      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.7
       acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.2
     components:
       managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.1
