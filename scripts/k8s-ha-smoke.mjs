@@ -110,7 +110,7 @@ async function registerWorkloadCluster(baseUrl, cookie) {
   };
 }
 
-function installWorkloadAgent(agentKey) {
+function installWorkloadAgent(agentKey, clusterId) {
   const websocketUrl = env(
     'ACORNOPS_K8S_HA_SMOKE_AGENT_WEBSOCKET_URL',
     config.workloadContext === config.context ? controlPlaneInternalWsUrl(config) : ''
@@ -132,7 +132,9 @@ function installWorkloadAgent(agentKey) {
     '--set-string',
     `config.websocketUrl=${websocketUrl}`,
     '--set-string',
-    `config.agentKey=${agentKey}`
+    `config.agentKey=${agentKey}`,
+    '--set-string',
+    `config.clusterId=${clusterId}`
   ]);
 }
 
@@ -168,7 +170,7 @@ async function main() {
   const { agentKey, clusterId, workspaceId } = await registerWorkloadCluster(baseUrl, cookie);
 
   const agentInstallStartedAt = new Date();
-  installWorkloadAgent(agentKey);
+  installWorkloadAgent(agentKey, clusterId);
   await waitForClusterOnline(baseUrl, cookie, workspaceId, clusterId, 'registered agent is online');
 
   const pod = ensureSmokeLogPod(config, runtime);

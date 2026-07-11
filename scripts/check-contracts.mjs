@@ -30,6 +30,7 @@ function stable(value) {
 }
 
 const deploymentManifest = readJson(path.join(root, 'docs/contracts/manifest.json'));
+const haSmoke = readFileSync(path.join(root, 'scripts/k8s-ha-smoke.mjs'), 'utf8');
 expect(deploymentManifest.repo === 'deployment', 'Deployment manifest repo should be deployment');
 expect(deploymentManifest.version === 1, 'Deployment manifest version should be 1');
 expect(
@@ -39,6 +40,16 @@ expect(
 expect(
   deploymentManifest.contractSurfaces?.agentKRolloutEnv?.includes('ACORNOPS_CLUSTER_ID'),
   'Deployment manifest should expose agentk cluster rollout env'
+);
+expect(
+  stable(deploymentManifest.contractSurfaces?.agentKInstallHelmValues) ===
+    stable(['agent.helm.chartRef', 'agent.helm.chartVersion']),
+  'Deployment manifest should expose the exact agentk install Helm values contract'
+);
+expect(
+  haSmoke.includes('installWorkloadAgent(agentKey, clusterId)') &&
+    haSmoke.includes('config.clusterId=${clusterId}'),
+  'HA smoke should install AgentK with the registered cluster ID'
 );
 
 const oidcAdditionalCaHelmValues = [
@@ -55,6 +66,10 @@ expect(
 
 const chartSchema = readJson(
   path.join(root, 'kubernetes/helm/acornops-platform/values.schema.json')
+);
+expect(
+  chartSchema.properties?.agent?.properties?.helm?.properties?.chartVersion,
+  'Chart schema should expose the optional AgentK chart version pin'
 );
 const oidcAdditionalCaSchema =
   chartSchema.properties?.auth?.properties?.oidc?.properties?.tls?.properties

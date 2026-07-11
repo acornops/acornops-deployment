@@ -104,6 +104,10 @@
       "ACORNOPS_CLUSTER_ID",
       "ACORNOPS_AGENT_KEY"
     ],
+    "agentKInstallHelmValues": [
+      "agent.helm.chartRef",
+      "agent.helm.chartVersion"
+    ],
     "agentVLocalEnv": [
       "ACORNOPS_AGENT_PLATFORM_URL",
       "ACORNOPS_AGENT_ALLOW_INSECURE_TRANSPORT",

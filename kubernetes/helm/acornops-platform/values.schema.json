@@ -403,6 +403,7 @@
           "properties": {
             "releaseName": { "type": "string", "minLength": 1 },
             "chartRef": { "type": "string", "minLength": 1 },
+            "chartVersion": { "type": "string" },
             "namespace": { "type": "string", "minLength": 1 }
           }
         },

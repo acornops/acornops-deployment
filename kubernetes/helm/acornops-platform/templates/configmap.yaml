@@ -33,6 +33,7 @@ data:
   SEED_DEVELOPMENT_DATA: "false"
   AGENT_HELM_RELEASE_NAME: {{ .Values.agent.helm.releaseName | quote }}
   AGENT_HELM_CHART_REF: {{ .Values.agent.helm.chartRef | quote }}
+  AGENT_HELM_CHART_VERSION: {{ .Values.agent.helm.chartVersion | quote }}
   AGENT_HELM_NAMESPACE: {{ .Values.agent.helm.namespace | quote }}
   OIDC_PROVIDER_NAME: {{ .Values.auth.oidc.providerName | quote }}
   OIDC_ISSUER_URL: {{ .Values.auth.oidc.issuerUrl | quote }}

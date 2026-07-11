@@ -111,12 +111,29 @@ expect(
 );
 
 const rendered = run('helm', ['template', 'acornops', chartPath, '--namespace', 'acornops']);
+const renderedWithAgentPin = run('helm', [
+  'template',
+  'acornops',
+  chartPath,
+  '--namespace',
+  'acornops',
+  '--set-string',
+  'agent.helm.chartVersion=0.0.1-experimental.4'
+]);
 for (const image of Object.values(expectedK8sImages)) {
   expect(rendered.includes(`image: "${image}"`), `platform chart should render ${image}`);
 }
 expect(
   rendered.includes('AGENT_HELM_CHART_REF: "oci://ghcr.io/acornops/charts/acornops-agentk"'),
   'platform chart should render the acornops-agentk chart reference'
+);
+expect(
+  rendered.includes('AGENT_HELM_CHART_VERSION: ""'),
+  'platform chart should leave the optional agentk chart version pin unset by default'
+);
+expect(
+  renderedWithAgentPin.includes('AGENT_HELM_CHART_VERSION: "0.0.1-experimental.4"'),
+  'platform chart should render an explicit agentk chart version pin when configured'
 );
 
 if (process.env.ACORNOPS_CHECK_PUBLISHED_ARTIFACTS === 'true') {
