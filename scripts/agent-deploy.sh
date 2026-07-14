@@ -26,7 +26,7 @@ set +a
 
 : "${K8S_NAMESPACE:=acornops}"
 : "${K8S_AGENT_REPLICAS:=1}"
-: "${ACORNOPS_AGENT_IMAGE:=ghcr.io/acornops/agentk:0.0.1-experimental.2}"
+: "${ACORNOPS_AGENT_IMAGE:=ghcr.io/acornops/agentk:0.0.1-experimental.7}"
 : "${ACORNOPS_AGENT_PLATFORM_URL:?ACORNOPS_AGENT_PLATFORM_URL is required}"
 : "${ACORNOPS_CLUSTER_ID:?ACORNOPS_CLUSTER_ID is required}"
 : "${ACORNOPS_AGENT_KEY:?ACORNOPS_AGENT_KEY is required}"

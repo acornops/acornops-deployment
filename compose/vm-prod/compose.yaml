@@ -2,7 +2,7 @@ name: acornops-platform
 
 services:
   management-console:
-    image: ${MANAGEMENT_CONSOLE_IMAGE:-ghcr.io/acornops/management-console:0.0.1-experimental.1}
+    image: ${MANAGEMENT_CONSOLE_IMAGE:-ghcr.io/acornops/management-console:0.0.1-experimental.15}
     depends_on:
       control-plane:
         condition: service_healthy
@@ -36,7 +36,7 @@ services:
       - acornops
 
   control-plane:
-    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.2}
+    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.16}
     environment:
       NODE_ENV: production
       PORT: 8081
@@ -167,7 +167,7 @@ services:
       - acornops
 
   control-plane-init:
-    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.2}
+    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.16}
     environment:
       DATABASE_URL: postgresql://${CP_DB_USER:-acornops}:${CP_DB_PASSWORD:-acornops}@cp-postgres:5432/${CP_DB_NAME:-acornops_control_plane}
     command: ["node", "dist/scripts/control-plane-db.js", "migrate"]
@@ -179,7 +179,7 @@ services:
       - acornops
 
   execution-engine:
-    image: ${EXECUTION_ENGINE_IMAGE:-ghcr.io/acornops/execution-engine:0.0.1-experimental.1}
+    image: ${EXECUTION_ENGINE_IMAGE:-ghcr.io/acornops/execution-engine:0.0.1-experimental.8}
     environment:
       APP_ENV: production
       ORCH_BASE_URL: ${ORCH_BASE_URL:-http://control-plane:8081}
@@ -222,7 +222,7 @@ services:
       - acornops
 
   llm-gateway:
-    image: ${LLM_GATEWAY_IMAGE:-ghcr.io/acornops/llm-gateway:0.0.1-experimental.2}
+    image: ${LLM_GATEWAY_IMAGE:-ghcr.io/acornops/llm-gateway:0.0.1-experimental.8}
     environment:
       APP_ENV: production
       DATABASE_URL: postgresql+asyncpg://${GATEWAY_DB_USER:-gateway_user}:${GATEWAY_DB_PASSWORD:-gateway_password}@gateway-postgres:5432/${GATEWAY_DB_NAME:-gateway}
@@ -274,7 +274,7 @@ services:
       - acornops
 
   llm-gateway-init:
-    image: ${LLM_GATEWAY_IMAGE:-ghcr.io/acornops/llm-gateway:0.0.1-experimental.2}
+    image: ${LLM_GATEWAY_IMAGE:-ghcr.io/acornops/llm-gateway:0.0.1-experimental.8}
     environment:
       DATABASE_URL: postgresql+asyncpg://${GATEWAY_DB_USER:-gateway_user}:${GATEWAY_DB_PASSWORD:-gateway_password}@gateway-postgres:5432/${GATEWAY_DB_NAME:-gateway}
       REDIS_URL: redis://:${GATEWAY_REDIS_PASSWORD:?set GATEWAY_REDIS_PASSWORD}@gateway-redis:6379/0
