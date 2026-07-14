@@ -1,3 +1,4 @@
+{{- $mcpEgressCaEnabled := include "acornops-platform.mcpEgressCaEnabled" . -}}
 {{- if .Values.components.llmGateway.enabled }}
 apiVersion: apps/v1
 kind: Deployment
@@ -54,6 +55,12 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            {{- if $mcpEgressCaEnabled }}
+            - name: mcp-egress-ca
+              mountPath: {{ include "acornops-platform.mcpEgressCaPath" . | quote }}
+              subPath: mcp-egress-ca-bundle.pem
+              readOnly: true
+            {{- end }}
             {{- if .Values.internalTransport.tls.enabled }}
             - name: internal-transport-ca
               mountPath: {{ printf "%s/ca" (include "acornops-platform.internalTlsMountPath" .) | quote }}
@@ -95,6 +102,10 @@ spec:
                   name: {{ include "acornops-platform.secretName" . }}
                   key: {{ .Values.secrets.keys.llmGateway.vaultToken }}
                   optional: true
+            {{- if $mcpEgressCaEnabled }}
+            - name: MCP_EGRESS_CA_BUNDLE_FILE
+              value: {{ include "acornops-platform.mcpEgressCaPath" . | quote }}
+            {{- end }}
             {{- with .Values.components.llmGateway.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -111,6 +122,22 @@ spec:
       volumes:
         - name: tmp
           emptyDir: {}
+        {{- with .Values.components.llmGateway.mcpEgress.caBundle.configMapKeyRef }}
+        - name: mcp-egress-ca
+          configMap:
+            name: {{ .name | quote }}
+            items:
+              - key: {{ .key | quote }}
+                path: mcp-egress-ca-bundle.pem
+        {{- end }}
+        {{- with .Values.components.llmGateway.mcpEgress.caBundle.secretKeyRef }}
+        - name: mcp-egress-ca
+          secret:
+            secretName: {{ .name | quote }}
+            items:
+              - key: {{ .key | quote }}
+                path: mcp-egress-ca-bundle.pem
+        {{- end }}
         {{- if .Values.internalTransport.tls.enabled }}
         - name: internal-transport-ca
           secret:

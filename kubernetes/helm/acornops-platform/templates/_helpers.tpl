@@ -112,6 +112,32 @@ true
 /etc/acornops/trust/oidc-ca.pem
 {{- end -}}
 
+{{/* Validate and report whether an MCP egress trust bundle is configured. */}}
+{{- define "acornops-platform.mcpEgressCaEnabled" -}}
+{{- $bundle := .Values.components.llmGateway.mcpEgress.caBundle -}}
+{{- $configMapRef := $bundle.configMapKeyRef -}}
+{{- $secretKeyRef := $bundle.secretKeyRef -}}
+{{- $hasConfigMapRef := kindIs "map" $configMapRef -}}
+{{- $hasSecretKeyRef := kindIs "map" $secretKeyRef -}}
+{{- if and $hasConfigMapRef $hasSecretKeyRef -}}
+{{- fail "components.llmGateway.mcpEgress.caBundle must configure only one of configMapKeyRef or secretKeyRef" -}}
+{{- end -}}
+{{- if $hasConfigMapRef -}}
+{{- $_ := required "components.llmGateway.mcpEgress.caBundle.configMapKeyRef.name is required when configMapKeyRef is configured" $configMapRef.name -}}
+{{- $_ := required "components.llmGateway.mcpEgress.caBundle.configMapKeyRef.key is required when configMapKeyRef is configured" $configMapRef.key -}}
+true
+{{- else if $hasSecretKeyRef -}}
+{{- $_ := required "components.llmGateway.mcpEgress.caBundle.secretKeyRef.name is required when secretKeyRef is configured" $secretKeyRef.name -}}
+{{- $_ := required "components.llmGateway.mcpEgress.caBundle.secretKeyRef.key is required when secretKeyRef is configured" $secretKeyRef.key -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/* Fixed file path consumed by HTTPX/OpenSSL for remote MCP TLS trust. */}}
+{{- define "acornops-platform.mcpEgressCaPath" -}}
+/etc/acornops/trust/mcp-egress-ca-bundle.pem
+{{- end -}}
+
 {{- define "acornops-platform.internalTlsEnabled" -}}
 {{- if .Values.internalTransport.tls.enabled }}true{{ else }}false{{ end -}}
 {{- end -}}

@@ -49,6 +49,8 @@ The chart values are organized by operator concern:
 - `components`: workload and component-local settings for management-console, control-plane, execution-engine, and llm-gateway
 - `components.llmGateway.providerBaseUrls`: optional deployment-wide OpenAI,
   Anthropic, and Gemini native API base URL overrides
+- `components.llmGateway.mcpEgress`: remote MCP hostname policy and optional
+  namespace-local TLS trust bundle
 
 Control-plane HA requires external Redis for agent ownership, cross-pod
 JSON-RPC command routing, run event fanout, and renewed scheduler leases. The
@@ -67,6 +69,42 @@ service ports; private databases, private Redis, custom ingress
 controllers, Vault, and private OIDC providers must be added under
 `networkPolicies.postgres.to`, `networkPolicies.redis.to`, `networkPolicies.vault.to`,
 or `networkPolicies.extraEgress.*` before deployment.
+
+Private MCP endpoints require all three controls: an exact hostname in
+`components.llmGateway.mcpEgress.allowedHosts`, a matching private destination
+under `networkPolicies.extraEgress.llmGateway`, and TLS trust for the issuing
+organization CA. Configure the trust file from exactly one existing ConfigMap
+or Secret in the release namespace:
+
+```yaml
+components:
+  llmGateway:
+    mcpEgress:
+      allowedHosts: test-mcp.app.internal.org
+      caBundle:
+        configMapKeyRef:
+          name: organization-trust-bundle
+          key: ca-bundle.pem
+
+networkPolicies:
+  extraEgress:
+    llmGateway:
+      - to:
+          - ipBlock:
+              cidr: 10.20.30.40/32
+        ports:
+          - protocol: TCP
+            port: 443
+```
+
+`secretKeyRef` with the same `name` and `key` shape is also supported. The
+selected key is mounted read-only and assigned to
+`MCP_EGRESS_CA_BUNDLE_FILE`. HTTPX extends its normal public roots with this
+bundle only for generic remote MCP traffic; provider, JWKS, Vault, and built-in
+bridge trust are unchanged. A missing resource or key prevents the gateway pod
+from starting, and this setting never disables certificate or hostname
+verification. Do not duplicate `MCP_EGRESS_CA_BUNDLE_FILE` through
+`components.llmGateway.extraEnv` while the dedicated setting is enabled.
 
 For k3s, override `exposure.ingress.className` to `traefik` and set
 `networkPolicies.ingressController.from` to the namespace/pod selectors used by

@@ -30,6 +30,20 @@ const secretCaArgs = [
   '--set-string',
   `${oidcAdditionalCaValuesPath}.secretKeyRef.key=secret-ca.pem`
 ];
+const mcpEgressCaValuesPath = 'components.llmGateway.mcpEgress.caBundle';
+const mcpEgressCaPath = '/etc/acornops/trust/mcp-egress-ca-bundle.pem';
+const mcpEgressConfigMapCaArgs = [
+  '--set-string',
+  `${mcpEgressCaValuesPath}.configMapKeyRef.name=organization-mcp-trust`,
+  '--set-string',
+  `${mcpEgressCaValuesPath}.configMapKeyRef.key=ca-bundle.pem`
+];
+const mcpEgressSecretCaArgs = [
+  '--set-string',
+  `${mcpEgressCaValuesPath}.secretKeyRef.name=organization-mcp-trust`,
+  '--set-string',
+  `${mcpEgressCaValuesPath}.secretKeyRef.key=ca-bundle.pem`
+];
 const internalTlsArgs = [
   '--set',
   'internalTransport.tls.enabled=true',
@@ -251,6 +265,8 @@ for (const valuesFile of exampleValues) {
 }
 runHelm(['lint', chart, '--strict', ...configMapCaArgs]);
 runHelm(['lint', chart, '--strict', ...secretCaArgs]);
+runHelm(['lint', chart, '--strict', ...mcpEgressConfigMapCaArgs]);
+runHelm(['lint', chart, '--strict', ...mcpEgressSecretCaArgs]);
 for (const args of [
   externalIngressArgs,
   emptyIngressControllerArgs,
@@ -329,6 +345,10 @@ for (const [args, message] of [
   [
     [...configMapCaArgs, ...secretCaArgs],
     'OIDC additional CA ConfigMap and Secret sources should be mutually exclusive'
+  ],
+  [
+    [...mcpEgressConfigMapCaArgs, ...mcpEgressSecretCaArgs],
+    'MCP egress CA ConfigMap and Secret sources should be mutually exclusive'
   ],
   [
     ['--set-string', `${oidcAdditionalCaValuesPath}.configMapKeyRef.key=ca.crt`],
@@ -565,6 +585,27 @@ assertMatch(
   /name: acornops-acornops-platform-llm-gateway[\s\S]*?MAX_REQUEST_BODY_BYTES: "1000000"/,
   'llm-gateway should render its request body limit from components.llmGateway.maxRequestBodyBytes'
 );
+assertExcludes(defaultRender, 'name: mcp-egress-ca', 'default chart should not mount an MCP egress CA bundle');
+assertExcludes(defaultRender, 'name: MCP_EGRESS_CA_BUNDLE_FILE', 'default chart should preserve the image trust configuration');
+
+const mcpConfigMapCaRender = helmTemplate(mcpEgressConfigMapCaArgs);
+assertMatch(
+  mcpConfigMapCaRender,
+  /name: mcp-egress-ca\n\s+configMap:\n\s+name: "organization-mcp-trust"/,
+  'MCP ConfigMap trust should render the configured volume source'
+);
+assertIncludes(mcpConfigMapCaRender, 'name: MCP_EGRESS_CA_BUNDLE_FILE', 'MCP ConfigMap trust should configure HTTPX/OpenSSL');
+assertIncludes(mcpConfigMapCaRender, `value: "${mcpEgressCaPath}"`, 'MCP ConfigMap trust should use the fixed file path');
+assertIncludes(mcpConfigMapCaRender, `mountPath: "${mcpEgressCaPath}"`, 'MCP ConfigMap trust should mount the fixed file path');
+
+const mcpSecretCaRender = helmTemplate(mcpEgressSecretCaArgs);
+assertMatch(
+  mcpSecretCaRender,
+  /name: mcp-egress-ca\n\s+secret:\n\s+secretName: "organization-mcp-trust"/,
+  'MCP Secret trust should render the configured volume source'
+);
+assertIncludes(mcpSecretCaRender, 'name: MCP_EGRESS_CA_BUNDLE_FILE', 'MCP Secret trust should configure HTTPX/OpenSSL');
+assertIncludes(mcpSecretCaRender, `value: "${mcpEgressCaPath}"`, 'MCP Secret trust should use the fixed file path');
 assertExcludes(defaultRender, 'path: /execution-engine', 'execution-engine must not be publicly routed');
 assertExcludes(defaultRender, 'path: /llm-gateway', 'llm-gateway must not be publicly routed');
 assertIncludes(defaultRender, 'kind: NetworkPolicy', 'chart should render NetworkPolicies by default');

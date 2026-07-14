@@ -211,11 +211,11 @@ agent:
     writeConfirmationTimeoutSeconds: 900
   helm:
     # Defaults used when the control plane creates workload-cluster agent installs.
-    releaseName: acornops-agent
+    releaseName: acornops-agentk
     chartRef: oci://ghcr.io/acornops/charts/acornops-agentk
     # Optional exact version. Leave empty to install the latest chart, including prereleases.
     chartVersion: ""
-    namespace: acornops
+    namespace: acornops-agentk
   builtinMcpServer:
     name: acornops-cluster-agent
     # Defaults to the in-cluster control-plane internal MCP endpoint when empty.
@@ -555,6 +555,10 @@ components:
       allowedHosts: ""
       allowPrivateNetworks: false
       allowLocalAddresses: false
+      # Optional namespace-local CA bundle that extends trust only for remote MCP.
+      caBundle:
+        configMapKeyRef: null
+        secretKeyRef: null
     rateLimits:
       windowSeconds: 60
       llmPerWindow: 100

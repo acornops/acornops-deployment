@@ -71,9 +71,9 @@ services:
       PERSIST_RUN_EVENTS: ${PERSIST_RUN_EVENTS:-true}
       WORKSPACE_ROLES_CONFIG_JSON: ${WORKSPACE_ROLES_CONFIG_JSON:-}
       SEED_AGENT_KEY: ${LOCAL_AGENT_KEY:-ak_local_dev_shared_key}
-      AGENT_HELM_RELEASE_NAME: ${AGENT_HELM_RELEASE_NAME:-acornops-agent}
+      AGENT_HELM_RELEASE_NAME: ${AGENT_HELM_RELEASE_NAME:-acornops-agentk}
       AGENT_HELM_CHART_REF: ${AGENT_HELM_CHART_REF:-oci://ghcr.io/acornops/charts/acornops-agentk}
-      AGENT_HELM_NAMESPACE: ${AGENT_HELM_NAMESPACE:-acornops}
+      AGENT_HELM_NAMESPACE: ${AGENT_HELM_NAMESPACE:-acornops-agentk}
       OIDC_PROVIDER_NAME: ${OIDC_PROVIDER_NAME:-dex}
       OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:-http://dex:5556/dex}
       OIDC_PUBLIC_ISSUER_URL: ${OIDC_PUBLIC_ISSUER_URL:-http://localhost:5556/dex}

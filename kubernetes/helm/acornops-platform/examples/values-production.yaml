@@ -112,9 +112,9 @@ agent:
     writeConfirmationRequired: true
     writeConfirmationTimeoutSeconds: 900
   helm:
-    releaseName: acornops-agent
+    releaseName: acornops-agentk
     chartRef: oci://ghcr.io/acornops/charts/acornops-agentk
-    namespace: acornops
+    namespace: acornops-agentk
 
 internalTransport:
   tls:
@@ -194,6 +194,14 @@ components:
       pathPrefix: acornops
       timeoutMs: 5000
       verifyTls: true
+    # Private MCP endpoints also require an exact allowedHosts entry,
+    # networkPolicies.extraEgress.llmGateway, and an additional CA bundle.
+    # mcpEgress:
+    #   allowedHosts: test-mcp.app.internal.org
+    #   caBundle:
+    #     configMapKeyRef:
+    #       name: organization-trust-bundle
+    #       key: ca-bundle.pem
     podDisruptionBudget:
       enabled: true
       minAvailable: 2
