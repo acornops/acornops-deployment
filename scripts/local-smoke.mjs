@@ -20,6 +20,14 @@ function env(name, fallback) {
   return process.env[name] || fallback;
 }
 
+function positiveIntegerEnv(name, fallback) {
+  const value = Number(env(name, String(fallback)));
+  if (!Number.isSafeInteger(value) || value < 1) {
+    throw new Error(`${name} must be a positive integer`);
+  }
+  return value;
+}
+
 const config = {
   edgeUrl: normalizeBaseUrl(env('ACORNOPS_SMOKE_EDGE_URL', DEFAULTS.edgeUrl)),
   consoleHost: env('ACORNOPS_SMOKE_CONSOLE_HOST', DEFAULTS.consoleHost),
@@ -31,8 +39,13 @@ const config = {
   intervalMs: Number(env('ACORNOPS_SMOKE_INTERVAL_MS', String(DEFAULTS.intervalMs))),
   allowNonLocal: env('ACORNOPS_SMOKE_ALLOW_NON_LOCAL', 'false') === 'true',
   runRemediation: env('ACORNOPS_SMOKE_RUN_REMEDIATION', 'true') === 'true',
+  remediationOnly: env('ACORNOPS_SMOKE_REMEDIATION_ONLY', 'false') === 'true',
+  remediationRuns: positiveIntegerEnv('ACORNOPS_SMOKE_REMEDIATION_RUNS', 1),
+  remediationMetricsPushUrl: env('ACORNOPS_SMOKE_REMEDIATION_METRICS_PUSH_URL', ''),
   kubeconfig: env('LOCAL_KUBECONFIG_PATH', '/tmp/acornops-local-kube/config')
 };
+
+class FatalSmokeError extends Error {}
 
 function normalizeBaseUrl(value) {
   return value.replace(/\/+$/, '');
@@ -146,6 +159,7 @@ async function waitFor(name, check) {
       console.log(`ok ${name}`);
       return result;
     } catch (err) {
+      if (err instanceof FatalSmokeError) throw err;
       lastError = err;
       await new Promise((resolve) => setTimeout(resolve, config.intervalMs));
     }
@@ -214,6 +228,26 @@ function getNamedCookie(response, cookieName) {
   return cookie.split(';')[0];
 }
 
+async function publishRemediationSmokeMetric(succeeded) {
+  if (!config.remediationOnly || !config.remediationMetricsPushUrl) return;
+  const timestamp = Math.floor(Date.now() / 1000);
+  const response = await fetch(config.remediationMetricsPushUrl, {
+    method: 'PUT',
+    headers: { 'content-type': 'text/plain; version=0.0.4; charset=utf-8' },
+    body: [
+      '# TYPE acornops_remediation_smoke_success gauge',
+      `acornops_remediation_smoke_success ${succeeded ? 1 : 0}`,
+      '# TYPE acornops_remediation_smoke_last_run_timestamp_seconds gauge',
+      `acornops_remediation_smoke_last_run_timestamp_seconds ${timestamp}`,
+      ''
+    ].join('\n')
+  });
+  if (!response.ok) {
+    throw new Error(`remediation smoke metric push failed with HTTP ${response.status}`);
+  }
+}
+
+async function main() {
 assertLocalOnly();
 
 console.log('Running local AcornOps full-stack smoke...');
@@ -485,7 +519,13 @@ await waitFor('cluster MCP catalog', async () => {
     `/api/v1/workspaces/${workspace.id}/targets/${cluster.id}/mcp/catalog?limit=50`,
     { headers: { cookie } }
   );
-  requireObject(parseJson('cluster MCP catalog', text), 'cluster MCP catalog');
+  const catalog = requireObject(parseJson('cluster MCP catalog', text), 'cluster MCP catalog');
+  const servers = requireArray(catalog.servers, 'cluster MCP catalog servers');
+  const builtIn = servers.find((server) => server?.type === 'builtin');
+  if (!builtIn) throw new Error('cluster MCP catalog is missing the built-in agent server');
+  if (builtIn.connectionStatus !== 'ok') throw new Error(`built-in agent server is ${builtIn.connectionStatus || 'unknown'}`);
+  const getResource = requireArray(builtIn.tools, 'built-in agent tools').find((tool) => tool?.name === 'get_resource');
+  if (!getResource?.enabledEffective) throw new Error('get_resource is not effectively available');
 });
 
 await waitFor('cluster target tools', async () => {
@@ -514,136 +554,257 @@ if (config.runRemediation) {
   const brokenImage = 'nginx:1.27.4-alpnie';
   const repairedImage = 'nginx:1.27.4-alpine';
 
-  await kubectl('-n', demoNamespace, 'set', 'image', `deployment/${demoDeployment}`, `nginx=${brokenImage}`);
-  await waitFor('repairable demo workload starts in ImagePullBackOff', async () => {
-    const pods = parseJson(
-      'repairable demo pods',
-      await kubectl('-n', demoNamespace, 'get', 'pods', '-l', `app.kubernetes.io/name=${demoDeployment}`, '-o', 'json')
-    );
-    const items = requireListItems(pods, 'repairable demo pods');
-    const hasImagePullFailure = items.some((pod) =>
-      (pod.status?.containerStatuses || []).some((status) =>
-        ['ErrImagePull', 'ImagePullBackOff'].includes(status.state?.waiting?.reason)
-      )
-    );
-    if (!hasImagePullFailure) throw new Error('demo workload has not reached an image pull failure');
-  });
+  for (let remediationIndex = 1; remediationIndex <= config.remediationRuns; remediationIndex += 1) {
+    await kubectl('-n', demoNamespace, 'set', 'image', `deployment/${demoDeployment}`, `nginx=${brokenImage}`);
+    const failingPodName = await waitFor('repairable demo workload starts in ImagePullBackOff', async () => {
+      const pods = parseJson(
+        'repairable demo pods',
+        await kubectl('-n', demoNamespace, 'get', 'pods', '-l', `app.kubernetes.io/name=${demoDeployment}`, '-o', 'json')
+      );
+      const items = requireListItems(pods, 'repairable demo pods');
+      const failingPod = items.find((pod) =>
+        (pod.status?.containerStatuses || []).some((status) =>
+          ['ErrImagePull', 'ImagePullBackOff'].includes(status.state?.waiting?.reason)
+        )
+      );
+      if (!failingPod?.metadata?.name) throw new Error('demo workload has not reached an image pull failure');
+      return failingPod.metadata.name;
+    });
 
-  const remediationSession = await waitFor('Kubernetes remediation session', async () => {
-    const { text } = await request(
-      'Kubernetes remediation session',
+    const remediationSession = await waitFor('Kubernetes remediation session', async () => {
+      const { text } = await request(
+        'Kubernetes remediation session',
+        config.consoleHost,
+        `/api/v1/workspaces/${workspace.id}/targets/${cluster.id}/sessions`,
+        {
+          method: 'POST',
+          headers: { cookie: csrf.cookie, 'content-type': 'application/json', 'x-csrf-token': csrf.token },
+          expectedStatuses: [201],
+          body: JSON.stringify({ title: `Repair demo ImagePullBackOff ${remediationIndex}` })
+        }
+      );
+      const payload = requireObject(parseJson('Kubernetes remediation session', text), 'Kubernetes remediation session');
+      if (!payload.id) throw new Error('Kubernetes remediation session response missing id');
+      return payload;
+    });
+
+    const remediationRun = await waitFor('Kubernetes remediation run dispatch', async () => {
+      const { text } = await request(
+        'Kubernetes remediation message',
+        config.consoleHost,
+        `/api/v1/sessions/${remediationSession.id}/messages`,
+        {
+          method: 'POST',
+          headers: { cookie: csrf.cookie, 'content-type': 'application/json', 'x-csrf-token': csrf.token },
+          expectedStatuses: [202],
+          body: JSON.stringify({
+            content: `Pod ${failingPodName} in namespace ${demoNamespace} is in ImagePullBackOff. Start by inspecting that exact Pod with get_resource, diagnose and repair it using the available Kubernetes tools, then verify the repair. Use only the returned remediationTarget; do not infer an owner name from the Pod name.`,
+            toolAccessMode: 'read_write',
+            clientMessageId: `local-smoke-repair-image-pull-${remediationIndex}`
+          })
+        }
+      );
+      const payload = requireObject(parseJson('Kubernetes remediation message', text), 'Kubernetes remediation message');
+      if (!payload.run_id) throw new Error('Kubernetes remediation message response missing run_id');
+      return payload;
+    });
+
+    const approval = await waitFor('Kubernetes remediation patch approval', async () => {
+      const { text } = await request(
+        'Kubernetes remediation approvals',
+        config.consoleHost,
+        `/api/v1/runs/${remediationRun.run_id}/approvals`,
+        { headers: { cookie } }
+      );
+      const approvals = requireListItems(parseJson('Kubernetes remediation approvals', text), 'Kubernetes remediation approvals');
+      const pending = approvals.find((item) => item.status === 'pending' && item.toolName === 'patch_resource');
+      if (!pending) {
+        const { text: runText } = await request(
+          'Kubernetes remediation run while awaiting approval',
+          config.consoleHost,
+          `/api/v1/runs/${remediationRun.run_id}`,
+          { headers: { cookie } }
+        );
+        const run = requireObject(
+          parseJson('Kubernetes remediation run while awaiting approval', runText),
+          'Kubernetes remediation run while awaiting approval'
+        );
+        if (['completed', 'failed', 'cancelled'].includes(run.status)) {
+          throw new FatalSmokeError(
+            `remediation run reached ${run.status} before patch approval${run.errorCode ? ` (${run.errorCode}: ${run.errorMessage || 'no message'})` : ''}`
+          );
+        }
+        throw new Error('pending patch_resource approval not created yet');
+      }
+      if (pending.arguments?.name !== demoDeployment || pending.arguments?.namespace !== demoNamespace) {
+        throw new Error('patch_resource approval targeted the wrong Kubernetes resource');
+      }
+      if (typeof pending.arguments?.expected_uid !== 'string' || pending.arguments.expected_uid.length === 0) {
+        throw new Error('patch_resource approval is missing the UID obtained by the guarded resource read');
+      }
+      const imageChange = pending.arguments?.changes?.find((change) => change.type === 'set_image');
+      if (imageChange?.container !== 'nginx' || imageChange?.expected_image !== brokenImage || imageChange?.image !== repairedImage) {
+        throw new Error('patch_resource approval does not contain the expected guarded image change');
+      }
+      return pending;
+    });
+
+    const fullResultArtifact = await waitFor('Kubernetes remediation compact events and artifact metadata', async () => {
+      const { text } = await request(
+        'Kubernetes remediation run events', config.consoleHost,
+        `/api/v1/runs/${remediationRun.run_id}/events`, { headers: { cookie } }
+      );
+      const events = requireListItems(parseJson('Kubernetes remediation run events', text), 'Kubernetes remediation run events');
+      const serialized = JSON.stringify(events);
+      if (serialized.includes('full_result') || serialized.includes('structuredContent')) {
+        throw new Error('full tool result leaked into the run-event stream');
+      }
+      const firstResourceRead = events.find((event) =>
+        event.type === 'tool_call_started' && event.payload?.tool === 'get_resource'
+      );
+      if (
+        firstResourceRead?.payload?.arguments?.kind !== 'Pod'
+        || firstResourceRead.payload.arguments.name !== failingPodName
+        || firstResourceRead.payload.arguments.namespace !== demoNamespace
+      ) {
+        throw new Error('remediation did not start from the exact failing Pod');
+      }
+      const completedRead = events.find((event) =>
+        event.type === 'tool_call_completed'
+        && event.payload?.tool === 'get_resource'
+        && event.payload?.result?.data?.resource?.kind === 'Pod'
+        && event.payload.result.data.resource.name === failingPodName
+        && event.payload?.artifact?.id
+      );
+      if (!completedRead) throw new Error('failing Pod get_resource evidence and artifact metadata are not available yet');
+      if (completedRead.payload?.context_meta?.strategy !== 'producer_projection') {
+        throw new Error(`get_resource used ${completedRead.payload?.context_meta?.strategy || 'no'} projection strategy`);
+      }
+      const remediationTarget = completedRead.payload?.result?.data?.remediationTarget;
+      if (
+        remediationTarget?.kind !== 'Deployment'
+        || remediationTarget.name !== demoDeployment
+        || remediationTarget.namespace !== demoNamespace
+        || typeof remediationTarget.uid !== 'string'
+        || remediationTarget.uid.length === 0
+      ) {
+        throw new Error('failing Pod evidence did not resolve the exact Deployment remediation target');
+      }
+      if (approval.arguments?.expected_uid !== remediationTarget.uid) {
+        throw new Error('patch_resource UID did not come from the Pod remediation target');
+      }
+      return completedRead.payload.artifact;
+    });
+
+    const artifactDownload = await request(
+      'Kubernetes remediation full redacted result', config.consoleHost,
+      `/api/v1/runs/${remediationRun.run_id}/tool-result-artifacts/${fullResultArtifact.id}`,
+      { headers: { cookie } }
+    );
+    parseJson('Kubernetes remediation full redacted result', artifactDownload.text);
+    if (artifactDownload.response.headers.get('cache-control') !== 'no-store') {
+      throw new Error('full redacted result response is missing Cache-Control: no-store');
+    }
+
+    await request(
+      'approve Kubernetes remediation patch',
       config.consoleHost,
-      `/api/v1/workspaces/${workspace.id}/targets/${cluster.id}/sessions`,
+      `/api/v1/runs/${remediationRun.run_id}/approvals/${approval.id}/decision`,
       {
         method: 'POST',
         headers: { cookie: csrf.cookie, 'content-type': 'application/json', 'x-csrf-token': csrf.token },
-        expectedStatuses: [201],
-        body: JSON.stringify({ title: 'Repair demo ImagePullBackOff' })
+        body: JSON.stringify({ decision: 'approved' })
       }
     );
-    const payload = requireObject(parseJson('Kubernetes remediation session', text), 'Kubernetes remediation session');
-    if (!payload.id) throw new Error('Kubernetes remediation session response missing id');
-    return payload;
-  });
 
-  const remediationRun = await waitFor('Kubernetes remediation run dispatch', async () => {
-    const { text } = await request(
-      'Kubernetes remediation message',
-      config.consoleHost,
-      `/api/v1/sessions/${remediationSession.id}/messages`,
-      {
-        method: 'POST',
-        headers: { cookie: csrf.cookie, 'content-type': 'application/json', 'x-csrf-token': csrf.token },
-        expectedStatuses: [202],
-        body: JSON.stringify({
-          content: `Deployment ${demoDeployment} in namespace ${demoNamespace} has image ${brokenImage}. Read the exact Deployment with get_resource, patch container nginx to ${repairedImage} with patch_resource, and verify the repair.`,
-          toolAccessMode: 'read_write',
-          clientMessageId: 'local-smoke-repair-image-pull'
-        })
+    await waitFor('Kubernetes remediation run completed', async () => {
+      const { text } = await request(
+        'Kubernetes remediation run',
+        config.consoleHost,
+        `/api/v1/runs/${remediationRun.run_id}`,
+        { headers: { cookie } }
+      );
+      const payload = requireObject(parseJson('Kubernetes remediation run', text), 'Kubernetes remediation run');
+      if (payload.status !== 'completed') throw new Error(`Kubernetes remediation run is ${payload.status}`);
+      if (payload.toolAccessMode !== 'read_write') throw new Error(`Kubernetes remediation run toolAccessMode is ${payload.toolAccessMode}`);
+    });
+
+    await waitFor('Kubernetes remediation patch execution succeeded', async () => {
+      const { text } = await request(
+        'Kubernetes remediation approvals after execution',
+        config.consoleHost,
+        `/api/v1/runs/${remediationRun.run_id}/approvals`,
+        { headers: { cookie } }
+      );
+      const approvals = requireListItems(
+        parseJson('Kubernetes remediation approvals after execution', text),
+        'Kubernetes remediation approvals after execution'
+      );
+      const executed = approvals.find((item) => item.id === approval.id);
+      if (executed?.status !== 'approved' || executed?.executionStatus !== 'succeeded' || executed?.toolResultIsError) {
+        throw new Error(`patch_resource execution is ${executed?.executionStatus || 'missing'}`);
       }
-    );
-    const payload = requireObject(parseJson('Kubernetes remediation message', text), 'Kubernetes remediation message');
-    if (!payload.run_id) throw new Error('Kubernetes remediation message response missing run_id');
-    return payload;
-  });
+    });
 
-  const approval = await waitFor('Kubernetes remediation patch approval', async () => {
-    const { text } = await request(
-      'Kubernetes remediation approvals',
-      config.consoleHost,
-      `/api/v1/runs/${remediationRun.run_id}/approvals`,
-      { headers: { cookie } }
-    );
-    const approvals = requireListItems(parseJson('Kubernetes remediation approvals', text), 'Kubernetes remediation approvals');
-    const pending = approvals.find((item) => item.status === 'pending' && item.toolName === 'patch_resource');
-    if (!pending) throw new Error('pending patch_resource approval not created yet');
-    if (pending.arguments?.name !== demoDeployment || pending.arguments?.namespace !== demoNamespace) {
-      throw new Error('patch_resource approval targeted the wrong Kubernetes resource');
-    }
-    if (typeof pending.arguments?.expected_uid !== 'string' || pending.arguments.expected_uid.length === 0) {
-      throw new Error('patch_resource approval is missing the UID obtained by the guarded resource read');
-    }
-    const imageChange = pending.arguments?.changes?.find((change) => change.type === 'set_image');
-    if (imageChange?.container !== 'nginx' || imageChange?.expected_image !== brokenImage || imageChange?.image !== repairedImage) {
-      throw new Error('patch_resource approval does not contain the expected guarded image change');
-    }
-    return pending;
-  });
+    await waitFor('Kubernetes remediation was verified through a fresh resource read', async () => {
+      const { text } = await request(
+        'Kubernetes remediation verification events', config.consoleHost,
+        `/api/v1/runs/${remediationRun.run_id}/events`, { headers: { cookie } }
+      );
+      const events = requireListItems(
+        parseJson('Kubernetes remediation verification events', text),
+        'Kubernetes remediation verification events'
+      );
+      const patchCompleted = events.find((event) =>
+        event.type === 'tool_call_completed'
+        && event.payload?.tool === 'patch_resource'
+        && event.payload?.is_error === false
+      );
+      if (!patchCompleted) throw new Error('successful patch_resource completion event is missing');
+      const verificationRead = events.find((event) => {
+        if (
+          event.type !== 'tool_call_completed'
+          || event.payload?.tool !== 'get_resource'
+          || event.payload?.is_error
+          || Number(event.seq) <= Number(patchCompleted.seq)
+        ) return false;
+        const result = event.payload?.result?.data;
+        const target = result?.remediationTarget || result?.resource;
+        if (
+          target?.kind !== 'Deployment'
+          || target.name !== demoDeployment
+          || target.namespace !== demoNamespace
+          || target.uid !== approval.arguments.expected_uid
+        ) return false;
+        const containers = result?.remediationTarget?.containers || result?.configuration?.containers || [];
+        return containers.some((container) => container?.name === 'nginx' && container?.image === repairedImage);
+      });
+      if (!verificationRead) {
+        throw new Error('no post-patch get_resource evidence confirmed the exact repaired Deployment image');
+      }
+    });
 
-  await request(
-    'approve Kubernetes remediation patch',
-    config.consoleHost,
-    `/api/v1/runs/${remediationRun.run_id}/approvals/${approval.id}/decision`,
-    {
-      method: 'POST',
-      headers: { cookie: csrf.cookie, 'content-type': 'application/json', 'x-csrf-token': csrf.token },
-      body: JSON.stringify({ decision: 'approved' })
-    }
-  );
+    await waitFor('Kubernetes remediation rollout healthy', async () => {
+      const deployment = requireObject(
+        parseJson(
+          'repaired demo deployment',
+          await kubectl('-n', demoNamespace, 'get', 'deployment', demoDeployment, '-o', 'json')
+        ),
+        'repaired demo deployment'
+      );
+      const image = deployment.spec?.template?.spec?.containers?.find((container) => container.name === 'nginx')?.image;
+      if (image !== repairedImage) throw new Error(`demo workload image is ${image}`);
+      if (deployment.status?.availableReplicas !== deployment.spec?.replicas) {
+        throw new Error('repaired demo Deployment is not fully available');
+      }
+    });
+    console.log(`Local Kubernetes remediation smoke run ${remediationIndex}/${config.remediationRuns} passed.`);
+  }
 
-  await waitFor('Kubernetes remediation run completed', async () => {
-    const { text } = await request(
-      'Kubernetes remediation run',
-      config.consoleHost,
-      `/api/v1/runs/${remediationRun.run_id}`,
-      { headers: { cookie } }
-    );
-    const payload = requireObject(parseJson('Kubernetes remediation run', text), 'Kubernetes remediation run');
-    if (payload.status !== 'completed') throw new Error(`Kubernetes remediation run is ${payload.status}`);
-    if (payload.toolAccessMode !== 'read_write') throw new Error(`Kubernetes remediation run toolAccessMode is ${payload.toolAccessMode}`);
-  });
-
-  await waitFor('Kubernetes remediation patch execution succeeded', async () => {
-    const { text } = await request(
-      'Kubernetes remediation approvals after execution',
-      config.consoleHost,
-      `/api/v1/runs/${remediationRun.run_id}/approvals`,
-      { headers: { cookie } }
-    );
-    const approvals = requireListItems(
-      parseJson('Kubernetes remediation approvals after execution', text),
-      'Kubernetes remediation approvals after execution'
-    );
-    const executed = approvals.find((item) => item.id === approval.id);
-    if (executed?.status !== 'approved' || executed?.executionStatus !== 'succeeded' || executed?.toolResultIsError) {
-      throw new Error(`patch_resource execution is ${executed?.executionStatus || 'missing'}`);
-    }
-  });
-
-  await waitFor('Kubernetes remediation rollout healthy', async () => {
-    const deployment = requireObject(
-      parseJson(
-        'repaired demo deployment',
-        await kubectl('-n', demoNamespace, 'get', 'deployment', demoDeployment, '-o', 'json')
-      ),
-      'repaired demo deployment'
-    );
-    const image = deployment.spec?.template?.spec?.containers?.find((container) => container.name === 'nginx')?.image;
-    if (image !== repairedImage) throw new Error(`demo workload image is ${image}`);
-    if (deployment.status?.availableReplicas !== deployment.spec?.replicas) {
-      throw new Error('repaired demo Deployment is not fully available');
-    }
-  });
+  if (config.remediationOnly) {
+    console.log('Local Kubernetes remediation smoke passed.');
+    return;
+  }
 }
 
 await waitFor('cluster target skills', async () => {
@@ -1062,3 +1223,16 @@ await waitFor('virtual machine troubleshooting run approvals', async () => {
 });
 
 console.log('Local AcornOps full-stack smoke passed.');
+}
+
+try {
+  await main();
+  await publishRemediationSmokeMetric(true);
+} catch (error) {
+  try {
+    await publishRemediationSmokeMetric(false);
+  } catch (publishError) {
+    console.error(publishError instanceof Error ? publishError.message : String(publishError));
+  }
+  throw error;
+}

@@ -63,6 +63,24 @@ groups:
           summary: "Execution engine tool-call error rate is elevated"
           description: "More than 10% of execution-engine tool calls are returning errors or timing out."
 
+      - alert: ToolResultTransportEnvelopeExceeded
+        expr: increase(execution_engine_tool_calls_total{result="response_too_large"}[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "A normalized tool result exceeded its transport envelope"
+          description: "The gateway-to-engine response crossed the 5 MiB ceiling. Inspect result sizing and the coordinated service version matrix."
+
+      - alert: ExecutionEngineAgentKProjectionInvalid
+        expr: increase(execution_engine_tool_result_normalizations_total{strategy="invalid_projection"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "A trusted AgentK projection failed execution-engine validation"
+          description: "The engine rejected a producer projection for envelope, identity, byte-count, or size-contract drift. Inspect the coordinated service version matrix before allowing remediation."
+
       - alert: ExecutionEngineRunFailuresElevated
         expr: rate(runs_failed_total[5m]) > 0.1
         for: 10m
@@ -71,3 +89,63 @@ groups:
         annotations:
           summary: "Execution engine run failures are elevated"
           description: "The execution engine is failing runs above the baseline threshold."
+
+      - alert: ToolResultArtifactUploadsBelowSlo
+        expr: |
+          sum(rate(execution_engine_tool_result_artifacts_total{result="failure"}[10m]))
+          /
+          clamp_min(sum(rate(execution_engine_tool_result_artifacts_total[10m])), 0.000001)
+          > 0.001
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Full tool-result artifact uploads are below the 99.9% SLO"
+          description: "Diagnosis continues with compact evidence, but full redacted results may be unavailable to operators."
+
+      - alert: KubernetesOwnershipResolutionFailuresElevated
+        expr: |
+          sum(rate(execution_engine_kubernetes_ownership_resolutions_total{status=~"partial|unsupported"}[15m]))
+          /
+          clamp_min(sum(rate(execution_engine_kubernetes_ownership_resolutions_total[15m])), 0.000001)
+          > 0.20
+          and
+          sum(increase(execution_engine_kubernetes_ownership_resolutions_total[15m])) >= 5
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kubernetes ownership resolution failures are elevated"
+          description: "More than 20% of recent Pod ownership resolutions are partial or unsupported; compare the controller and bounded error-code labels with the staging baseline."
+
+      - alert: KubernetesRemediationVerificationFailedOrMissing
+        expr: increase(execution_engine_remediation_verification_outcomes_total{outcome=~"failed|missing"}[15m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "A Kubernetes remediation was not verified"
+          description: "A successful image patch was followed by contradictory resource evidence or the run ended without a matching fresh get_resource verification."
+
+      - alert: KubernetesRemediationSmokeFailed
+        expr: max(acornops_remediation_smoke_success) == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "The staged Kubernetes remediation smoke failed"
+          description: "The most recent Pod-only remediation evaluation failed. Keep the coordinated release gate closed and inspect the synthetic run."
+
+      - alert: KubernetesRemediationSmokeMissingOrStale
+        expr: |
+          absent(acornops_remediation_smoke_success)
+          or
+          absent(acornops_remediation_smoke_last_run_timestamp_seconds)
+          or
+          (time() - max(acornops_remediation_smoke_last_run_timestamp_seconds) > 7200)
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "The staged Kubernetes remediation smoke is missing or stale"
+          description: "No current synthetic remediation result is available, or the last run is more than two hours old. Keep the coordinated release gate closed and restore the scheduled smoke."

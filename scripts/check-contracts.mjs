@@ -112,11 +112,28 @@ const localCompose = readFileSync(path.join(root, 'compose/local/compose.source.
 const taskfile = readFileSync(path.join(root, 'Taskfile.yml'), 'utf8');
 const demoWorkloads = readFileSync(path.join(root, 'k8s/demo-workloads.yaml.tpl'), 'utf8');
 const localSmoke = readFileSync(path.join(root, 'scripts/local-smoke.mjs'), 'utf8');
+const executionEngineAlerts = readFileSync(
+  path.join(root, 'observability/prometheus/alerts/execution-engine.rules.yaml'),
+  'utf8'
+);
+const localAgentEnvExample = readFileSync(path.join(root, 'env/local/.env.agent.example'), 'utf8');
+const localEnvExample = readFileSync(path.join(root, 'env/local/.env.example'), 'utf8');
 expect(!agentDeploy.includes('ACORNOPS_TARGET_ID'), 'Deployment agentk env should not expose a separate target id');
 expect(agentDeploy.includes('ACORNOPS_CLUSTER_ID'), 'Deployment agentk env should expose ACORNOPS_CLUSTER_ID');
 expect(localCompose.includes('ACORNOPS_CLUSTER_ID'), 'Local agentk env should expose ACORNOPS_CLUSTER_ID');
 expect(localCompose.includes('ACORNOPS_TARGET_ID'), 'Local agentv env should expose ACORNOPS_TARGET_ID');
 expect(localCompose.includes('ACORNOPS_AGENT_ALLOW_INSECURE_TRANSPORT'), 'Local agents should opt into insecure local transport explicitly');
+expect(localCompose.includes('AGENT_WS_MAX_PAYLOAD_BYTES'), 'Local control-plane should expose the bounded Agent MCP envelope limit');
+expect(localCompose.includes('BUILTIN_MCP_MAX_RESPONSE_BYTES'), 'Local llm-gateway should expose the bounded built-in MCP envelope limit');
+expect(localCompose.includes('TOOL_GATEWAY_MAX_RESPONSE_BYTES'), 'Local execution-engine should expose the bounded normalized gateway envelope limit');
+expect(
+  localCompose.includes('ACORNOPS_AGENT_WATCH_NAMESPACES: ${ACORNOPS_AGENT_WATCH_NAMESPACES:-}'),
+  'Local agentk should watch all namespaces unless an explicit namespace allowlist is configured'
+);
+expect(
+  localAgentEnvExample.includes('ACORNOPS_AGENT_WATCH_NAMESPACES=\n'),
+  'Local agent env example should leave the namespace allowlist empty for all-namespace access'
+);
 expect(
   deploymentManifest.contractSurfaces?.localAgentInsecureTransportEnv?.includes('ACORNOPS_AGENT_ALLOW_INSECURE_TRANSPORT'),
   'Deployment manifest should expose local-only insecure agent transport env'
@@ -131,6 +148,14 @@ expect(
 );
 expect(localCompose.includes('ACORNOPS_VM_ALLOWED_LOG_SOURCES'), 'Local agentv env should expose VM log-source configuration');
 expect(localCompose.includes('LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES'), 'Local llm-gateway env should expose opt-in deterministic dev responses for smoke tests');
+expect(
+  localUp.includes('ensure_local_gateway_signing_key') && localUp.includes('openssl genpkey'),
+  'local-up should persist a stable local gateway signing key before starting services'
+);
+expect(
+  localEnvExample.includes('GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64=') && localEnvExample.includes('PERSIST_RUN_EVENTS=true'),
+  'local env example should preserve restart-safe signing and durable trace defaults'
+);
 expect(
   localCompose.includes('LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES: ${LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES:-false}'),
   'Local llm-gateway init should receive deterministic smoke env so providerless seed keys are available'
@@ -162,6 +187,18 @@ expect(
 );
 for (const marker of ['acornops-demo-unhealthy', 'get_resource', 'patch_resource', "decision: 'approved'", 'availableReplicas']) {
   expect(localSmoke.includes(marker), `Local smoke should preserve remediation marker ${marker}`);
+}
+expect(localSmoke.includes('ACORNOPS_SMOKE_REMEDIATION_ONLY'), 'Local smoke should support focused remediation regression runs');
+expect(localSmoke.includes('ACORNOPS_SMOKE_REMEDIATION_RUNS'), 'Local smoke should support the 20-run remediation release gate');
+for (const marker of [
+  'KubernetesRemediationVerificationFailedOrMissing',
+  'execution_engine_remediation_verification_outcomes_total',
+  'KubernetesRemediationSmokeMissingOrStale',
+  'absent(acornops_remediation_smoke_success)',
+  'absent(acornops_remediation_smoke_last_run_timestamp_seconds)',
+  'time() - max(acornops_remediation_smoke_last_run_timestamp_seconds) > 7200'
+]) {
+  expect(executionEngineAlerts.includes(marker), `Execution-engine alert rules should preserve ${marker}`);
 }
 
 const repoManifests = {

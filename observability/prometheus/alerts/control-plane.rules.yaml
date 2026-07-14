@@ -1,0 +1,20 @@
+groups:
+  - name: control-plane-tool-results
+    rules:
+      - alert: ToolResultArtifactSizeRejections
+        expr: increase(control_plane_tool_result_artifact_events_total{event="size_rejected"}[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Tool-result artifacts are exceeding the platform size limit"
+          description: "At least one complete redacted result exceeded the 2 MiB ceiling and was not retained. Compact diagnosis evidence remains available."
+
+      - alert: ToolResultArtifactAuthorizationFailuresElevated
+        expr: increase(control_plane_tool_result_artifact_events_total{event="authorization_denied"}[15m]) >= 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Full-result artifact authorization failures are elevated"
+          description: "Repeated denied artifact reads may indicate stale links, incorrect workspace scoping, or attempted cross-workspace access."

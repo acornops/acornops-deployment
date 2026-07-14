@@ -1018,6 +1018,21 @@ assertIncludes(
 );
 assertIncludes(
   defaultRender,
+  'AGENT_WS_MAX_PAYLOAD_BYTES: "3145728"',
+  'authenticated agent transport should accommodate complete tool-result envelopes'
+);
+assertIncludes(
+  defaultRender,
+  'BUILTIN_MCP_MAX_RESPONSE_BYTES: "3145728"',
+  'gateway built-in MCP transport should accommodate complete tool-result envelopes'
+);
+assertIncludes(
+  defaultRender,
+  'TOOL_GATEWAY_MAX_RESPONSE_BYTES: "5242880"',
+  'execution engine should bound normalized gateway response envelopes'
+);
+assertIncludes(
+  defaultRender,
   'TARGET_CHAT_RECENT_ACTIVITY_WINDOW_SECONDS: "300"',
   'target chat recent activity window should default to 300 seconds'
 );

@@ -22,12 +22,15 @@ data:
   AUTOMATION_RUNTIME_MODE: {{ .Values.automation.runtimeMode | quote }}
   AUTOMATION_CANARY_WORKSPACE_IDS: {{ .Values.automation.canaryWorkspaceIds | quote }}
   AUTOMATION_WORKER_INTERVAL_MS: {{ .Values.automation.workerIntervalMs | quote }}
+  AGENT_WS_MAX_PAYLOAD_BYTES: {{ .Values.agent.routing.maxWebSocketPayloadBytes | int | quote }}
   CORS_ORIGIN: {{ default (include "acornops-platform.managementConsoleUrl" .) .Values.components.controlPlane.corsOrigin | quote }}
   SESSION_COOKIE_NAME: {{ .Values.auth.session.cookieName | quote }}
   SESSION_MAX_AGE_SECONDS: {{ .Values.auth.session.maxAgeSeconds | quote }}
   SESSION_IDLE_TIMEOUT_SECONDS: {{ .Values.auth.session.idleTimeoutSeconds | quote }}
   CONVERSATION_RETENTION_DAYS: {{ .Values.components.controlPlane.conversationRetention.days | quote }}
   CONVERSATION_RETENTION_JOB_INTERVAL_SECONDS: {{ .Values.components.controlPlane.conversationRetention.jobIntervalSeconds | quote }}
+  TOOL_RESULT_ARTIFACT_RETENTION_DAYS: {{ .Values.components.controlPlane.toolResultArtifacts.retentionDays | quote }}
+  TOOL_RESULT_ARTIFACT_MAX_BYTES: {{ .Values.components.controlPlane.toolResultArtifacts.maxBytes | quote }}
   WORKSPACE_AUDIT_LOGGING_MODE: {{ .Values.auditLogging.mode | quote }}
   WORKSPACE_AUDIT_RETENTION_DAYS: {{ .Values.auditLogging.retentionDays | quote }}
   TARGET_CHAT_RECENT_ACTIVITY_WINDOW_SECONDS: {{ .Values.components.controlPlane.recentActivity.windowSeconds | quote }}
@@ -143,6 +146,9 @@ data:
   ORCH_RETRY_MAX_ELAPSED_SECONDS: {{ .Values.components.executionEngine.timeouts.orchestratorRetryMaxElapsedSeconds | quote }}
   GATEWAY_STREAM_IDLE_TIMEOUT_SECONDS: {{ .Values.components.executionEngine.timeouts.gatewayStreamIdleSeconds | quote }}
   TOOL_CALL_TIMEOUT_SECONDS: {{ .Values.components.executionEngine.timeouts.toolCallSeconds | quote }}
+  TOOL_CONTEXT_MAX_BYTES: {{ .Values.components.executionEngine.toolContext.maxBytes | quote }}
+  TOOL_CONTEXT_RUN_MAX_BYTES: {{ .Values.components.executionEngine.toolContext.runMaxBytes | quote }}
+  TOOL_GATEWAY_MAX_RESPONSE_BYTES: {{ .Values.components.executionEngine.toolContext.gatewayMaxResponseBytes | int | quote }}
   DISPATCH_REQUEST_TIMEOUT_SECONDS: {{ .Values.components.executionEngine.timeouts.dispatchRequestSeconds | quote }}
   MAX_REQUEST_BODY_BYTES: {{ .Values.components.executionEngine.maxRequestBodyBytes | int | quote }}
 {{- end }}
@@ -160,6 +166,7 @@ data:
   LOG_LEVEL: {{ .Values.components.llmGateway.logLevel | quote }}
   ENABLE_API_DOCS: {{ .Values.components.llmGateway.apiDocsEnabled | quote }}
   MAX_REQUEST_BODY_BYTES: {{ .Values.components.llmGateway.maxRequestBodyBytes | int | quote }}
+  BUILTIN_MCP_MAX_RESPONSE_BYTES: {{ .Values.components.llmGateway.builtinMcpMaxResponseBytes | int | quote }}
   SECRETS_BACKEND: {{ .Values.components.llmGateway.secretsBackend | quote }}
   SECRETS_CACHE_TTL_SEC: {{ .Values.components.llmGateway.secretsCacheTtlSeconds | quote }}
   LLM_PROVIDER_OPENAI_BASE_URL: {{ .Values.components.llmGateway.providerBaseUrls.openai | quote }}

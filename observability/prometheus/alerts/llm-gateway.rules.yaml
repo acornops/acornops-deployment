@@ -53,3 +53,12 @@ groups:
         annotations:
           summary: "LLM gateway tool-call error rate is elevated"
           description: "More than 10% of MCP tool calls are returning error results."
+
+      - alert: AgentKToolProjectionInvalid
+        expr: increase(gateway_tool_result_normalizations_total{strategy="schema_error"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "A trusted AgentK tool projection failed validation"
+          description: "A deployed built-in tool returned an incompatible or invalid structured result contract."

@@ -30,6 +30,42 @@ if [[ ! -f "${ENV_FILE}" ]]; then
   exit 1
 fi
 
+ensure_local_gateway_signing_key() {
+  if grep -Eq '^GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64=.+$' "${ENV_FILE}"; then
+    return
+  fi
+  if ! command -v openssl >/dev/null 2>&1; then
+    echo "Missing required command: openssl (needed to create the persistent local gateway signing key)."
+    exit 1
+  fi
+
+  local generated_key temp_env
+  generated_key="$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 2>/dev/null | base64 | tr -d '\r\n')"
+  if [[ -z "${generated_key}" ]]; then
+    echo "Failed to generate the persistent local gateway signing key."
+    exit 1
+  fi
+  temp_env="$(mktemp "${ENV_FILE}.tmp.XXXXXX")"
+  awk -v value="${generated_key}" '
+    BEGIN { replaced = 0 }
+    /^GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64=/ {
+      if (!replaced) print "GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64=" value
+      replaced = 1
+      next
+    }
+    { print }
+    END {
+      if (!replaced) print "GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64=" value
+    }
+  ' "${ENV_FILE}" > "${temp_env}"
+  chmod 600 "${temp_env}"
+  mv "${temp_env}" "${ENV_FILE}"
+  unset generated_key
+  echo "Generated a persistent local gateway signing key in ${ENV_FILE}."
+}
+
+ensure_local_gateway_signing_key
+
 if [[ -z "${AGENT_ENV_FILE}" ]]; then
   AGENT_ENV_FILE="${DEFAULT_AGENT_ENV_FILE}"
 fi

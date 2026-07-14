@@ -387,7 +387,8 @@
           "properties": {
             "distributedEnabled": { "type": "boolean" },
             "ownerTtlSeconds": { "type": "integer", "minimum": 1 },
-            "snapshotIntervalSeconds": { "type": "integer", "minimum": 1 }
+            "snapshotIntervalSeconds": { "type": "integer", "minimum": 1 },
+            "maxWebSocketPayloadBytes": { "type": "integer", "minimum": 2162688, "maximum": 5242880 }
           }
         },
         "runtime": {
@@ -564,8 +565,10 @@
                   { "required": ["terminationGracePeriodSeconds"] },
                   { "required": ["corsOrigin"] },
                   { "required": ["conversationRetention"] },
+                  { "required": ["toolResultArtifacts"] },
                   { "required": ["runEvents"] },
                   { "required": ["maxConcurrentRuns"] },
+                  { "required": ["toolContext"] },
                   { "required": ["durability"] },
                   { "required": ["timeouts"] },
                   { "required": ["maxRequestBodyBytes"] },
@@ -601,6 +604,15 @@
                     "jobIntervalSeconds": { "type": "integer", "minimum": 1 }
                   }
                 },
+                "toolResultArtifacts": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["retentionDays", "maxBytes"],
+                  "properties": {
+                    "retentionDays": { "type": "integer", "minimum": 1, "maximum": 7 },
+                    "maxBytes": { "type": "integer", "minimum": 1024, "maximum": 2097152 }
+                  }
+                },
                 "recentActivity": {
                   "type": "object",
                   "additionalProperties": false,
@@ -624,6 +636,7 @@
                   { "required": ["basePath"] },
                   { "required": ["locales"] },
                   { "required": ["maxConcurrentRuns"] },
+                  { "required": ["toolContext"] },
                   { "required": ["durability"] },
                   { "required": ["timeouts"] },
                   { "required": ["maxRequestBodyBytes"] },
@@ -649,6 +662,16 @@
                 "apiDocsEnabled": { "type": "boolean" },
                 "logLevel": { "type": "string", "enum": ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "trace", "debug", "info", "warn", "error"] },
                 "maxConcurrentRuns": { "type": "integer", "minimum": 1 },
+                "toolContext": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["maxBytes", "runMaxBytes", "gatewayMaxResponseBytes"],
+                  "properties": {
+                    "maxBytes": { "type": "integer", "minimum": 1024, "maximum": 12288 },
+                    "runMaxBytes": { "type": "integer", "minimum": 1024, "maximum": 49152 },
+                    "gatewayMaxResponseBytes": { "type": "integer", "minimum": 4325376, "maximum": 6291456 }
+                  }
+                },
                 "durability": {
                   "type": "object",
                   "additionalProperties": false,
@@ -684,6 +707,7 @@
                   { "required": ["terminationGracePeriodSeconds"] },
                   { "required": ["corsOrigin"] },
                   { "required": ["conversationRetention"] },
+                  { "required": ["toolResultArtifacts"] },
                   { "required": ["runEvents"] },
                   { "required": ["secretsBackend"] },
                   { "required": ["secretsCacheTtlSeconds"] },
@@ -707,6 +731,7 @@
                 "apiDocsEnabled": { "type": "boolean" },
                 "logLevel": { "type": "string", "enum": ["trace", "debug", "info", "warn", "error"] },
                 "maxRequestBodyBytes": { "type": "integer", "minimum": 1 },
+                "builtinMcpMaxResponseBytes": { "type": "integer", "minimum": 2162688, "maximum": 5242880 },
                 "secretsBackend": { "type": "string", "enum": ["database", "vault"] },
                 "secretsCacheTtlSeconds": { "type": "integer", "minimum": 0 },
                 "providerBaseUrls": {
@@ -780,8 +805,10 @@
                   { "required": ["terminationGracePeriodSeconds"] },
                   { "required": ["corsOrigin"] },
                   { "required": ["conversationRetention"] },
+                  { "required": ["toolResultArtifacts"] },
                   { "required": ["runEvents"] },
                   { "required": ["maxConcurrentRuns"] },
+                  { "required": ["toolContext"] },
                   { "required": ["durability"] },
                   { "required": ["timeouts"] }
                 ]
@@ -860,12 +887,15 @@
         "terminationGracePeriodSeconds": { "type": "integer" },
         "corsOrigin": { "type": "string" },
         "conversationRetention": { "type": "object" },
+        "toolResultArtifacts": { "type": "object" },
         "recentActivity": { "type": "object" },
         "runEvents": { "type": "object" },
         "maxConcurrentRuns": { "type": "integer" },
+        "toolContext": { "type": "object" },
         "durability": { "type": "object" },
         "timeouts": { "type": "object" },
         "maxRequestBodyBytes": { "type": "integer" },
+        "builtinMcpMaxResponseBytes": { "type": "integer" },
         "secretsBackend": { "type": "string" },
         "secretsCacheTtlSeconds": { "type": "integer" },
         "auth": { "type": "object" },

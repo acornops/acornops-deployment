@@ -104,6 +104,7 @@ agent:
     distributedEnabled: true
     ownerTtlSeconds: 90
     snapshotIntervalSeconds: 60
+    maxWebSocketPayloadBytes: 3145728
   runtime:
     contextMaxTokens: 120000
     budgetCents: 25
@@ -171,12 +172,17 @@ components:
   executionEngine:
     replicas: 3
     apiDocsEnabled: false
+    toolContext:
+      maxBytes: 12288
+      runMaxBytes: 49152
+      gatewayMaxResponseBytes: 5242880
     podDisruptionBudget:
       enabled: true
       minAvailable: 2
   llmGateway:
     replicas: 3
     apiDocsEnabled: false
+    builtinMcpMaxResponseBytes: 3145728
     # Keep plaintext secret caching disabled in production.
     secretsCacheTtlSeconds: 0
     # Set secretsBackend: vault and configure vault fields if using Vault.

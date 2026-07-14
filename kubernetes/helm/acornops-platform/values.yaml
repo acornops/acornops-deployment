@@ -195,6 +195,8 @@ agent:
     distributedEnabled: true
     ownerTtlSeconds: 90
     snapshotIntervalSeconds: 60
+    # Accommodates the 2 MiB complete tool result plus its MCP/WebSocket envelope.
+    maxWebSocketPayloadBytes: 3145728
   runtime:
     contextMaxTokens: 120000
     budgetCents: 25
@@ -405,6 +407,9 @@ components:
     conversationRetention:
       days: 30
       jobIntervalSeconds: 3600
+    toolResultArtifacts:
+      retentionDays: 7
+      maxBytes: 2097152
     recentActivity:
       windowSeconds: 300
     runEvents:
@@ -456,6 +461,11 @@ components:
     apiDocsEnabled: false
     logLevel: INFO
     maxConcurrentRuns: 100
+    toolContext:
+      maxBytes: 12288
+      runMaxBytes: 49152
+      # Allows duplicated full/context views for untrusted normalized MCP results.
+      gatewayMaxResponseBytes: 5242880
     durability:
       keyPrefix: execution-engine
       terminalRunTtlSeconds: 3600
@@ -517,6 +527,8 @@ components:
     logLevel: info
     # Maximum request body size accepted by the LLM gateway.
     maxRequestBodyBytes: 1000000
+    # Maximum trusted built-in MCP response, including the result envelope.
+    builtinMcpMaxResponseBytes: 3145728
     secretsBackend: database
     secretsCacheTtlSeconds: 0
     providerBaseUrls:
