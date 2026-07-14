@@ -2,7 +2,7 @@ apiVersion: acornops.dev/v1alpha1
 kind: StackVersionMatrix
 metadata:
   name: acornops-stack
-  updatedAt: "2026-07-14"
+  updatedAt: "2026-07-15"
 
 stacks:
   - name: local-dev
@@ -17,21 +17,21 @@ stacks:
   - name: vm-prod-v1
     description: Baseline Docker-on-VM production stack.
     components:
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.15
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.16
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.16
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.17
       executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.8
-      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.8
+      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.9
 
   - name: k8s-platform-v1
     description: Kubernetes platform stack deployed with the acornops-platform Helm chart.
     chart:
-      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.9
-      acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.7
+      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.10
+      acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.8
     components:
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.15
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.16
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.16
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.17
       executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.8
-      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.8
+      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.9
 
 compatibility:
   notes:
