@@ -117,6 +117,14 @@
       "components.managementConsole.service.targetPort",
       "components.controlPlane.service.targetPort"
     ],
+    "privateControlPlaneEgressHelmValues": [
+      "networkPolicies.oidc.to",
+      "networkPolicies.oidc.ports",
+      "networkPolicies.webhooks.to",
+      "networkPolicies.webhooks.ports",
+      "components.controlPlane.webhookEgress.allowedPrivateHosts"
+    ],
+    "privateWebhookRuntimeEnv": ["WEBHOOK_EGRESS_ALLOWED_PRIVATE_HOSTS_JSON"],
     "agentKRolloutEnv": [
       "ACORNOPS_AGENT_PLATFORM_URL",
       "ACORNOPS_CLUSTER_ID",

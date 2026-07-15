@@ -139,6 +139,18 @@ spec:
       ports:
         {{- toYaml $np.publicInternet.ports | nindent 8 }}
     {{- end }}
+    {{- if $np.oidc.to }}
+    - to:
+        {{- toYaml $np.oidc.to | nindent 8 }}
+      ports:
+        {{- toYaml $np.oidc.ports | nindent 8 }}
+    {{- end }}
+    {{- if $np.webhooks.to }}
+    - to:
+        {{- toYaml $np.webhooks.to | nindent 8 }}
+      ports:
+        {{- toYaml $np.webhooks.ports | nindent 8 }}
+    {{- end }}
     {{- if $np.postgres.to }}
     - to:
         {{- toYaml $np.postgres.to | nindent 8 }}

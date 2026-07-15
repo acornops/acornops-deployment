@@ -67,21 +67,20 @@ networkPolicies:
     ports:
       - protocol: TCP
         port: 6379
-  extraEgress:
-    controlPlane:
-      - to:
-          - namespaceSelector:
-              matchLabels:
-                kubernetes.io/metadata.name: acornops-identity
-            podSelector:
-              matchLabels:
-                app.kubernetes.io/name: keycloak
-                app.kubernetes.io/instance: acornops-keycloak
-        ports:
-          - protocol: TCP
-            port: 80
-          - protocol: TCP
-            port: 8080
+  oidc:
+    to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: acornops-identity
+        podSelector:
+          matchLabels:
+            app.kubernetes.io/name: keycloak
+            app.kubernetes.io/instance: acornops-keycloak
+    ports:
+      - protocol: TCP
+        port: 80
+      - protocol: TCP
+        port: 8080
 
 components:
   managementConsole:

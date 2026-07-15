@@ -99,6 +99,17 @@ const customIngressControllerArgs = [
   '--set-json',
   `networkPolicies.ingressController.from=${JSON.stringify(customIngressControllerPeers)}`
 ];
+const privateControlPlaneEgressArgs = [
+  '--set-json',
+  `networkPolicies.oidc.to=${JSON.stringify([{ ipBlock: { cidr: '10.20.30.40/32' } }])}`,
+  '--set-json',
+  `networkPolicies.webhooks.to=${JSON.stringify([{ ipBlock: { cidr: '10.20.30.50/32' } }])}`,
+  '--set-json',
+  `components.controlPlane.webhookEgress.allowedPrivateHosts=${JSON.stringify([
+    'hooks.example.org',
+    '*.webhooks.example.org'
+  ])}`
+];
 const staleAgentChartRefPattern = /oci:\/\/ghcr\.io\/acornops\/charts\/acornops-agent(?:\s|$|["'}`])/;
 
 function runHelm(args) {
@@ -586,6 +597,36 @@ assertMatch(
 );
 assertExcludes(defaultRender, 'name: additional-ca', 'default chart should not mount an additional CA bundle');
 assertExcludes(defaultRender, 'name: ADDITIONAL_CA_BUNDLE_FILE', 'default chart should preserve the image trust configuration');
+assertIncludes(
+  defaultRender,
+  'WEBHOOK_EGRESS_ALLOWED_PRIVATE_HOSTS_JSON: "[]"',
+  'private webhook access should default to an empty hostname allowlist'
+);
+
+const privateControlPlaneEgressRender = helmTemplate(privateControlPlaneEgressArgs);
+const privateControlPlaneEgressPolicy = manifestDocument(
+  privateControlPlaneEgressRender,
+  'NetworkPolicy',
+  'acornops-acornops-platform-control-plane-egress'
+);
+for (const cidr of ['10.20.30.40/32', '10.20.30.50/32']) {
+  assertIncludes(
+    privateControlPlaneEgressPolicy,
+    `cidr: ${cidr}`,
+    `control-plane egress should include configured private destination ${cidr}`
+  );
+}
+assertOccurrences(
+  privateControlPlaneEgressPolicy,
+  'port: 443',
+  3,
+  'private OIDC and webhook egress should each render their HTTPS destination port'
+);
+assertIncludes(
+  privateControlPlaneEgressRender,
+  'WEBHOOK_EGRESS_ALLOWED_PRIVATE_HOSTS_JSON: "[\\"hooks.example.org\\",\\"*.webhooks.example.org\\"]"',
+  'control-plane should receive the private webhook hostname policy as JSON'
+);
 
 const llmGatewayConfigMapCaRender = helmTemplate(llmGatewayConfigMapCaArgs);
 assertMatch(

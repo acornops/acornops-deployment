@@ -66,10 +66,55 @@ engine traffic to control-plane and llm-gateway, and llm-gateway traffic to
 control-plane for JWKS and built-in MCP calls. DNS egress is explicit. Public
 HTTP/HTTPS egress is limited to non-private IPv4 ranges for OIDC, webhooks, LLM
 providers, and external MCP targets. Postgres and Redis egress default to public
-service ports; private databases, private Redis, custom ingress
-controllers, Vault, and private OIDC providers must be added under
-`networkPolicies.postgres.to`, `networkPolicies.redis.to`, `networkPolicies.vault.to`,
-or `networkPolicies.extraEgress.*` before deployment.
+service ports. Private OIDC and webhook destinations have dedicated
+`networkPolicies.oidc` and `networkPolicies.webhooks` groups; private databases,
+private Redis, custom ingress controllers, Vault, and other component-specific
+destinations use their named groups or `networkPolicies.extraEgress.*`.
+
+For a private OIDC provider, allow every private destination used for discovery,
+token exchange, userinfo, and JWKS. The rule applies whether the chart or an
+external system owns the public Ingress:
+
+```yaml
+networkPolicies:
+  oidc:
+    to:
+      - ipBlock:
+          cidr: 10.20.30.40/32
+    ports:
+      - protocol: TCP
+        port: 443
+```
+
+Private webhooks require both a packet-level destination rule and an
+application-level hostname allowlist:
+
+```yaml
+components:
+  controlPlane:
+    webhookEgress:
+      allowedPrivateHosts:
+        - hooks.example.org
+        - "*.webhooks.example.org"
+
+networkPolicies:
+  webhooks:
+    to:
+      - ipBlock:
+          cidr: 10.20.30.50/32
+    ports:
+      - protocol: TCP
+        port: 443
+```
+
+The allowlist is additive: public webhook destinations continue to work when it
+is non-empty. An exact entry matches one hostname. A leading `*.` matches only
+subdomains, including deeper descendants, and never the bare suffix. The
+control plane still rejects localhost, metadata services, IP-literal URLs,
+unsafe schemes, and any hostname whose DNS answers include a disallowed
+address. DNS answers are validated before a selected address is pinned for the
+connection; webhook redirects are not followed. Kubernetes NetworkPolicy is
+layer 3/4, so its destinations use selectors or CIDRs rather than hostnames.
 
 Private MCP endpoints require all three controls: an exact hostname in
 `components.llmGateway.mcpEgress.allowedHosts`, a matching private destination
@@ -312,11 +357,12 @@ also independent of `internalTransport.tls`: that feature owns AcornOps
 service-to-service HTTPS/mTLS certificates and private keys, while this feature
 adds CA-only trust for outbound TLS dependencies.
 
-Private endpoints also need an explicit component egress allowance
-when `networkPolicies.enabled=true`. The default public HTTPS rule excludes
-private address ranges, so add the issuer destination under
-`networkPolicies.extraEgress.<component>` using selectors or CIDRs appropriate
-for the cluster. Supplying a CA bundle does not change NetworkPolicy behavior.
+Private endpoints also need an explicit component egress allowance when
+`networkPolicies.enabled=true`. The default public HTTPS rule excludes private
+address ranges. Use `networkPolicies.oidc` for a private issuer,
+`networkPolicies.webhooks` for private webhook receivers, and the applicable
+named group or `networkPolicies.extraEgress.<component>` for other dependencies.
+Supplying a CA bundle does not change NetworkPolicy behavior.
 
 ### trust-manager compatibility
 
@@ -421,7 +467,7 @@ kubectl -n acornops exec deployment/<control-plane-deployment> -- \
 `unable to get local issuer certificate` usually means the configured bundle
 does not contain the issuer chain's required CA. A pod stuck before startup
 usually indicates a missing resource or key. A timeout to a private issuer may
-indicate that `networkPolicies.extraEgress.controlPlane` is incomplete. The API
+indicate that `networkPolicies.oidc` is incomplete. The API
 keeps certificate details out of browser responses; correlate the request ID
 with control-plane logs for the underlying TLS error without logging the
 certificate contents.

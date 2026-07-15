@@ -148,7 +148,13 @@ networkPolicies:
   #   to:
   #     - ipBlock:
   #         cidr: 10.20.30.41/32
-  # Use extraEgress for private OIDC, webhook, Vault, or MCP destinations.
+  # Configure private OIDC and webhook destinations explicitly. NetworkPolicy
+  # accepts selectors or CIDRs, not DNS hostnames.
+  oidc:
+    to: []
+  webhooks:
+    to: []
+  # Use extraEgress for other private component-specific destinations such as MCP.
   extraEgress:
     controlPlane: []
     executionEngine: []
@@ -166,6 +172,9 @@ components:
     replicas: 3
     apiDocsEnabled: false
     terminationGracePeriodSeconds: 45
+    webhookEgress:
+      # Required in addition to networkPolicies.webhooks.to for private webhook hosts.
+      allowedPrivateHosts: []
     podDisruptionBudget:
       enabled: true
       minAvailable: 2

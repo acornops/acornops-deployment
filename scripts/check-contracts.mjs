@@ -78,6 +78,22 @@ expect(
     ]),
   'Deployment manifest should expose the exact additional CA runtime environment contract'
 );
+expect(
+  stable(deploymentManifest.contractSurfaces?.privateControlPlaneEgressHelmValues) ===
+    stable([
+      'networkPolicies.oidc.to',
+      'networkPolicies.oidc.ports',
+      'networkPolicies.webhooks.to',
+      'networkPolicies.webhooks.ports',
+      'components.controlPlane.webhookEgress.allowedPrivateHosts'
+    ]),
+  'Deployment manifest should expose the exact private control-plane egress Helm contract'
+);
+expect(
+  stable(deploymentManifest.contractSurfaces?.privateWebhookRuntimeEnv) ===
+    stable(['WEBHOOK_EGRESS_ALLOWED_PRIVATE_HOSTS_JSON']),
+  'Deployment manifest should expose the exact private webhook runtime environment contract'
+);
 
 const chartSchema = readJson(
   path.join(root, 'kubernetes/helm/acornops-platform/values.schema.json')
@@ -103,6 +119,38 @@ expect(
 expect(
   additionalCaSchema?.properties?.secretKeyRef,
   'Chart schema should expose the additional CA Secret source'
+);
+expect(
+  chartSchema.properties?.networkPolicies?.properties?.oidc?.$ref ===
+    '#/definitions/networkEgressGroup' &&
+    chartSchema.properties?.networkPolicies?.properties?.webhooks?.$ref ===
+      '#/definitions/networkEgressGroup',
+  'Chart schema should expose dedicated private OIDC and webhook NetworkPolicy groups'
+);
+expect(
+  chartSchema.properties?.components?.properties?.controlPlane?.allOf?.[1]?.properties
+    ?.webhookEgress?.properties?.allowedPrivateHosts,
+  'Chart schema should expose the private webhook hostname allowlist'
+);
+
+const privateEgressTemplate = readFileSync(
+  path.join(root, 'kubernetes/helm/acornops-platform/templates/networkpolicy.yaml'),
+  'utf8'
+);
+const controlPlaneConfigMap = readFileSync(
+  path.join(root, 'kubernetes/helm/acornops-platform/templates/configmap.yaml'),
+  'utf8'
+);
+for (const valuePath of ['$np.oidc.to', '$np.oidc.ports', '$np.webhooks.to', '$np.webhooks.ports']) {
+  expect(
+    privateEgressTemplate.includes(valuePath),
+    `Control-plane NetworkPolicy should render ${valuePath}`
+  );
+}
+expect(
+  controlPlaneConfigMap.includes('WEBHOOK_EGRESS_ALLOWED_PRIVATE_HOSTS_JSON') &&
+    controlPlaneConfigMap.includes('.Values.components.controlPlane.webhookEgress.allowedPrivateHosts'),
+  'Control-plane ConfigMap should render the private webhook hostname policy'
 );
 
 const additionalCaTemplateSource = [

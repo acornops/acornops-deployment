@@ -483,6 +483,8 @@
         "ingressController": { "$ref": "#/definitions/networkPeerList" },
         "dns": { "$ref": "#/definitions/networkEgressGroupWithToggle" },
         "publicInternet": { "$ref": "#/definitions/networkEgressGroupWithToggle" },
+        "oidc": { "$ref": "#/definitions/networkEgressGroup" },
+        "webhooks": { "$ref": "#/definitions/networkEgressGroup" },
         "postgres": { "$ref": "#/definitions/networkEgressGroup" },
         "redis": { "$ref": "#/definitions/networkEgressGroup" },
         "vault": { "$ref": "#/definitions/networkEgressGroup" },
@@ -531,6 +533,7 @@
                   { "required": ["conversationRetention"] },
                   { "required": ["toolResultArtifacts"] },
                   { "required": ["runEvents"] },
+                  { "required": ["webhookEgress"] },
                   { "required": ["maxConcurrentRuns"] },
                   { "required": ["toolContext"] },
                   { "required": ["durability"] },
@@ -591,6 +594,18 @@
                   "properties": {
                     "bufferSize": { "type": "integer", "minimum": 1 },
                     "persist": { "type": "boolean" }
+                  }
+                },
+                "webhookEgress": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["allowedPrivateHosts"],
+                  "properties": {
+                    "allowedPrivateHosts": {
+                      "type": "array",
+                      "maxItems": 100,
+                      "items": { "type": "string", "minLength": 1 }
+                    }
                   }
                 }
               }
@@ -674,6 +689,7 @@
                   { "required": ["conversationRetention"] },
                   { "required": ["toolResultArtifacts"] },
                   { "required": ["runEvents"] },
+                  { "required": ["webhookEgress"] },
                   { "required": ["secretsBackend"] },
                   { "required": ["secretsCacheTtlSeconds"] },
                   { "required": ["auth"] },
@@ -772,6 +788,7 @@
                   { "required": ["conversationRetention"] },
                   { "required": ["toolResultArtifacts"] },
                   { "required": ["runEvents"] },
+                  { "required": ["webhookEgress"] },
                   { "required": ["maxConcurrentRuns"] },
                   { "required": ["toolContext"] },
                   { "required": ["durability"] },
@@ -908,6 +925,7 @@
         "toolResultArtifacts": { "type": "object" },
         "recentActivity": { "type": "object" },
         "runEvents": { "type": "object" },
+        "webhookEgress": { "type": "object" },
         "maxConcurrentRuns": { "type": "integer" },
         "toolContext": { "type": "object" },
         "durability": { "type": "object" },

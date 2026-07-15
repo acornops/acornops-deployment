@@ -82,8 +82,9 @@ replacing that trust.
 This CA-only contract is independent of `internalTransport.tls`, which
 owns AcornOps service-to-service HTTPS/mTLS trust and identity material. It also
 does not grant NetworkPolicy egress to a private issuer. Operators must
-distribute the resource into the AcornOps namespace, configure required
-`networkPolicies.extraEgress.<component>` rules, and restart affected pods
+distribute the resource into the AcornOps namespace, configure the dedicated
+`networkPolicies.oidc` or `networkPolicies.webhooks` rule (or the applicable
+component egress rule for other dependencies), and restart affected pods
 after trust-bundle changes. Rotation uses an old/new CA overlap followed by a
 restart at each bundle transition because Node.js reads `NODE_EXTRA_CA_CERTS`
 only at process startup.

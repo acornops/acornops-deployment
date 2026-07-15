@@ -313,6 +313,18 @@ networkPolicies:
         port: 443
       - protocol: TCP
         port: 80
+  oidc:
+    # Private OIDC discovery, token, userinfo, and JWKS destinations used by control-plane.
+    to: []
+    ports:
+      - protocol: TCP
+        port: 443
+  webhooks:
+    # Private webhook destinations used by control-plane. Pair with the hostname allowlist below.
+    to: []
+    ports:
+      - protocol: TCP
+        port: 443
   postgres:
     # Egress destinations for external Postgres. Replace this for private databases.
     to:
@@ -425,6 +437,10 @@ components:
     runEvents:
       bufferSize: 200
       persist: true
+    webhookEgress:
+      # Exact hosts and leading wildcards (for example, hooks.example.org and *.hooks.example.org).
+      # Public webhook hosts remain allowed; this only permits listed hosts to resolve privately.
+      allowedPrivateHosts: []
     image:
       repository: ghcr.io/acornops/control-plane
       tag: 0.0.1-experimental.17

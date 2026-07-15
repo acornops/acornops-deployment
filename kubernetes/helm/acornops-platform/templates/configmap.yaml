@@ -57,6 +57,7 @@ data:
   OIDC_USE_USERINFO: {{ .Values.auth.oidc.useUserinfo | quote }}
   OIDC_REQUIRE_VERIFIED_EMAIL: {{ .Values.auth.oidc.requireVerifiedEmail | quote }}
   OIDC_HTTP_TIMEOUT_MS: {{ .Values.auth.oidc.httpTimeoutMs | quote }}
+  WEBHOOK_EGRESS_ALLOWED_PRIVATE_HOSTS_JSON: {{ .Values.components.controlPlane.webhookEgress.allowedPrivateHosts | toJson | quote }}
   PASSWORD_AUTH_ENABLED: {{ .Values.auth.password.enabled | quote }}
   PASSWORD_SIGNUP_ENABLED: {{ .Values.auth.password.signupEnabled | quote }}
   PASSWORD_EMAIL_VERIFICATION_REQUIRED: {{ .Values.auth.password.emailVerificationRequired | quote }}
