@@ -243,6 +243,10 @@ cp env/vm/.env.example env/vm/.env.prod
 
 2. Set real values (domains, image tags, secrets, DB credentials, OIDC).
 
+For private PKI, set `ADDITIONAL_CA_BUNDLE_SOURCE_PATH` to a readable host PEM
+bundle. `prod-up` then enables the additional-CA Compose overlay for the control
+plane, execution engine, LLM gateway, and both migration jobs.
+
 Generate service/admin tokens, OIDC/CSRF secrets, and database passwords with `openssl rand -base64 32`. Generate `SECRETS_KEK_BASE64` and `WEBHOOK_SECRET_ENCRYPTION_KEY` with `openssl rand -base64 32`; both runtime validators require decoded 32-byte keys. Generate `GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64` once and share it across all control-plane replicas. Production services reject placeholders and known development defaults at startup.
 
 Production edge exposure is intentionally narrow: publish `MANAGEMENT_CONSOLE_HOST` for the browser app and `API_HOST` for the platform API; keep execution-engine and llm-gateway reachable only on the Docker network. Configure TLS at the edge proxy or in front of it with a load balancer, and firewall the VM so only the public edge ports are reachable from the internet.

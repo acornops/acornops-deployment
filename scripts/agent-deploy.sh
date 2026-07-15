@@ -38,6 +38,31 @@ set +a
 : "${ACORNOPS_AGENT_LEASE_DURATION_MS:=15000}"
 : "${ACORNOPS_AGENT_RENEW_DEADLINE_MS:=10000}"
 : "${ACORNOPS_AGENT_RETRY_PERIOD_MS:=2000}"
+: "${ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE:=}"
+
+ADDITIONAL_CA_ENV_YAML=""
+ADDITIONAL_CA_MOUNT_YAML=""
+ADDITIONAL_CA_VOLUME_YAML=""
+if [[ -n "${ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE}" ]]; then
+  if [[ ! -r "${ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE}" ]]; then
+    echo "ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE must point to a readable PEM bundle."
+    exit 1
+  fi
+  printf -v ADDITIONAL_CA_ENV_YAML '%s\n%s' \
+    '            - name: NODE_EXTRA_CA_CERTS' \
+    '              value: "/etc/acornops/trust/additional-ca.pem"'
+  printf -v ADDITIONAL_CA_MOUNT_YAML '%s\n%s\n%s\n%s\n%s' \
+    '          volumeMounts:' \
+    '            - name: additional-ca' \
+    '              mountPath: /etc/acornops/trust/additional-ca.pem' \
+    '              subPath: additional-ca.pem' \
+    '              readOnly: true'
+  printf -v ADDITIONAL_CA_VOLUME_YAML '%s\n%s\n%s\n%s' \
+    '      volumes:' \
+    '        - name: additional-ca' \
+    '          configMap:' \
+    '            name: acornops-agentk-additional-ca'
+fi
 
 if [[ "${K8S_AGENT_REPLICAS}" -gt 1 && "${ACORNOPS_AGENT_LEADER_ELECTION_ENABLED}" != "true" ]]; then
   echo "K8S_AGENT_REPLICAS > 1 requires ACORNOPS_AGENT_LEADER_ELECTION_ENABLED=true; the agent supports active-passive HA only."
@@ -103,6 +128,12 @@ roleRef:
   name: acornops-agentk-role
   apiGroup: rbac.authorization.k8s.io
 EOF
+
+if [[ -n "${ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE}" ]]; then
+  kubectl -n "${K8S_NAMESPACE}" create configmap acornops-agentk-additional-ca \
+    --from-file=additional-ca.pem="${ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE}" \
+    --dry-run=client -o yaml | kubectl apply -f -
+fi
 
 if [[ "${ACORNOPS_AGENT_LEADER_ELECTION_ENABLED}" == "true" ]]; then
 kubectl apply -f - <<EOF
@@ -197,6 +228,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+${ADDITIONAL_CA_ENV_YAML}
+${ADDITIONAL_CA_MOUNT_YAML}
           resources:
             limits:
               cpu: 500m
@@ -204,6 +237,7 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
+${ADDITIONAL_CA_VOLUME_YAML}
 EOF
 
 echo "agentk deployed to namespace ${K8S_NAMESPACE}."

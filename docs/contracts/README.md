@@ -13,8 +13,8 @@ This repository owns deployment and compatibility contracts rather than service 
 - Deployment-track environment templates
 - External integration account-link token wiring for VM Compose and Helm
 - Helm Ingress ownership and NetworkPolicy peer authorization for public workloads
-- Helm `auth.oidc.tls.additionalCaBundle` references for additional private OIDC
-  issuer CA trust
+- Helm global and per-component `trust.additionalCaBundle` references for
+  additive private CA trust
 - Helm `internalTransport.tls` values for optional operator-supplied internal HTTPS/mTLS
 - Password email verification/reset and SMTP environment wiring
 - Release image compatibility metadata
@@ -53,28 +53,37 @@ These rules use each workload's configured `service.targetPort`; the chart does
 not discover ingress-controller labels or infer authorization from Ingress
 ownership.
 
-## OIDC Additional CA Trust
+## Additional CA Trust
 
-The Helm values contract for an OIDC provider signed by an organization-private
-CA is one of these two mutually exclusive, namespace-local references:
+The global Helm values contract is one of these two mutually exclusive,
+namespace-local references:
 
-- `auth.oidc.tls.additionalCaBundle.configMapKeyRef.name` and `.key`
-- `auth.oidc.tls.additionalCaBundle.secretKeyRef.name` and `.key`
+- `global.trust.additionalCaBundle.configMapKeyRef.name` and `.key`
+- `global.trust.additionalCaBundle.secretKeyRef.name` and `.key`
+
+The same shape under `components.controlPlane`, `components.executionEngine`,
+or `components.llmGateway` overrides the global bundle for that component.
+
+Runtime wiring uses `ADDITIONAL_CA_BUNDLE_FILE` for Python, adds
+`NODE_EXTRA_CA_CERTS` for Node.js, selects the VM Compose overlay with
+`ADDITIONAL_CA_BUNDLE_SOURCE_PATH`, and uses
+`ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE` for target-agent install paths.
 
 Both references default to `null`; a selected reference requires both of its
 fields. The chart accepts no inline PEM, private key, client certificate, custom
 mount path, or TLS-verification bypass. It maps the selected key from an
 existing resource in the Helm release namespace to the read-only
-`oidc-additional-ca` volume at `/etc/acornops/trust/oidc-ca.pem` and sets the
-chart-owned `NODE_EXTRA_CA_CERTS` variable to that fixed path. The source is not
-optional, so a missing resource or key fails pod startup. Node.js adds this file
-to its public CA trust rather than replacing that trust.
+`additional-ca` volume at `/etc/acornops/trust/additional-ca.pem` and sets
+`ADDITIONAL_CA_BUNDLE_FILE`; Node.js workloads also receive
+`NODE_EXTRA_CA_CERTS`. The source is not optional, so a missing resource or key
+fails pod startup. Runtime clients add this file to public CA trust rather than
+replacing that trust.
 
-This CA-only OIDC contract is independent of `internalTransport.tls`, which
+This CA-only contract is independent of `internalTransport.tls`, which
 owns AcornOps service-to-service HTTPS/mTLS trust and identity material. It also
 does not grant NetworkPolicy egress to a private issuer. Operators must
-distribute the resource into the AcornOps namespace, configure any required
-`networkPolicies.extraEgress.controlPlane` rule, and restart control-plane pods
+distribute the resource into the AcornOps namespace, configure required
+`networkPolicies.extraEgress.<component>` rules, and restart affected pods
 after trust-bundle changes. Rotation uses an old/new CA overlap followed by a
 restart at each bundle transition because Node.js reads `NODE_EXTRA_CA_CERTS`
 only at process startup.

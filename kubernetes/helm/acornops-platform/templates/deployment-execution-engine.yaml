@@ -1,3 +1,6 @@
+{{- $additionalCaArgs := dict "root" . "component" "executionEngine" -}}
+{{- $additionalCaBundle := include "acornops-platform.additionalCaBundle" $additionalCaArgs | fromYaml -}}
+{{- $additionalCaEnabled := include "acornops-platform.additionalCaEnabled" $additionalCaArgs -}}
 {{- if .Values.components.executionEngine.enabled }}
 apiVersion: apps/v1
 kind: Deployment
@@ -54,6 +57,12 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            {{- if $additionalCaEnabled }}
+            - name: additional-ca
+              mountPath: {{ include "acornops-platform.additionalCaPath" . | quote }}
+              subPath: additional-ca.pem
+              readOnly: true
+            {{- end }}
             {{- if .Values.internalTransport.tls.enabled }}
             - name: internal-transport-ca
               mountPath: {{ printf "%s/ca" (include "acornops-platform.internalTlsMountPath" .) | quote }}
@@ -84,6 +93,10 @@ spec:
                 secretKeyRef:
                   name: {{ include "acornops-platform.secretName" . }}
                   key: {{ .Values.secrets.keys.executionEngine.redisUrl }}
+            {{- if $additionalCaEnabled }}
+            - name: ADDITIONAL_CA_BUNDLE_FILE
+              value: {{ include "acornops-platform.additionalCaPath" . | quote }}
+            {{- end }}
             {{- with .Values.components.executionEngine.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -100,6 +113,22 @@ spec:
       volumes:
         - name: tmp
           emptyDir: {}
+        {{- with $additionalCaBundle.configMapKeyRef }}
+        - name: additional-ca
+          configMap:
+            name: {{ .name | quote }}
+            items:
+              - key: {{ .key | quote }}
+                path: additional-ca.pem
+        {{- end }}
+        {{- with $additionalCaBundle.secretKeyRef }}
+        - name: additional-ca
+          secret:
+            secretName: {{ .name | quote }}
+            items:
+              - key: {{ .key | quote }}
+                path: additional-ca.pem
+        {{- end }}
         {{- if .Values.internalTransport.tls.enabled }}
         - name: internal-transport-ca
           secret:

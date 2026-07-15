@@ -1,4 +1,6 @@
-{{- $oidcAdditionalCaEnabled := include "acornops-platform.oidcAdditionalCaEnabled" . -}}
+{{- $additionalCaArgs := dict "root" . "component" "controlPlane" -}}
+{{- $additionalCaBundle := include "acornops-platform.additionalCaBundle" $additionalCaArgs | fromYaml -}}
+{{- $additionalCaEnabled := include "acornops-platform.additionalCaEnabled" $additionalCaArgs -}}
 {{- if .Values.components.controlPlane.enabled }}
 apiVersion: apps/v1
 kind: Deployment
@@ -56,10 +58,10 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
-            {{- if $oidcAdditionalCaEnabled }}
-            - name: oidc-additional-ca
-              mountPath: {{ include "acornops-platform.oidcAdditionalCaPath" . | quote }}
-              subPath: oidc-ca.pem
+            {{- if $additionalCaEnabled }}
+            - name: additional-ca
+              mountPath: {{ include "acornops-platform.additionalCaPath" . | quote }}
+              subPath: additional-ca.pem
               readOnly: true
             {{- end }}
             {{- if .Values.internalTransport.tls.enabled }}
@@ -150,9 +152,11 @@ spec:
                   name: {{ include "acornops-platform.secretName" . }}
                   key: {{ .Values.secrets.keys.controlPlane.smtpPassword }}
                   optional: true
-            {{- if $oidcAdditionalCaEnabled }}
+            {{- if $additionalCaEnabled }}
+            - name: ADDITIONAL_CA_BUNDLE_FILE
+              value: {{ include "acornops-platform.additionalCaPath" . | quote }}
             - name: NODE_EXTRA_CA_CERTS
-              value: {{ include "acornops-platform.oidcAdditionalCaPath" . | quote }}
+              value: {{ include "acornops-platform.additionalCaPath" . | quote }}
             {{- end }}
             {{- with .Values.components.controlPlane.extraEnv }}
             {{- toYaml . | nindent 12 }}
@@ -170,21 +174,21 @@ spec:
       volumes:
         - name: tmp
           emptyDir: {}
-        {{- with .Values.auth.oidc.tls.additionalCaBundle.configMapKeyRef }}
-        - name: oidc-additional-ca
+        {{- with $additionalCaBundle.configMapKeyRef }}
+        - name: additional-ca
           configMap:
             name: {{ .name | quote }}
             items:
               - key: {{ .key | quote }}
-                path: oidc-ca.pem
+                path: additional-ca.pem
         {{- end }}
-        {{- with .Values.auth.oidc.tls.additionalCaBundle.secretKeyRef }}
-        - name: oidc-additional-ca
+        {{- with $additionalCaBundle.secretKeyRef }}
+        - name: additional-ca
           secret:
             secretName: {{ .name | quote }}
             items:
               - key: {{ .key | quote }}
-                path: oidc-ca.pem
+                path: additional-ca.pem
         {{- end }}
         {{- if .Values.internalTransport.tls.enabled }}
         - name: internal-transport-ca

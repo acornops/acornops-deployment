@@ -1,4 +1,6 @@
-{{- $mcpEgressCaEnabled := include "acornops-platform.mcpEgressCaEnabled" . -}}
+{{- $additionalCaArgs := dict "root" . "component" "llmGateway" -}}
+{{- $additionalCaBundle := include "acornops-platform.additionalCaBundle" $additionalCaArgs | fromYaml -}}
+{{- $additionalCaEnabled := include "acornops-platform.additionalCaEnabled" $additionalCaArgs -}}
 {{- if .Values.components.llmGateway.enabled }}
 apiVersion: apps/v1
 kind: Deployment
@@ -55,10 +57,10 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
-            {{- if $mcpEgressCaEnabled }}
-            - name: mcp-egress-ca
-              mountPath: {{ include "acornops-platform.mcpEgressCaPath" . | quote }}
-              subPath: mcp-egress-ca-bundle.pem
+            {{- if $additionalCaEnabled }}
+            - name: additional-ca
+              mountPath: {{ include "acornops-platform.additionalCaPath" . | quote }}
+              subPath: additional-ca.pem
               readOnly: true
             {{- end }}
             {{- if .Values.internalTransport.tls.enabled }}
@@ -102,9 +104,9 @@ spec:
                   name: {{ include "acornops-platform.secretName" . }}
                   key: {{ .Values.secrets.keys.llmGateway.vaultToken }}
                   optional: true
-            {{- if $mcpEgressCaEnabled }}
-            - name: MCP_EGRESS_CA_BUNDLE_FILE
-              value: {{ include "acornops-platform.mcpEgressCaPath" . | quote }}
+            {{- if $additionalCaEnabled }}
+            - name: ADDITIONAL_CA_BUNDLE_FILE
+              value: {{ include "acornops-platform.additionalCaPath" . | quote }}
             {{- end }}
             {{- with .Values.components.llmGateway.extraEnv }}
             {{- toYaml . | nindent 12 }}
@@ -122,21 +124,21 @@ spec:
       volumes:
         - name: tmp
           emptyDir: {}
-        {{- with .Values.components.llmGateway.mcpEgress.caBundle.configMapKeyRef }}
-        - name: mcp-egress-ca
+        {{- with $additionalCaBundle.configMapKeyRef }}
+        - name: additional-ca
           configMap:
             name: {{ .name | quote }}
             items:
               - key: {{ .key | quote }}
-                path: mcp-egress-ca-bundle.pem
+                path: additional-ca.pem
         {{- end }}
-        {{- with .Values.components.llmGateway.mcpEgress.caBundle.secretKeyRef }}
-        - name: mcp-egress-ca
+        {{- with $additionalCaBundle.secretKeyRef }}
+        - name: additional-ca
           secret:
             secretName: {{ .name | quote }}
             items:
               - key: {{ .key | quote }}
-                path: mcp-egress-ca-bundle.pem
+                path: additional-ca.pem
         {{- end }}
         {{- if .Values.internalTransport.tls.enabled }}
         - name: internal-transport-ca

@@ -1,3 +1,9 @@
+{{- $controlPlaneCaArgs := dict "root" . "component" "controlPlane" -}}
+{{- $controlPlaneCaBundle := include "acornops-platform.additionalCaBundle" $controlPlaneCaArgs | fromYaml -}}
+{{- $controlPlaneCaEnabled := include "acornops-platform.additionalCaEnabled" $controlPlaneCaArgs -}}
+{{- $llmGatewayCaArgs := dict "root" . "component" "llmGateway" -}}
+{{- $llmGatewayCaBundle := include "acornops-platform.additionalCaBundle" $llmGatewayCaArgs | fromYaml -}}
+{{- $llmGatewayCaEnabled := include "acornops-platform.additionalCaEnabled" $llmGatewayCaArgs -}}
 {{- if and .Values.migrations.enabled .Values.components.controlPlane.enabled }}
 apiVersion: batch/v1
 kind: Job
@@ -34,15 +40,43 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            {{- if $controlPlaneCaEnabled }}
+            - name: additional-ca
+              mountPath: {{ include "acornops-platform.additionalCaPath" . | quote }}
+              subPath: additional-ca.pem
+              readOnly: true
+            {{- end }}
           env:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
                   name: {{ include "acornops-platform.secretName" . }}
                   key: {{ .Values.secrets.keys.controlPlane.databaseUrl }}
+            {{- if $controlPlaneCaEnabled }}
+            - name: ADDITIONAL_CA_BUNDLE_FILE
+              value: {{ include "acornops-platform.additionalCaPath" . | quote }}
+            - name: NODE_EXTRA_CA_CERTS
+              value: {{ include "acornops-platform.additionalCaPath" . | quote }}
+            {{- end }}
       volumes:
         - name: tmp
           emptyDir: {}
+        {{- with $controlPlaneCaBundle.configMapKeyRef }}
+        - name: additional-ca
+          configMap:
+            name: {{ .name | quote }}
+            items:
+              - key: {{ .key | quote }}
+                path: additional-ca.pem
+        {{- end }}
+        {{- with $controlPlaneCaBundle.secretKeyRef }}
+        - name: additional-ca
+          secret:
+            secretName: {{ .name | quote }}
+            items:
+              - key: {{ .key | quote }}
+                path: additional-ca.pem
+        {{- end }}
 {{- end }}
 {{- if and .Values.migrations.enabled .Values.components.llmGateway.enabled }}
 ---
@@ -81,6 +115,12 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            {{- if $llmGatewayCaEnabled }}
+            - name: additional-ca
+              mountPath: {{ include "acornops-platform.additionalCaPath" . | quote }}
+              subPath: additional-ca.pem
+              readOnly: true
+            {{- end }}
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -101,7 +141,27 @@ spec:
                 secretKeyRef:
                   name: {{ include "acornops-platform.secretName" . }}
                   key: {{ .Values.secrets.keys.llmGateway.secretsKekBase64 }}
+            {{- if $llmGatewayCaEnabled }}
+            - name: ADDITIONAL_CA_BUNDLE_FILE
+              value: {{ include "acornops-platform.additionalCaPath" . | quote }}
+            {{- end }}
       volumes:
         - name: tmp
           emptyDir: {}
+        {{- with $llmGatewayCaBundle.configMapKeyRef }}
+        - name: additional-ca
+          configMap:
+            name: {{ .name | quote }}
+            items:
+              - key: {{ .key | quote }}
+                path: additional-ca.pem
+        {{- end }}
+        {{- with $llmGatewayCaBundle.secretKeyRef }}
+        - name: additional-ca
+          secret:
+            secretName: {{ .name | quote }}
+            items:
+              - key: {{ .key | quote }}
+                path: additional-ca.pem
+        {{- end }}
 {{- end }}

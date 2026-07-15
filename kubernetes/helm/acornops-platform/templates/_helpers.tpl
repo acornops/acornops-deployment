@@ -86,56 +86,41 @@ app.kubernetes.io/component: {{ .component }}
 {{- end -}}
 {{- end -}}
 
-{{/* Validate and report whether an additional OIDC CA bundle is configured. */}}
-{{- define "acornops-platform.oidcAdditionalCaEnabled" -}}
-{{- $bundle := .Values.auth.oidc.tls.additionalCaBundle -}}
+{{/* Resolve a component override, falling back to the global additive CA bundle. */}}
+{{- define "acornops-platform.additionalCaBundle" -}}
+{{- $bundle := .root.Values.global.trust.additionalCaBundle -}}
+{{- $componentValues := index .root.Values.components .component -}}
+{{- $componentBundle := $componentValues.trust.additionalCaBundle -}}
+{{- if or (kindIs "map" $componentBundle.configMapKeyRef) (kindIs "map" $componentBundle.secretKeyRef) -}}
+{{- $bundle = $componentBundle -}}
+{{- end -}}
+{{- toYaml $bundle -}}
+{{- end -}}
+
+{{/* Validate and report whether an effective component CA bundle is configured. */}}
+{{- define "acornops-platform.additionalCaEnabled" -}}
+{{- $bundle := include "acornops-platform.additionalCaBundle" . | fromYaml -}}
 {{- $configMapRef := $bundle.configMapKeyRef -}}
 {{- $secretKeyRef := $bundle.secretKeyRef -}}
 {{- $hasConfigMapRef := kindIs "map" $configMapRef -}}
 {{- $hasSecretKeyRef := kindIs "map" $secretKeyRef -}}
 {{- if and $hasConfigMapRef $hasSecretKeyRef -}}
-{{- fail "auth.oidc.tls.additionalCaBundle must configure only one of configMapKeyRef or secretKeyRef" -}}
+{{- fail (printf "effective additional CA bundle for components.%s must configure only one of configMapKeyRef or secretKeyRef" .component) -}}
 {{- end -}}
 {{- if $hasConfigMapRef -}}
-{{- $_ := required "auth.oidc.tls.additionalCaBundle.configMapKeyRef.name is required when configMapKeyRef is configured" $configMapRef.name -}}
-{{- $_ := required "auth.oidc.tls.additionalCaBundle.configMapKeyRef.key is required when configMapKeyRef is configured" $configMapRef.key -}}
+{{- $_ := required "additionalCaBundle.configMapKeyRef.name is required when configMapKeyRef is configured" $configMapRef.name -}}
+{{- $_ := required "additionalCaBundle.configMapKeyRef.key is required when configMapKeyRef is configured" $configMapRef.key -}}
 true
 {{- else if $hasSecretKeyRef -}}
-{{- $_ := required "auth.oidc.tls.additionalCaBundle.secretKeyRef.name is required when secretKeyRef is configured" $secretKeyRef.name -}}
-{{- $_ := required "auth.oidc.tls.additionalCaBundle.secretKeyRef.key is required when secretKeyRef is configured" $secretKeyRef.key -}}
+{{- $_ := required "additionalCaBundle.secretKeyRef.name is required when secretKeyRef is configured" $secretKeyRef.name -}}
+{{- $_ := required "additionalCaBundle.secretKeyRef.key is required when secretKeyRef is configured" $secretKeyRef.key -}}
 true
 {{- end -}}
 {{- end -}}
 
-{{/* Fixed file path consumed by Node.js for the additional OIDC CA bundle. */}}
-{{- define "acornops-platform.oidcAdditionalCaPath" -}}
-/etc/acornops/trust/oidc-ca.pem
-{{- end -}}
-
-{{/* Validate and report whether an MCP egress trust bundle is configured. */}}
-{{- define "acornops-platform.mcpEgressCaEnabled" -}}
-{{- $bundle := .Values.components.llmGateway.mcpEgress.caBundle -}}
-{{- $configMapRef := $bundle.configMapKeyRef -}}
-{{- $secretKeyRef := $bundle.secretKeyRef -}}
-{{- $hasConfigMapRef := kindIs "map" $configMapRef -}}
-{{- $hasSecretKeyRef := kindIs "map" $secretKeyRef -}}
-{{- if and $hasConfigMapRef $hasSecretKeyRef -}}
-{{- fail "components.llmGateway.mcpEgress.caBundle must configure only one of configMapKeyRef or secretKeyRef" -}}
-{{- end -}}
-{{- if $hasConfigMapRef -}}
-{{- $_ := required "components.llmGateway.mcpEgress.caBundle.configMapKeyRef.name is required when configMapKeyRef is configured" $configMapRef.name -}}
-{{- $_ := required "components.llmGateway.mcpEgress.caBundle.configMapKeyRef.key is required when configMapKeyRef is configured" $configMapRef.key -}}
-true
-{{- else if $hasSecretKeyRef -}}
-{{- $_ := required "components.llmGateway.mcpEgress.caBundle.secretKeyRef.name is required when secretKeyRef is configured" $secretKeyRef.name -}}
-{{- $_ := required "components.llmGateway.mcpEgress.caBundle.secretKeyRef.key is required when secretKeyRef is configured" $secretKeyRef.key -}}
-true
-{{- end -}}
-{{- end -}}
-
-{{/* Fixed file path consumed by HTTPX/OpenSSL for remote MCP TLS trust. */}}
-{{- define "acornops-platform.mcpEgressCaPath" -}}
-/etc/acornops/trust/mcp-egress-ca-bundle.pem
+{{/* Fixed path shared by all runtimes and migration jobs. */}}
+{{- define "acornops-platform.additionalCaPath" -}}
+/etc/acornops/trust/additional-ca.pem
 {{- end -}}
 
 {{- define "acornops-platform.internalTlsEnabled" -}}

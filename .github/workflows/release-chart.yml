@@ -35,11 +35,11 @@ jobs:
             helm lint "${CHART_DIR}" --strict -f "${values}"
           done
           helm lint "${CHART_DIR}" --strict \
-            --set-string auth.oidc.tls.additionalCaBundle.configMapKeyRef.name=organization-trust-bundle \
-            --set-string auth.oidc.tls.additionalCaBundle.configMapKeyRef.key=ca.crt
+            --set-string global.trust.additionalCaBundle.configMapKeyRef.name=organization-trust-bundle \
+            --set-string global.trust.additionalCaBundle.configMapKeyRef.key=ca.crt
           helm lint "${CHART_DIR}" --strict \
-            --set-string auth.oidc.tls.additionalCaBundle.secretKeyRef.name=organization-trust-bundle \
-            --set-string auth.oidc.tls.additionalCaBundle.secretKeyRef.key=ca.crt
+            --set-string global.trust.additionalCaBundle.secretKeyRef.name=organization-trust-bundle \
+            --set-string global.trust.additionalCaBundle.secretKeyRef.key=ca.crt
 
       - name: Render chart
         run: |

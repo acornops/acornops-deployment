@@ -19,6 +19,9 @@ Requires [Task](https://taskfile.dev/) CLI (`task`) and Docker Compose.
    - secrets and DB credentials
    - durable execution settings (`PERSIST_RUN_EVENTS=true`, `EXECUTION_ENGINE_REDIS_URL=redis://cp-redis:6379/1`)
    - internal gateway readiness target (`EXECUTION_GATEWAY_BASE_URL=http://llm-gateway:8001`)
+   - optional organization CA (`ADDITIONAL_CA_BUNDLE_SOURCE_PATH`); when non-empty,
+     `prod-up` enables `compose.additional-ca.yaml` for every server component
+     and migration job
 4. Use a disposable or resettable Postgres database while the platform remains pre-release.
 
 Generate every production secret before starting the stack. Runtime validation rejects placeholder/default values such as `change-me`, `replace-me`, development service tokens, default database passwords, and the local gateway KEK.

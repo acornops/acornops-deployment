@@ -1,0 +1,32 @@
+services:
+  control-plane:
+    environment:
+      ADDITIONAL_CA_BUNDLE_FILE: /etc/acornops/trust/additional-ca.pem
+      NODE_EXTRA_CA_CERTS: /etc/acornops/trust/additional-ca.pem
+    volumes:
+      - ${ADDITIONAL_CA_BUNDLE_SOURCE_PATH:?set ADDITIONAL_CA_BUNDLE_SOURCE_PATH}:/etc/acornops/trust/additional-ca.pem:ro
+
+  control-plane-init:
+    environment:
+      ADDITIONAL_CA_BUNDLE_FILE: /etc/acornops/trust/additional-ca.pem
+      NODE_EXTRA_CA_CERTS: /etc/acornops/trust/additional-ca.pem
+    volumes:
+      - ${ADDITIONAL_CA_BUNDLE_SOURCE_PATH:?set ADDITIONAL_CA_BUNDLE_SOURCE_PATH}:/etc/acornops/trust/additional-ca.pem:ro
+
+  execution-engine:
+    environment:
+      ADDITIONAL_CA_BUNDLE_FILE: /etc/acornops/trust/additional-ca.pem
+    volumes:
+      - ${ADDITIONAL_CA_BUNDLE_SOURCE_PATH:?set ADDITIONAL_CA_BUNDLE_SOURCE_PATH}:/etc/acornops/trust/additional-ca.pem:ro
+
+  llm-gateway:
+    environment:
+      ADDITIONAL_CA_BUNDLE_FILE: /etc/acornops/trust/additional-ca.pem
+    volumes:
+      - ${ADDITIONAL_CA_BUNDLE_SOURCE_PATH:?set ADDITIONAL_CA_BUNDLE_SOURCE_PATH}:/etc/acornops/trust/additional-ca.pem:ro
+
+  llm-gateway-init:
+    environment:
+      ADDITIONAL_CA_BUNDLE_FILE: /etc/acornops/trust/additional-ca.pem
+    volumes:
+      - ${ADDITIONAL_CA_BUNDLE_SOURCE_PATH:?set ADDITIONAL_CA_BUNDLE_SOURCE_PATH}:/etc/acornops/trust/additional-ca.pem:ro

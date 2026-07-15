@@ -86,11 +86,29 @@
       "ai.allowedReasoningSummaryModes",
       "ai.allowedReasoningEfforts"
     ],
-    "oidcAdditionalCaHelmValues": [
-      "auth.oidc.tls.additionalCaBundle.configMapKeyRef.name",
-      "auth.oidc.tls.additionalCaBundle.configMapKeyRef.key",
-      "auth.oidc.tls.additionalCaBundle.secretKeyRef.name",
-      "auth.oidc.tls.additionalCaBundle.secretKeyRef.key"
+    "additionalCaHelmValues": [
+      "global.trust.additionalCaBundle.configMapKeyRef.name",
+      "global.trust.additionalCaBundle.configMapKeyRef.key",
+      "global.trust.additionalCaBundle.secretKeyRef.name",
+      "global.trust.additionalCaBundle.secretKeyRef.key",
+      "components.controlPlane.trust.additionalCaBundle.configMapKeyRef.name",
+      "components.controlPlane.trust.additionalCaBundle.configMapKeyRef.key",
+      "components.controlPlane.trust.additionalCaBundle.secretKeyRef.name",
+      "components.controlPlane.trust.additionalCaBundle.secretKeyRef.key",
+      "components.executionEngine.trust.additionalCaBundle.configMapKeyRef.name",
+      "components.executionEngine.trust.additionalCaBundle.configMapKeyRef.key",
+      "components.executionEngine.trust.additionalCaBundle.secretKeyRef.name",
+      "components.executionEngine.trust.additionalCaBundle.secretKeyRef.key",
+      "components.llmGateway.trust.additionalCaBundle.configMapKeyRef.name",
+      "components.llmGateway.trust.additionalCaBundle.configMapKeyRef.key",
+      "components.llmGateway.trust.additionalCaBundle.secretKeyRef.name",
+      "components.llmGateway.trust.additionalCaBundle.secretKeyRef.key"
+    ],
+    "additionalCaRuntimeEnv": [
+      "ADDITIONAL_CA_BUNDLE_FILE",
+      "NODE_EXTRA_CA_CERTS",
+      "ADDITIONAL_CA_BUNDLE_SOURCE_PATH",
+      "ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE"
     ],
     "ingressNetworkPolicyHelmValues": [
       "exposure.ingress.enabled",

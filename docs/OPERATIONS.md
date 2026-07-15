@@ -35,7 +35,8 @@ without changing workspace credentials. For VM Compose, set any of
 `LLM_PROVIDER_OPENAI_BASE_URL`, `LLM_PROVIDER_ANTHROPIC_BASE_URL`, or
 `LLM_PROVIDER_GEMINI_BASE_URL`. For Helm, set the corresponding
 `components.llmGateway.providerBaseUrls` value. Empty values retain the vendor
-SDK defaults. Custom endpoints must implement the native API used by the gateway;
+endpoint defaults. Provider SDK-specific environment variables are not part of
+the AcornOps configuration contract. Custom endpoints must implement the native API used by the gateway;
 an OpenAI endpoint must support the Responses API, not only Chat Completions.
 The `/admin` route is only routed on the API host and must not be proxied from
 the management console host.

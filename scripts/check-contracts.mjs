@@ -52,16 +52,31 @@ expect(
   'HA smoke should install AgentK with the registered cluster ID'
 );
 
-const oidcAdditionalCaHelmValues = [
-  'auth.oidc.tls.additionalCaBundle.configMapKeyRef.name',
-  'auth.oidc.tls.additionalCaBundle.configMapKeyRef.key',
-  'auth.oidc.tls.additionalCaBundle.secretKeyRef.name',
-  'auth.oidc.tls.additionalCaBundle.secretKeyRef.key'
-];
+const additionalCaHelmValues = [
+  'global.trust.additionalCaBundle',
+  'components.controlPlane.trust.additionalCaBundle',
+  'components.executionEngine.trust.additionalCaBundle',
+  'components.llmGateway.trust.additionalCaBundle'
+].flatMap((prefix) => [
+  `${prefix}.configMapKeyRef.name`,
+  `${prefix}.configMapKeyRef.key`,
+  `${prefix}.secretKeyRef.name`,
+  `${prefix}.secretKeyRef.key`
+]);
 expect(
-  stable(deploymentManifest.contractSurfaces?.oidcAdditionalCaHelmValues) ===
-    stable(oidcAdditionalCaHelmValues),
-  'Deployment manifest should expose the exact OIDC additional CA Helm values contract'
+  stable(deploymentManifest.contractSurfaces?.additionalCaHelmValues) ===
+    stable(additionalCaHelmValues),
+  'Deployment manifest should expose the exact additional CA Helm values contract'
+);
+expect(
+  stable(deploymentManifest.contractSurfaces?.additionalCaRuntimeEnv) ===
+    stable([
+      'ADDITIONAL_CA_BUNDLE_FILE',
+      'NODE_EXTRA_CA_CERTS',
+      'ADDITIONAL_CA_BUNDLE_SOURCE_PATH',
+      'ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE'
+    ]),
+  'Deployment manifest should expose the exact additional CA runtime environment contract'
 );
 
 const chartSchema = readJson(
@@ -80,19 +95,17 @@ expect(
     ?.additionalCaBundle?.properties?.sourcePath,
   'Chart schema should expose the generated AgentK install CA source path'
 );
-const oidcAdditionalCaSchema =
-  chartSchema.properties?.auth?.properties?.oidc?.properties?.tls?.properties
-    ?.additionalCaBundle;
+const additionalCaSchema = chartSchema.definitions?.additionalCaBundle;
 expect(
-  oidcAdditionalCaSchema?.properties?.configMapKeyRef,
-  'Chart schema should expose the OIDC additional CA ConfigMap source'
+  additionalCaSchema?.properties?.configMapKeyRef,
+  'Chart schema should expose the additional CA ConfigMap source'
 );
 expect(
-  oidcAdditionalCaSchema?.properties?.secretKeyRef,
-  'Chart schema should expose the OIDC additional CA Secret source'
+  additionalCaSchema?.properties?.secretKeyRef,
+  'Chart schema should expose the additional CA Secret source'
 );
 
-const oidcAdditionalCaTemplateSource = [
+const additionalCaTemplateSource = [
   readFileSync(
     path.join(root, 'kubernetes/helm/acornops-platform/templates/_helpers.tpl'),
     'utf8'
@@ -100,24 +113,41 @@ const oidcAdditionalCaTemplateSource = [
   readFileSync(
     path.join(root, 'kubernetes/helm/acornops-platform/templates/deployment-control-plane.yaml'),
     'utf8'
+  ),
+  readFileSync(
+    path.join(root, 'kubernetes/helm/acornops-platform/templates/deployment-execution-engine.yaml'),
+    'utf8'
+  ),
+  readFileSync(
+    path.join(root, 'kubernetes/helm/acornops-platform/templates/deployment-llm-gateway.yaml'),
+    'utf8'
+  ),
+  readFileSync(
+    path.join(root, 'kubernetes/helm/acornops-platform/templates/migrations.yaml'),
+    'utf8'
   )
 ].join('\n');
 for (const identifier of [
   'configMapKeyRef',
   'secretKeyRef',
-  'oidc-additional-ca',
-  '/etc/acornops/trust/oidc-ca.pem',
+  'additional-ca',
+  '/etc/acornops/trust/additional-ca.pem',
+  'ADDITIONAL_CA_BUNDLE_FILE',
   'NODE_EXTRA_CA_CERTS'
 ]) {
   expect(
-    oidcAdditionalCaTemplateSource.includes(identifier),
-    `Chart templates should preserve the OIDC additional CA identifier ${identifier}`
+    additionalCaTemplateSource.includes(identifier),
+    `Chart templates should preserve the additional CA identifier ${identifier}`
   );
 }
 
 const agentDeploy = readFileSync(path.join(root, 'scripts/agent-deploy.sh'), 'utf8');
 const localUp = readFileSync(path.join(root, 'scripts/local-up.sh'), 'utf8');
 const localCompose = readFileSync(path.join(root, 'compose/local/compose.source.yaml'), 'utf8');
+const vmAdditionalCaCompose = readFileSync(
+  path.join(root, 'compose/vm-prod/compose.additional-ca.yaml'),
+  'utf8'
+);
 const taskfile = readFileSync(path.join(root, 'Taskfile.yml'), 'utf8');
 const demoWorkloads = readFileSync(path.join(root, 'k8s/demo-workloads.yaml.tpl'), 'utf8');
 const localSmoke = readFileSync(path.join(root, 'scripts/local-smoke.mjs'), 'utf8');
@@ -129,6 +159,29 @@ const localAgentEnvExample = readFileSync(path.join(root, 'env/local/.env.agent.
 const localEnvExample = readFileSync(path.join(root, 'env/local/.env.example'), 'utf8');
 expect(!agentDeploy.includes('ACORNOPS_TARGET_ID'), 'Deployment agentk env should not expose a separate target id');
 expect(agentDeploy.includes('ACORNOPS_CLUSTER_ID'), 'Deployment agentk env should expose ACORNOPS_CLUSTER_ID');
+expect(
+  agentDeploy.includes('ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE') &&
+    agentDeploy.includes('NODE_EXTRA_CA_CERTS') &&
+    agentDeploy.includes('/etc/acornops/trust/additional-ca.pem'),
+  'Manual AgentK deployment should expose additive private CA trust'
+);
+for (const service of [
+  'control-plane',
+  'control-plane-init',
+  'execution-engine',
+  'llm-gateway',
+  'llm-gateway-init'
+]) {
+  expect(
+    vmAdditionalCaCompose.includes(`  ${service}:`),
+    `VM additional CA overlay should include ${service}`
+  );
+}
+expect(
+  vmAdditionalCaCompose.includes('ADDITIONAL_CA_BUNDLE_FILE') &&
+    vmAdditionalCaCompose.includes('NODE_EXTRA_CA_CERTS'),
+  'VM additional CA overlay should configure Python and Node.js additive trust'
+);
 expect(localCompose.includes('ACORNOPS_CLUSTER_ID'), 'Local agentk env should expose ACORNOPS_CLUSTER_ID');
 expect(localCompose.includes('ACORNOPS_TARGET_ID'), 'Local agentv env should expose ACORNOPS_TARGET_ID');
 expect(localCompose.includes('ACORNOPS_AGENT_ALLOW_INSECURE_TRANSPORT'), 'Local agents should opt into insecure local transport explicitly');

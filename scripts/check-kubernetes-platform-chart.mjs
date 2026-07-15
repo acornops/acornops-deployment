@@ -16,33 +16,32 @@ const exampleValues = fs
   .filter((file) => /\.ya?ml$/.test(file))
   .sort()
   .map((file) => `${chart}/examples/${file}`);
-const oidcAdditionalCaValuesPath = 'auth.oidc.tls.additionalCaBundle';
-const oidcAdditionalCaPath = '/etc/acornops/trust/oidc-ca.pem';
+const globalAdditionalCaValuesPath = 'global.trust.additionalCaBundle';
+const additionalCaPath = '/etc/acornops/trust/additional-ca.pem';
 const configMapCaArgs = [
   '--set-string',
-  `${oidcAdditionalCaValuesPath}.configMapKeyRef.name=organization-configmap-trust`,
+  `${globalAdditionalCaValuesPath}.configMapKeyRef.name=organization-configmap-trust`,
   '--set-string',
-  `${oidcAdditionalCaValuesPath}.configMapKeyRef.key=configmap-ca.crt`
+  `${globalAdditionalCaValuesPath}.configMapKeyRef.key=configmap-ca.crt`
 ];
 const secretCaArgs = [
   '--set-string',
-  `${oidcAdditionalCaValuesPath}.secretKeyRef.name=organization-secret-trust`,
+  `${globalAdditionalCaValuesPath}.secretKeyRef.name=organization-secret-trust`,
   '--set-string',
-  `${oidcAdditionalCaValuesPath}.secretKeyRef.key=secret-ca.pem`
+  `${globalAdditionalCaValuesPath}.secretKeyRef.key=secret-ca.pem`
 ];
-const mcpEgressCaValuesPath = 'components.llmGateway.mcpEgress.caBundle';
-const mcpEgressCaPath = '/etc/acornops/trust/mcp-egress-ca-bundle.pem';
-const mcpEgressConfigMapCaArgs = [
+const llmGatewayAdditionalCaValuesPath = 'components.llmGateway.trust.additionalCaBundle';
+const llmGatewayConfigMapCaArgs = [
   '--set-string',
-  `${mcpEgressCaValuesPath}.configMapKeyRef.name=organization-mcp-trust`,
+  `${llmGatewayAdditionalCaValuesPath}.configMapKeyRef.name=organization-llm-trust`,
   '--set-string',
-  `${mcpEgressCaValuesPath}.configMapKeyRef.key=ca-bundle.pem`
+  `${llmGatewayAdditionalCaValuesPath}.configMapKeyRef.key=ca-bundle.pem`
 ];
-const mcpEgressSecretCaArgs = [
+const llmGatewaySecretCaArgs = [
   '--set-string',
-  `${mcpEgressCaValuesPath}.secretKeyRef.name=organization-mcp-trust`,
+  `${llmGatewayAdditionalCaValuesPath}.secretKeyRef.name=organization-llm-trust`,
   '--set-string',
-  `${mcpEgressCaValuesPath}.secretKeyRef.key=ca-bundle.pem`
+  `${llmGatewayAdditionalCaValuesPath}.secretKeyRef.key=ca-bundle.pem`
 ];
 const internalTlsArgs = [
   '--set',
@@ -265,8 +264,8 @@ for (const valuesFile of exampleValues) {
 }
 runHelm(['lint', chart, '--strict', ...configMapCaArgs]);
 runHelm(['lint', chart, '--strict', ...secretCaArgs]);
-runHelm(['lint', chart, '--strict', ...mcpEgressConfigMapCaArgs]);
-runHelm(['lint', chart, '--strict', ...mcpEgressSecretCaArgs]);
+runHelm(['lint', chart, '--strict', ...llmGatewayConfigMapCaArgs]);
+runHelm(['lint', chart, '--strict', ...llmGatewaySecretCaArgs]);
 for (const args of [
   externalIngressArgs,
   emptyIngressControllerArgs,
@@ -347,58 +346,58 @@ for (const [args, message] of [
     'OIDC additional CA ConfigMap and Secret sources should be mutually exclusive'
   ],
   [
-    [...mcpEgressConfigMapCaArgs, ...mcpEgressSecretCaArgs],
+    [...llmGatewayConfigMapCaArgs, ...llmGatewaySecretCaArgs],
     'MCP egress CA ConfigMap and Secret sources should be mutually exclusive'
   ],
   [
-    ['--set-string', `${oidcAdditionalCaValuesPath}.configMapKeyRef.key=ca.crt`],
+    ['--set-string', `${globalAdditionalCaValuesPath}.configMapKeyRef.key=ca.crt`],
     'OIDC additional CA ConfigMap source should require a name'
   ],
   [
-    ['--set-string', `${oidcAdditionalCaValuesPath}.configMapKeyRef.name=organization-trust-bundle`],
+    ['--set-string', `${globalAdditionalCaValuesPath}.configMapKeyRef.name=organization-trust-bundle`],
     'OIDC additional CA ConfigMap source should require a key'
   ],
   [
     [
       '--set-string',
-      `${oidcAdditionalCaValuesPath}.configMapKeyRef.name=`,
+      `${globalAdditionalCaValuesPath}.configMapKeyRef.name=`,
       '--set-string',
-      `${oidcAdditionalCaValuesPath}.configMapKeyRef.key=ca.crt`
+      `${globalAdditionalCaValuesPath}.configMapKeyRef.key=ca.crt`
     ],
     'OIDC additional CA ConfigMap source should reject an empty name'
   ],
   [
     [
       '--set-string',
-      `${oidcAdditionalCaValuesPath}.configMapKeyRef.name=organization-trust-bundle`,
+      `${globalAdditionalCaValuesPath}.configMapKeyRef.name=organization-trust-bundle`,
       '--set-string',
-      `${oidcAdditionalCaValuesPath}.configMapKeyRef.key=`
+      `${globalAdditionalCaValuesPath}.configMapKeyRef.key=`
     ],
     'OIDC additional CA ConfigMap source should reject an empty key'
   ],
   [
-    ['--set-string', `${oidcAdditionalCaValuesPath}.secretKeyRef.key=ca.crt`],
+    ['--set-string', `${globalAdditionalCaValuesPath}.secretKeyRef.key=ca.crt`],
     'OIDC additional CA Secret source should require a name'
   ],
   [
-    ['--set-string', `${oidcAdditionalCaValuesPath}.secretKeyRef.name=organization-trust-bundle`],
+    ['--set-string', `${globalAdditionalCaValuesPath}.secretKeyRef.name=organization-trust-bundle`],
     'OIDC additional CA Secret source should require a key'
   ],
   [
     [
       '--set-string',
-      `${oidcAdditionalCaValuesPath}.secretKeyRef.name=`,
+      `${globalAdditionalCaValuesPath}.secretKeyRef.name=`,
       '--set-string',
-      `${oidcAdditionalCaValuesPath}.secretKeyRef.key=ca.crt`
+      `${globalAdditionalCaValuesPath}.secretKeyRef.key=ca.crt`
     ],
     'OIDC additional CA Secret source should reject an empty name'
   ],
   [
     [
       '--set-string',
-      `${oidcAdditionalCaValuesPath}.secretKeyRef.name=organization-trust-bundle`,
+      `${globalAdditionalCaValuesPath}.secretKeyRef.name=organization-trust-bundle`,
       '--set-string',
-      `${oidcAdditionalCaValuesPath}.secretKeyRef.key=`
+      `${globalAdditionalCaValuesPath}.secretKeyRef.key=`
     ],
     'OIDC additional CA Secret source should reject an empty key'
   ],
@@ -406,17 +405,17 @@ for (const [args, message] of [
     [
       ...configMapCaArgs,
       '--set-string',
-      `${oidcAdditionalCaValuesPath}.configMapKeyRef.namespace=other`
+      `${globalAdditionalCaValuesPath}.configMapKeyRef.namespace=other`
     ],
     'OIDC additional CA references should reject unknown fields'
   ],
   [
-    ['--set-string', `${oidcAdditionalCaValuesPath}.inlinePem=unsupported`],
+    ['--set-string', `${globalAdditionalCaValuesPath}.inlinePem=unsupported`],
     'OIDC additional CA configuration should reject inline PEM fields'
   ],
   [
-    ['--set', 'auth.oidc.tls.skipTlsVerify=true'],
-    'OIDC additional CA configuration should reject TLS verification bypasses'
+    ['--set', 'global.trust.skipTlsVerify=true'],
+    'additional CA configuration should reject TLS verification bypasses'
   ],
   [
     ['--set', 'auth.session.maxAgeSeconds=3600', '--set', 'auth.session.idleTimeoutSeconds=7200'],
@@ -443,7 +442,7 @@ const ambiguousOidcAdditionalCaFailure = expectHelmFailure(
 );
 assertIncludes(
   ambiguousOidcAdditionalCaFailure,
-  'auth.oidc.tls.additionalCaBundle must configure only one of configMapKeyRef or secretKeyRef',
+  'effective additional CA bundle for components.controlPlane must configure only one of configMapKeyRef or secretKeyRef',
   'ambiguous OIDC additional CA template failure should be actionable'
 );
 
@@ -459,7 +458,7 @@ const disabledControlPlaneAmbiguousOidcAdditionalCaFailure = expectHelmFailure(
 );
 assertIncludes(
   disabledControlPlaneAmbiguousOidcAdditionalCaFailure,
-  'auth.oidc.tls.additionalCaBundle must configure only one of configMapKeyRef or secretKeyRef',
+  'effective additional CA bundle for components.controlPlane must configure only one of configMapKeyRef or secretKeyRef',
   'OIDC additional CA validation should not depend on rendering the control-plane Deployment'
 );
 
@@ -467,13 +466,13 @@ const incompleteOidcAdditionalCaConfigMapFailure = expectHelmFailure(
   [
     '--skip-schema-validation',
     '--set-string',
-    `${oidcAdditionalCaValuesPath}.configMapKeyRef.key=ca.crt`
+    `${globalAdditionalCaValuesPath}.configMapKeyRef.key=ca.crt`
   ],
   'template validation should reject an incomplete OIDC additional CA ConfigMap source'
 );
 assertIncludes(
   incompleteOidcAdditionalCaConfigMapFailure,
-  'auth.oidc.tls.additionalCaBundle.configMapKeyRef.name is required when configMapKeyRef is configured',
+  'additionalCaBundle.configMapKeyRef.name is required when configMapKeyRef is configured',
   'incomplete OIDC additional CA ConfigMap template failure should name the missing field'
 );
 
@@ -483,13 +482,13 @@ const disabledControlPlaneIncompleteOidcAdditionalCaFailure = expectHelmFailure(
     '--set',
     'components.controlPlane.enabled=false',
     '--set-string',
-    `${oidcAdditionalCaValuesPath}.configMapKeyRef.key=ca.crt`
+    `${globalAdditionalCaValuesPath}.configMapKeyRef.key=ca.crt`
   ],
   'template validation should reject incomplete OIDC additional CA configuration when control-plane is disabled'
 );
 assertIncludes(
   disabledControlPlaneIncompleteOidcAdditionalCaFailure,
-  'auth.oidc.tls.additionalCaBundle.configMapKeyRef.name is required when configMapKeyRef is configured',
+  'additionalCaBundle.configMapKeyRef.name is required when configMapKeyRef is configured',
   'incomplete OIDC additional CA validation should not depend on rendering the control-plane Deployment'
 );
 
@@ -497,13 +496,13 @@ const incompleteOidcAdditionalCaSecretFailure = expectHelmFailure(
   [
     '--skip-schema-validation',
     '--set-string',
-    `${oidcAdditionalCaValuesPath}.secretKeyRef.name=organization-trust-bundle`
+    `${globalAdditionalCaValuesPath}.secretKeyRef.name=organization-trust-bundle`
   ],
   'template validation should reject an incomplete OIDC additional CA Secret source'
 );
 assertIncludes(
   incompleteOidcAdditionalCaSecretFailure,
-  'auth.oidc.tls.additionalCaBundle.secretKeyRef.key is required when secretKeyRef is configured',
+  'additionalCaBundle.secretKeyRef.key is required when secretKeyRef is configured',
   'incomplete OIDC additional CA Secret template failure should name the missing field'
 );
 
@@ -585,27 +584,27 @@ assertMatch(
   /name: acornops-acornops-platform-llm-gateway[\s\S]*?MAX_REQUEST_BODY_BYTES: "1000000"/,
   'llm-gateway should render its request body limit from components.llmGateway.maxRequestBodyBytes'
 );
-assertExcludes(defaultRender, 'name: mcp-egress-ca', 'default chart should not mount an MCP egress CA bundle');
-assertExcludes(defaultRender, 'name: MCP_EGRESS_CA_BUNDLE_FILE', 'default chart should preserve the image trust configuration');
+assertExcludes(defaultRender, 'name: additional-ca', 'default chart should not mount an additional CA bundle');
+assertExcludes(defaultRender, 'name: ADDITIONAL_CA_BUNDLE_FILE', 'default chart should preserve the image trust configuration');
 
-const mcpConfigMapCaRender = helmTemplate(mcpEgressConfigMapCaArgs);
+const llmGatewayConfigMapCaRender = helmTemplate(llmGatewayConfigMapCaArgs);
 assertMatch(
-  mcpConfigMapCaRender,
-  /name: mcp-egress-ca\n\s+configMap:\n\s+name: "organization-mcp-trust"/,
-  'MCP ConfigMap trust should render the configured volume source'
+  llmGatewayConfigMapCaRender,
+  /name: additional-ca\n\s+configMap:\n\s+name: "organization-llm-trust"/,
+  'component ConfigMap trust should render the configured volume source'
 );
-assertIncludes(mcpConfigMapCaRender, 'name: MCP_EGRESS_CA_BUNDLE_FILE', 'MCP ConfigMap trust should configure HTTPX/OpenSSL');
-assertIncludes(mcpConfigMapCaRender, `value: "${mcpEgressCaPath}"`, 'MCP ConfigMap trust should use the fixed file path');
-assertIncludes(mcpConfigMapCaRender, `mountPath: "${mcpEgressCaPath}"`, 'MCP ConfigMap trust should mount the fixed file path');
+assertIncludes(llmGatewayConfigMapCaRender, 'name: ADDITIONAL_CA_BUNDLE_FILE', 'component ConfigMap trust should configure the runtime');
+assertIncludes(llmGatewayConfigMapCaRender, `value: "${additionalCaPath}"`, 'component ConfigMap trust should use the fixed file path');
+assertIncludes(llmGatewayConfigMapCaRender, `mountPath: "${additionalCaPath}"`, 'component ConfigMap trust should mount the fixed file path');
 
-const mcpSecretCaRender = helmTemplate(mcpEgressSecretCaArgs);
+const llmGatewaySecretCaRender = helmTemplate(llmGatewaySecretCaArgs);
 assertMatch(
-  mcpSecretCaRender,
-  /name: mcp-egress-ca\n\s+secret:\n\s+secretName: "organization-mcp-trust"/,
-  'MCP Secret trust should render the configured volume source'
+  llmGatewaySecretCaRender,
+  /name: additional-ca\n\s+secret:\n\s+secretName: "organization-llm-trust"/,
+  'component Secret trust should render the configured volume source'
 );
-assertIncludes(mcpSecretCaRender, 'name: MCP_EGRESS_CA_BUNDLE_FILE', 'MCP Secret trust should configure HTTPX/OpenSSL');
-assertIncludes(mcpSecretCaRender, `value: "${mcpEgressCaPath}"`, 'MCP Secret trust should use the fixed file path');
+assertIncludes(llmGatewaySecretCaRender, 'name: ADDITIONAL_CA_BUNDLE_FILE', 'component Secret trust should configure the runtime');
+assertIncludes(llmGatewaySecretCaRender, `value: "${additionalCaPath}"`, 'component Secret trust should use the fixed file path');
 assertExcludes(defaultRender, 'path: /execution-engine', 'execution-engine must not be publicly routed');
 assertExcludes(defaultRender, 'path: /llm-gateway', 'llm-gateway must not be publicly routed');
 assertIncludes(defaultRender, 'kind: NetworkPolicy', 'chart should render NetworkPolicies by default');
@@ -964,9 +963,9 @@ assertExcludes(
   'port: 8081',
   'empty peers should not leave a public HTTP rule when internal TLS is enabled'
 );
-assertExcludes(defaultRender, 'oidc-additional-ca', 'default chart should not render an OIDC additional CA volume or mount');
+assertExcludes(defaultRender, 'name: additional-ca', 'default chart should not render an additional CA volume or mount');
 assertExcludes(defaultRender, 'NODE_EXTRA_CA_CERTS', 'default chart should not configure Node.js additional CA trust');
-assertExcludes(defaultRender, oidcAdditionalCaPath, 'default chart should not render the fixed OIDC additional CA path');
+assertExcludes(defaultRender, additionalCaPath, 'default chart should not render the fixed OIDC additional CA path');
 assertExcludes(defaultRender, 'NODE_TLS_REJECT_UNAUTHORIZED', 'chart must not disable Node.js TLS verification');
 
 const configMapCaRender = helmTemplate(configMapCaArgs);
@@ -975,38 +974,54 @@ const configMapControlPlane = manifestDocument(
   'Deployment',
   `${defaultPrefix}-control-plane`
 );
-const configMapCaMount = indentedNamedListItem(configMapControlPlane, 12, 'oidc-additional-ca');
-assertIncludes(configMapCaMount, `mountPath: "${oidcAdditionalCaPath}"`, 'ConfigMap CA should use the fixed mount path');
-assertIncludes(configMapCaMount, 'subPath: oidc-ca.pem', 'ConfigMap CA should use the fixed mounted filename');
+const configMapCaMount = indentedNamedListItem(configMapControlPlane, 12, 'additional-ca');
+assertIncludes(configMapCaMount, `mountPath: "${additionalCaPath}"`, 'ConfigMap CA should use the fixed mount path');
+assertIncludes(configMapCaMount, 'subPath: additional-ca.pem', 'ConfigMap CA should use the fixed mounted filename');
 assertIncludes(configMapCaMount, 'readOnly: true', 'ConfigMap CA mount should be read-only');
 const configMapCaEnv = indentedNamedListItem(configMapControlPlane, 12, 'NODE_EXTRA_CA_CERTS');
-assertIncludes(configMapCaEnv, `value: "${oidcAdditionalCaPath}"`, 'ConfigMap CA should configure Node.js with the fixed path');
-const configMapCaVolume = indentedNamedListItem(configMapControlPlane, 8, 'oidc-additional-ca');
+assertIncludes(configMapCaEnv, `value: "${additionalCaPath}"`, 'ConfigMap CA should configure Node.js with the fixed path');
+const configMapCaVolume = indentedNamedListItem(configMapControlPlane, 8, 'additional-ca');
 assertIncludes(configMapCaVolume, 'configMap:', 'ConfigMap CA should render a ConfigMap volume source');
 assertIncludes(configMapCaVolume, 'name: "organization-configmap-trust"', 'ConfigMap CA should reference the configured resource');
 assertIncludes(configMapCaVolume, 'key: "configmap-ca.crt"', 'ConfigMap CA should select the configured key');
-assertIncludes(configMapCaVolume, 'path: oidc-ca.pem', 'ConfigMap CA key should map to the fixed filename');
+assertIncludes(configMapCaVolume, 'path: additional-ca.pem', 'ConfigMap CA key should map to the fixed filename');
 assertExcludes(configMapCaVolume, 'secret:', 'ConfigMap CA should not render a Secret volume source');
 assertExcludes(configMapCaVolume, 'optional:', 'ConfigMap CA source should fail closed when the resource or key is missing');
 
+for (const [kind, name] of [
+  ['Deployment', `${defaultPrefix}-execution-engine`],
+  ['Deployment', `${defaultPrefix}-llm-gateway`],
+  ['Job', `${defaultPrefix}-control-plane-migrate`],
+  ['Job', `${defaultPrefix}-llm-gateway-migrate`]
+]) {
+  const workload = manifestDocument(configMapCaRender, kind, name);
+  assertIncludes(workload, 'name: additional-ca', `global CA trust should mount in ${name}`);
+  assertIncludes(workload, 'name: ADDITIONAL_CA_BUNDLE_FILE', `global CA trust should configure ${name}`);
+}
+
+for (const name of [`${defaultPrefix}-control-plane`, `${defaultPrefix}-execution-engine`]) {
+  const workload = manifestDocument(llmGatewayConfigMapCaRender, 'Deployment', name);
+  assertExcludes(workload, 'name: additional-ca', 'an llm-gateway override must not affect sibling components');
+}
+
 const secretCaRender = helmTemplate(secretCaArgs);
 const secretControlPlane = manifestDocument(secretCaRender, 'Deployment', `${defaultPrefix}-control-plane`);
-const secretCaMount = indentedNamedListItem(secretControlPlane, 12, 'oidc-additional-ca');
-assertIncludes(secretCaMount, `mountPath: "${oidcAdditionalCaPath}"`, 'Secret CA should use the fixed mount path');
-assertIncludes(secretCaMount, 'subPath: oidc-ca.pem', 'Secret CA should use the fixed mounted filename');
+const secretCaMount = indentedNamedListItem(secretControlPlane, 12, 'additional-ca');
+assertIncludes(secretCaMount, `mountPath: "${additionalCaPath}"`, 'Secret CA should use the fixed mount path');
+assertIncludes(secretCaMount, 'subPath: additional-ca.pem', 'Secret CA should use the fixed mounted filename');
 assertIncludes(secretCaMount, 'readOnly: true', 'Secret CA mount should be read-only');
 const secretCaEnv = indentedNamedListItem(secretControlPlane, 12, 'NODE_EXTRA_CA_CERTS');
-assertIncludes(secretCaEnv, `value: "${oidcAdditionalCaPath}"`, 'Secret CA should configure Node.js with the fixed path');
-const secretCaVolume = indentedNamedListItem(secretControlPlane, 8, 'oidc-additional-ca');
+assertIncludes(secretCaEnv, `value: "${additionalCaPath}"`, 'Secret CA should configure Node.js with the fixed path');
+const secretCaVolume = indentedNamedListItem(secretControlPlane, 8, 'additional-ca');
 assertIncludes(secretCaVolume, 'secret:', 'Secret CA should render a Secret volume source');
 assertIncludes(secretCaVolume, 'secretName: "organization-secret-trust"', 'Secret CA should reference the configured resource');
 assertIncludes(secretCaVolume, 'key: "secret-ca.pem"', 'Secret CA should select the configured key');
-assertIncludes(secretCaVolume, 'path: oidc-ca.pem', 'Secret CA key should map to the fixed filename');
+assertIncludes(secretCaVolume, 'path: additional-ca.pem', 'Secret CA key should map to the fixed filename');
 assertExcludes(secretCaVolume, 'configMap:', 'Secret CA should not render a ConfigMap volume source');
 assertExcludes(secretCaVolume, 'optional:', 'Secret CA source should fail closed when the resource or key is missing');
 
 for (const caRender of [configMapCaRender, secretCaRender]) {
-  assertExcludes(caRender, 'NODE_TLS_REJECT_UNAUTHORIZED', 'OIDC additional CA trust must preserve TLS verification');
+  assertExcludes(caRender, 'NODE_TLS_REJECT_UNAUTHORIZED', 'additional CA trust must preserve TLS verification');
   assertExcludes(caRender, 'BEGIN CERTIFICATE', 'chart must not render inline CA certificate material');
   assertExcludes(caRender, 'BEGIN PRIVATE KEY', 'chart must not render private key material');
 }
@@ -1251,26 +1266,26 @@ assertMatch(
 );
 assertExcludes(tlsRender, 'BEGIN PRIVATE KEY', 'rendered manifests must not include raw private key material');
 
-const tlsWithOidcAdditionalCaRender = helmTemplate([...internalTlsArgs, ...configMapCaArgs]);
+const tlsWithAdditionalCaRender = helmTemplate([...internalTlsArgs, ...configMapCaArgs]);
 assertIncludes(
-  tlsWithOidcAdditionalCaRender,
+  tlsWithAdditionalCaRender,
   'name: internal-transport-ca',
-  'internal mTLS CA volume should remain configured alongside OIDC additional CA trust'
+  'internal mTLS CA volume should remain configured alongside additional CA trust'
 );
 assertIncludes(
-  tlsWithOidcAdditionalCaRender,
-  'name: oidc-additional-ca',
-  'OIDC additional CA volume should remain configured alongside internal mTLS'
+  tlsWithAdditionalCaRender,
+  'name: additional-ca',
+  'additional CA volume should remain configured alongside internal mTLS'
 );
 assertIncludes(
-  tlsWithOidcAdditionalCaRender,
+  tlsWithAdditionalCaRender,
   'name: NODE_EXTRA_CA_CERTS',
-  'OIDC additional CA environment should remain configured alongside internal mTLS'
+  'additional CA environment should remain configured alongside internal mTLS'
 );
 assertIncludes(
-  tlsWithOidcAdditionalCaRender,
+  tlsWithAdditionalCaRender,
   'INTERNAL_TRANSPORT_TLS_ENABLED: "true"',
-  'internal mTLS configuration should remain enabled alongside OIDC additional CA trust'
+  'internal mTLS configuration should remain enabled alongside additional CA trust'
 );
 
 const extraValuesDir = fs.mkdtempSync(path.join(os.tmpdir(), 'acornops-platform-values-'));
@@ -1303,7 +1318,7 @@ assertIncludes(extraRender, 'priorityClassName: "platform-critical"', 'priorityC
 assertIncludes(extraRender, 'topologySpreadConstraints:', 'topology spread constraints should render on component pods');
 assertIncludes(extraRender, 'name: control-plane-extra-env', 'extraEnvFrom should render on component containers');
 assertIncludes(extraRender, 'name: EXTRA_CONTROL_PLANE_ENV', 'extraEnv should render on component containers');
-assertIncludes(extraRender, 'name: NODE_EXTRA_CA_CERTS', 'dedicated OIDC CA environment should coexist with extraEnv');
-assertIncludes(extraRender, 'name: oidc-additional-ca', 'dedicated OIDC CA mount should coexist with extraEnvFrom');
+assertIncludes(extraRender, 'name: NODE_EXTRA_CA_CERTS', 'additional CA environment should coexist with extraEnv');
+assertIncludes(extraRender, 'name: additional-ca', 'additional CA mount should coexist with extraEnvFrom');
 
 console.log('Kubernetes platform Helm chart checks passed.');

@@ -38,8 +38,8 @@ The chart values are organized by operator concern:
 - `exposure`: Ingress hosts, class, annotations, and TLS
 - `secrets`: existing Secret name and grouped Secret key mappings
 - `auth`: session, OIDC, and password-auth settings
-- `auth.oidc.tls.additionalCaBundle`: optional existing ConfigMap or Secret with
-  additional CA trust for a private OIDC issuer
+- `global.trust.additionalCaBundle`: default existing ConfigMap or Secret with
+  additive CA trust for server-side platform components
 - `ai`: default provider/model policy
 - `agent`: control-plane defaults for agent routing, runtime limits, and agent Helm installs
 - `automation`: durable runtime mode, canary workspace allow-list, and worker poll interval
@@ -49,8 +49,9 @@ The chart values are organized by operator concern:
 - `components`: workload and component-local settings for management-console, control-plane, execution-engine, and llm-gateway
 - `components.llmGateway.providerBaseUrls`: optional deployment-wide OpenAI,
   Anthropic, and Gemini native API base URL overrides
-- `components.llmGateway.mcpEgress`: remote MCP hostname policy and optional
-  namespace-local TLS trust bundle
+- `components.{controlPlane,executionEngine,llmGateway}.trust.additionalCaBundle`:
+  optional component override for the global trust bundle
+- `components.llmGateway.mcpEgress`: remote MCP hostname policy
 
 Control-plane HA requires external Redis for agent ownership, cross-pod
 JSON-RPC command routing, run event fanout, and renewed scheduler leases. The
@@ -79,12 +80,13 @@ or Secret in the release namespace:
 ```yaml
 components:
   llmGateway:
-    mcpEgress:
-      allowedHosts: test-mcp.app.internal.org
-      caBundle:
+    trust:
+      additionalCaBundle:
         configMapKeyRef:
           name: organization-trust-bundle
           key: ca-bundle.pem
+    mcpEgress:
+      allowedHosts: test-mcp.app.internal.org
 
 networkPolicies:
   extraEgress:
@@ -98,13 +100,11 @@ networkPolicies:
 ```
 
 `secretKeyRef` with the same `name` and `key` shape is also supported. The
-selected key is mounted read-only and assigned to
-`MCP_EGRESS_CA_BUNDLE_FILE`. HTTPX extends its normal public roots with this
-bundle only for generic remote MCP traffic; provider, JWKS, Vault, and built-in
-bridge trust are unchanged. A missing resource or key prevents the gateway pod
-from starting, and this setting never disables certificate or hostname
-verification. Do not duplicate `MCP_EGRESS_CA_BUNDLE_FILE` through
-`components.llmGateway.extraEnv` while the dedicated setting is enabled.
+selected key is mounted read-only and assigned to `ADDITIONAL_CA_BUNDLE_FILE`.
+Gateway provider, Vault, JWKS, remote MCP, Redis TLS, and database TLS clients
+extend their normal public roots with it. A missing resource or key prevents
+the gateway pod from starting, and this setting never disables certificate or
+hostname verification.
 
 For k3s, override `exposure.ingress.className` to `traefik` and set
 `networkPolicies.ingressController.from` to the namespace/pod selectors used by
@@ -251,10 +251,10 @@ to a ConfigMap containing `manifest.json` and any referenced locale JSON files.
 The chart mounts the ConfigMap at `/usr/share/nginx/html/locales`; when unset,
 the console uses its bundled English and Mandarin Chinese languages.
 
-## OIDC Additional CA Trust
+## Additional CA Trust
 
-Use `auth.oidc.tls.additionalCaBundle` when the control plane must reach an OIDC
-issuer whose server certificate chains to an organization-private CA. The chart
+Use `global.trust.additionalCaBundle` when platform dependencies chain to an
+organization-private CA. The chart
 references an existing ConfigMap or Secret in the Helm release namespace; it
 does not create or copy the resource, and Kubernetes cannot mount a resource
 from another namespace. A ConfigMap is preferred because CA certificates are
@@ -269,53 +269,53 @@ certificate. The chart does not accept inline PEM content.
 ConfigMap source:
 
 ```yaml
-auth:
-  oidc:
-    tls:
-      additionalCaBundle:
-        configMapKeyRef:
-          name: organization-trust-bundle
-          key: ca.crt
+global:
+  trust:
+    additionalCaBundle:
+      configMapKeyRef:
+        name: organization-trust-bundle
+        key: ca.crt
 ```
 
 Secret source:
 
 ```yaml
-auth:
-  oidc:
-    tls:
-      additionalCaBundle:
-        secretKeyRef:
-          name: organization-trust-bundle
-          key: ca.crt
+global:
+  trust:
+    additionalCaBundle:
+      secretKeyRef:
+        name: organization-trust-bundle
+        key: ca.crt
 ```
 
 Configure exactly one source. Both `name` and `key` are required for a selected
-source. When neither source is set, the chart renders no OIDC CA volume, mount,
-or environment variable. When one is set, the control-plane container receives:
+source. When neither source is set, the chart renders no additional CA volume,
+mount, or environment variable. When one is set, the control-plane,
+execution-engine, llm-gateway, and their migration jobs receive:
 
-- a read-only `oidc-additional-ca` volume at
-  `/etc/acornops/trust/oidc-ca.pem`; and
-- chart-owned
-  `NODE_EXTRA_CA_CERTS=/etc/acornops/trust/oidc-ca.pem`.
+- a read-only `additional-ca` volume at
+  `/etc/acornops/trust/additional-ca.pem`; and
+- chart-owned `ADDITIONAL_CA_BUNDLE_FILE` for every runtime, plus
+  `NODE_EXTRA_CA_CERTS` for Node.js workloads.
 
 `NODE_EXTRA_CA_CERTS` adds the bundle to Node.js's normal public CA set; it does
 not replace public trust or disable certificate and hostname verification. It
 does apply the added trust process-wide to outbound TLS from the control plane.
-Do not override or duplicate `NODE_EXTRA_CA_CERTS` through
-`components.controlPlane.extraEnv` while the dedicated setting is enabled.
+Each component may replace the global default through its own
+`components.<name>.trust.additionalCaBundle`. Component and global bundles are
+alternatives; the chart does not concatenate them.
 
 The volume source is intentionally not optional. A missing resource or key
 prevents the pod from starting instead of silently falling back to a different
 trust policy. An unrelated or incorrect CA remains untrusted. This setting is
 also independent of `internalTransport.tls`: that feature owns AcornOps
 service-to-service HTTPS/mTLS certificates and private keys, while this feature
-adds CA-only trust for the external OIDC provider.
+adds CA-only trust for outbound TLS dependencies.
 
-Private OIDC endpoints also need an explicit control-plane egress allowance
+Private endpoints also need an explicit component egress allowance
 when `networkPolicies.enabled=true`. The default public HTTPS rule excludes
 private address ranges, so add the issuer destination under
-`networkPolicies.extraEgress.controlPlane` using selectors or CIDRs appropriate
+`networkPolicies.extraEgress.<component>` using selectors or CIDRs appropriate
 for the cluster. Supplying a CA bundle does not change NetworkPolicy behavior.
 
 ### trust-manager compatibility
@@ -363,16 +363,16 @@ the file with `subPath`. Updating the external ConfigMap or Secret therefore
 does not update trust in an already-running process. Rotate with an overlap:
 
 1. Publish a bundle containing both the old and new CA trust anchors.
-2. Restart the control-plane Deployment.
-3. Rotate the OIDC provider's serving certificate to the new CA.
+2. Restart every Deployment using the bundle.
+3. Rotate dependency serving certificates to the new CA.
 4. After the overlap window, remove the old CA from the bundle.
-5. Restart the control-plane Deployment again.
+5. Restart every affected Deployment again.
 
 Trigger each rollout explicitly, substituting the rendered Deployment name:
 
 ```bash
-kubectl -n acornops rollout restart deployment/<control-plane-deployment>
-kubectl -n acornops rollout status deployment/<control-plane-deployment>
+kubectl -n acornops rollout restart deployment/<component-deployment>
+kubectl -n acornops rollout status deployment/<component-deployment>
 ```
 
 If the cluster already runs a reloader controller, pass its workload opt-in

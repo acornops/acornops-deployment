@@ -11,7 +11,8 @@
       "properties": {
         "imagePullSecrets": { "type": "array" },
         "commonLabels": { "type": "object" },
-        "commonAnnotations": { "type": "object" }
+        "commonAnnotations": { "type": "object" },
+        "trust": { "$ref": "#/definitions/trust" }
       }
     },
     "platform": {
@@ -145,58 +146,7 @@
             "scopes": { "type": "string", "minLength": 1 },
             "useUserinfo": { "type": "boolean" },
             "requireVerifiedEmail": { "type": "boolean" },
-            "httpTimeoutMs": { "type": "integer", "minimum": 1 },
-            "tls": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "additionalCaBundle": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "configMapKeyRef": {
-                      "oneOf": [
-                        { "type": "null" },
-                        {
-                          "type": "object",
-                          "additionalProperties": false,
-                          "required": ["name", "key"],
-                          "properties": {
-                            "name": { "type": "string", "minLength": 1 },
-                            "key": { "type": "string", "minLength": 1 }
-                          }
-                        }
-                      ]
-                    },
-                    "secretKeyRef": {
-                      "oneOf": [
-                        { "type": "null" },
-                        {
-                          "type": "object",
-                          "additionalProperties": false,
-                          "required": ["name", "key"],
-                          "properties": {
-                            "name": { "type": "string", "minLength": 1 },
-                            "key": { "type": "string", "minLength": 1 }
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "allOf": [
-                    {
-                      "not": {
-                        "required": ["configMapKeyRef", "secretKeyRef"],
-                        "properties": {
-                          "configMapKeyRef": { "type": "object" },
-                          "secretKeyRef": { "type": "object" }
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
+            "httpTimeoutMs": { "type": "integer", "minimum": 1 }
           }
         },
         "password": {
@@ -591,6 +541,7 @@
                   { "required": ["auth"] },
                   { "required": ["database"] },
                   { "required": ["vault"] },
+                  { "required": ["trust"] },
                   { "required": ["mcpEgress"] },
                   { "required": ["rateLimits"] }
                 ]
@@ -795,52 +746,7 @@
                   "properties": {
                     "allowedHosts": { "type": "string" },
                     "allowPrivateNetworks": { "type": "boolean" },
-                    "allowLocalAddresses": { "type": "boolean" },
-                    "caBundle": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "configMapKeyRef": {
-                          "oneOf": [
-                            { "type": "null" },
-                            {
-                              "type": "object",
-                              "additionalProperties": false,
-                              "required": ["name", "key"],
-                              "properties": {
-                                "name": { "type": "string", "minLength": 1 },
-                                "key": { "type": "string", "minLength": 1 }
-                              }
-                            }
-                          ]
-                        },
-                        "secretKeyRef": {
-                          "oneOf": [
-                            { "type": "null" },
-                            {
-                              "type": "object",
-                              "additionalProperties": false,
-                              "required": ["name", "key"],
-                              "properties": {
-                                "name": { "type": "string", "minLength": 1 },
-                                "key": { "type": "string", "minLength": 1 }
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "allOf": [
-                        {
-                          "not": {
-                            "required": ["configMapKeyRef", "secretKeyRef"],
-                            "properties": {
-                              "configMapKeyRef": { "type": "object" },
-                              "secretKeyRef": { "type": "object" }
-                            }
-                          }
-                        }
-                      ]
-                    }
+                    "allowLocalAddresses": { "type": "boolean" }
                   }
                 },
                 "rateLimits": {
@@ -889,6 +795,58 @@
     }
   },
   "definitions": {
+    "additionalCaBundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "configMapKeyRef": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "key"],
+              "properties": {
+                "name": { "type": "string", "minLength": 1 },
+                "key": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        },
+        "secretKeyRef": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "key"],
+              "properties": {
+                "name": { "type": "string", "minLength": 1 },
+                "key": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "not": {
+            "required": ["configMapKeyRef", "secretKeyRef"],
+            "properties": {
+              "configMapKeyRef": { "type": "object" },
+              "secretKeyRef": { "type": "object" }
+            }
+          }
+        }
+      ]
+    },
+    "trust": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "additionalCaBundle": { "$ref": "#/definitions/additionalCaBundle" }
+      }
+    },
     "workload": {
       "type": "object",
       "additionalProperties": false,
@@ -937,6 +895,7 @@
         "priorityClassName": { "type": "string" },
         "extraEnv": { "type": "array" },
         "extraEnvFrom": { "type": "array" },
+        "trust": { "$ref": "#/definitions/trust" },
         "basePath": { "type": "string" },
         "locales": { "type": "object" },
         "apiDocsEnabled": { "type": "boolean" },

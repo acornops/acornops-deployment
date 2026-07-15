@@ -10,6 +10,11 @@ global:
   commonLabels: {}
   # Annotations added to top-level workload and service objects.
   commonAnnotations: {}
+  trust:
+    # Default additive CA bundle for every server-side platform component.
+    additionalCaBundle:
+      configMapKeyRef: null
+      secretKeyRef: null
 
 platform:
   # Public API base URL for the platform control plane.
@@ -102,11 +107,6 @@ auth:
     # Keep true unless a trusted provider intentionally emits email_verified=false.
     requireVerifiedEmail: true
     httpTimeoutMs: 10000
-    tls:
-      # Optional namespace-local CA bundle used to extend Node.js trust for OIDC.
-      additionalCaBundle:
-        configMapKeyRef: null
-        secretKeyRef: null
   password:
     # Username/password auth can run alongside OIDC.
     enabled: true
@@ -464,6 +464,11 @@ components:
     priorityClassName: ""
     extraEnv: []
     extraEnvFrom: []
+    trust:
+      # When configured, replaces global.trust.additionalCaBundle for this component.
+      additionalCaBundle:
+        configMapKeyRef: null
+        secretKeyRef: null
 
   executionEngine:
     enabled: true
@@ -529,6 +534,10 @@ components:
     priorityClassName: ""
     extraEnv: []
     extraEnvFrom: []
+    trust:
+      additionalCaBundle:
+        configMapKeyRef: null
+        secretKeyRef: null
 
   llmGateway:
     enabled: true
@@ -565,10 +574,6 @@ components:
       allowedHosts: ""
       allowPrivateNetworks: false
       allowLocalAddresses: false
-      # Optional namespace-local CA bundle that extends trust only for remote MCP.
-      caBundle:
-        configMapKeyRef: null
-        secretKeyRef: null
     rateLimits:
       windowSeconds: 60
       llmPerWindow: 100
@@ -613,6 +618,10 @@ components:
     priorityClassName: ""
     extraEnv: []
     extraEnvFrom: []
+    trust:
+      additionalCaBundle:
+        configMapKeyRef: null
+        secretKeyRef: null
 
 migrations:
   # Runs database migrations as Helm pre-install/pre-upgrade hooks.
