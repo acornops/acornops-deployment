@@ -52,7 +52,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: llm-gateway
-          image: ghcr.io/acornops/llm-gateway:0.0.1-experimental.8
+          image: ghcr.io/acornops/llm-gateway:0.0.1-experimental.11
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

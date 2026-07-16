@@ -378,7 +378,7 @@ components:
     basePath: /
     image:
       repository: ghcr.io/acornops/management-console
-      tag: 0.0.1-experimental.16
+      tag: 0.0.1-experimental.20
       pullPolicy: IfNotPresent
     service:
       port: 80
@@ -443,7 +443,7 @@ components:
       allowedPrivateHosts: []
     image:
       repository: ghcr.io/acornops/control-plane
-      tag: 0.0.1-experimental.17
+      tag: 0.0.1-experimental.20
       pullPolicy: IfNotPresent
     service:
       port: 8081
@@ -513,7 +513,7 @@ components:
     maxRequestBodyBytes: 1000000
     image:
       repository: ghcr.io/acornops/execution-engine
-      tag: 0.0.1-experimental.8
+      tag: 0.0.1-experimental.9
       pullPolicy: IfNotPresent
     service:
       port: 8080
@@ -597,7 +597,7 @@ components:
       requireRedisInProduction: true
     image:
       repository: ghcr.io/acornops/llm-gateway
-      tag: 0.0.1-experimental.9
+      tag: 0.0.1-experimental.11
       pullPolicy: IfNotPresent
     service:
       port: 8001

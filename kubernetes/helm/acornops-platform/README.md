@@ -257,11 +257,11 @@ the generated command:
 agent:
   helm:
     chartRef: oci://docker.artifact.internal.org/acornops/charts/acornops-agentk
-    chartVersion: 0.0.1-experimental.8
+    chartVersion: 0.0.1-experimental.9
     values:
       image:
         repository: docker.artifact.internal.org/ghcr.io/acornops/agentk
-        tag: 0.0.1-experimental.8
+        tag: 0.0.1-experimental.9
         pullPolicy: IfNotPresent
       imagePullSecrets:
         - name: internal-registry
