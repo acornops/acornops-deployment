@@ -286,6 +286,10 @@ cp env/vm/.env.agent.example env/vm/.env.agent
 This env file is used by `task agent-deploy` and `task agent-remove`. For Kubernetes platform deployment, use `env/k8s/.env.agent` by passing `ENV_AGENT=env/k8s/.env.agent`.
 
 2. Set required values (`ACORNOPS_AGENT_PLATFORM_URL`, `ACORNOPS_CLUSTER_ID`, `ACORNOPS_AGENT_KEY`).
+Set `ACORNOPS_AGENT_WRITE_ENABLED=true` only for clusters where approved
+remediation is intended. The deploy task then grants `patch` only for
+Deployments, StatefulSets, and DaemonSets; read-only installs receive no
+mutation verbs.
 
 For active-passive agent HA, set `K8S_AGENT_REPLICAS` above `1` and `ACORNOPS_AGENT_LEADER_ELECTION_ENABLED=true`. Passive replicas participate in Kubernetes Lease election only; they do not connect to the control plane until elected.
 

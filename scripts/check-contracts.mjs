@@ -208,6 +208,12 @@ const localEnvExample = readFileSync(path.join(root, 'env/local/.env.example'), 
 expect(!agentDeploy.includes('ACORNOPS_TARGET_ID'), 'Deployment agentk env should not expose a separate target id');
 expect(agentDeploy.includes('ACORNOPS_CLUSTER_ID'), 'Deployment agentk env should expose ACORNOPS_CLUSTER_ID');
 expect(
+  agentDeploy.includes('if [[ "${ACORNOPS_AGENT_WRITE_ENABLED}" == "true" ]]') &&
+    agentDeploy.includes('resources: ["deployments", "statefulsets", "daemonsets"]') &&
+    agentDeploy.includes('verbs: ["patch"]'),
+  'Manual AgentK deployment should grant least-privilege workload patch RBAC only when writes are enabled'
+);
+expect(
   agentDeploy.includes('ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE') &&
     agentDeploy.includes('NODE_EXTRA_CA_CERTS') &&
     agentDeploy.includes('/etc/acornops/trust/additional-ca.pem'),
