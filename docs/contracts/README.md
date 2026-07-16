@@ -118,8 +118,12 @@ default. The chart renders `auditLogging.retentionDays` to
 `WORKSPACE_AUDIT_RETENTION_DAYS`; it must be a positive integer and defaults to
 `365`.
 
-AI provider/model policy is configured by Helm `ai.*` values or the matching
-Compose environment variables. The chart renders reasoning summary policy to
+AI provider/model policy is configured by Helm `ai.allowedProviders` and
+`ai.allowedProviderModels` or the matching Compose environment variables.
+Provider-scoped models use the control-plane-native
+`provider:model|model;provider:model` serialization. The chart renders them to
+`LLM_ALLOWED_PROVIDERS` and `LLM_ALLOWED_PROVIDER_MODELS`. The chart renders
+reasoning summary policy to
 `LLM_REASONING_SUMMARIES_ENABLED`,
 `LLM_ALLOWED_REASONING_SUMMARY_MODES`, and
 `LLM_ALLOWED_REASONING_EFFORTS`. These values are a deployment ceiling only;

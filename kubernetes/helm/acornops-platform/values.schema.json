@@ -194,7 +194,7 @@
         "defaultProvider": { "type": "string", "minLength": 1 },
         "defaultModel": { "type": "string", "minLength": 1 },
         "allowedProviders": { "type": "string", "minLength": 1 },
-        "allowedModels": { "type": "string", "minLength": 1 },
+        "allowedProviderModels": { "type": "string", "minLength": 1 },
         "reasoningSummariesEnabled": { "type": "boolean" },
         "allowedReasoningSummaryModes": {
           "type": "string",

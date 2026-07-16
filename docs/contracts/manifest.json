@@ -55,7 +55,7 @@
       "LLM_DEFAULT_PROVIDER",
       "LLM_DEFAULT_MODEL",
       "LLM_ALLOWED_PROVIDERS",
-      "LLM_ALLOWED_MODELS",
+      "LLM_ALLOWED_PROVIDER_MODELS",
       "LLM_REASONING_SUMMARIES_ENABLED",
       "LLM_ALLOWED_REASONING_SUMMARY_MODES",
       "LLM_ALLOWED_REASONING_EFFORTS"
@@ -81,7 +81,7 @@
       "ai.defaultProvider",
       "ai.defaultModel",
       "ai.allowedProviders",
-      "ai.allowedModels",
+      "ai.allowedProviderModels",
       "ai.reasoningSummariesEnabled",
       "ai.allowedReasoningSummaryModes",
       "ai.allowedReasoningEfforts"

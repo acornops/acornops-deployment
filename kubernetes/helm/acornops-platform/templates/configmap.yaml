@@ -83,7 +83,7 @@ data:
   LLM_DEFAULT_PROVIDER: {{ .Values.ai.defaultProvider | quote }}
   LLM_DEFAULT_MODEL: {{ .Values.ai.defaultModel | quote }}
   LLM_ALLOWED_PROVIDERS: {{ .Values.ai.allowedProviders | quote }}
-  LLM_ALLOWED_MODELS: {{ .Values.ai.allowedModels | quote }}
+  LLM_ALLOWED_PROVIDER_MODELS: {{ .Values.ai.allowedProviderModels | quote }}
   LLM_REASONING_SUMMARIES_ENABLED: {{ .Values.ai.reasoningSummariesEnabled | quote }}
   LLM_ALLOWED_REASONING_SUMMARY_MODES: {{ .Values.ai.allowedReasoningSummaryModes | quote }}
   LLM_ALLOWED_REASONING_EFFORTS: {{ .Values.ai.allowedReasoningEfforts | quote }}

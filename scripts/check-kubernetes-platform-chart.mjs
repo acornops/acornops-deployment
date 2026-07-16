@@ -1181,8 +1181,22 @@ assertIncludes(defaultRender, 'LLM_DEFAULT_PROVIDER: "openai"', 'OpenAI should b
 assertIncludes(defaultRender, 'LLM_DEFAULT_MODEL: "gpt-5.5"', 'GPT-5.5 should be the default LLM model');
 assertIncludes(
   defaultRender,
-  'LLM_ALLOWED_MODELS: "gpt-5.5,gpt-5.4,gpt-5.4-mini,gpt-5.4-nano,gpt-5,gpt-5-mini,gpt-5-nano,claude-3-5-sonnet-latest,gemini-2.0-flash"',
-  'default LLM allow list should include GPT-5 OpenAI models'
+  'LLM_ALLOWED_PROVIDER_MODELS: "openai:gpt-5.5|gpt-5.4|gpt-5.4-mini|gpt-5.4-nano|gpt-5|gpt-5-mini|gpt-5-nano;anthropic:claude-fable-5|claude-opus-4-8|claude-sonnet-4-6|claude-haiku-4-5;gemini:gemini-3.5-flash|gemini-3.5-flash-lite|gemini-3.1-pro|gemini-3.1-flash|gemini-3.1-flash-lite|gemini-2.5-pro|gemini-2.5-flash|gemini-2.5-flash-lite|gemini-2.0-flash|gemini-2.0-flash-lite"',
+  'default LLM allow list should be scoped by provider'
+);
+assertExcludes(defaultRender, 'LLM_ALLOWED_MODELS:', 'legacy flat LLM model policy should not render');
+const customProviderModelsRender = helmTemplate([
+  '--set-string',
+  'ai.allowedProviderModels=openai:workspace-primary|workspace-secondary'
+]);
+assertIncludes(
+  customProviderModelsRender,
+  'LLM_ALLOWED_PROVIDER_MODELS: "openai:workspace-primary|workspace-secondary"',
+  'provider-scoped model policy should render from its first-class Helm value'
+);
+expectHelmFailure(
+  ['--set-string', 'ai.allowedModels=workspace-primary'],
+  'legacy ai.allowedModels should be rejected by the chart schema'
 );
 assertExcludes(defaultRender, 'gpt-4.1-mini', 'default chart policy should not allow GPT-4 OpenAI models');
 assertExcludes(defaultRender, 'CSRF_COOKIE_NAME:', 'CSRF cookie name is a fixed browser contract and should not be chart-configurable');
