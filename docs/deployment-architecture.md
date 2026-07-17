@@ -3,7 +3,7 @@
 This document describes how the deployment repository assembles and exposes the
 AcornOps platform. For the whole-platform service model, start from the
 workspace-level architecture at `../docs/system-architecture.md` when this
-repository is checked out through `acornops-workspace` from the repository root,
+repository is checked out through the `acornops` workspace from the repository root,
 or `../../docs/system-architecture.md` from this docs directory.
 
 Component repositories own service internals. This repository owns the
