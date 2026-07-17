@@ -33,7 +33,10 @@ Start from [docs/index.md](docs/index.md) for the repo-local knowledge base.
 
 ## Agent-Assisted Development
 
-This repository supports human and agent-assisted development. Start coding agents from this repository root for deployment-only work, and from the `acornops-workspace` root for changes that touch multiple AcornOps repositories.
+This repository supports human and agent-assisted development. Start coding
+agents from this repository root for deployment-only work, and from the
+AcornOps workspace cloned from the [`acornops`](https://github.com/acornops/acornops)
+repository for changes that touch multiple AcornOps repositories.
 
 ## Contracts
 
