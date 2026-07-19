@@ -20,9 +20,31 @@ spec:
         {{- if .Values.components.managementConsole.enabled }}
         - {{ .Values.exposure.ingress.consoleHost | quote }}
         {{- end }}
+        {{- if .Values.components.platformAdminConsole.enabled }}
+        - {{ .Values.exposure.ingress.adminHost | quote }}
+        {{- end }}
       secretName: {{ .Values.exposure.ingress.tls.secretName | quote }}
   {{- end }}
   rules:
+    {{- if .Values.components.platformAdminConsole.enabled }}
+    - host: {{ .Values.exposure.ingress.adminHost | quote }}
+      http:
+        paths:
+          - path: /admin-auth
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "acornops-platform.componentFullname" (dict "root" . "component" "control-plane") }}
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "acornops-platform.componentFullname" (dict "root" . "component" "platform-admin-console") }}
+                port:
+                  name: http
+    {{- end }}
     {{- if .Values.components.managementConsole.enabled }}
     - host: {{ .Values.exposure.ingress.consoleHost | quote }}
       http:

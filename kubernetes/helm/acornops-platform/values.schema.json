@@ -20,7 +20,8 @@
       "additionalProperties": false,
       "properties": {
         "publicUrl": { "type": "string", "minLength": 1 },
-        "consoleUrl": { "type": "string", "minLength": 1 }
+        "consoleUrl": { "type": "string", "minLength": 1 },
+        "adminConsoleUrl": { "type": "string", "minLength": 1 }
       }
     },
     "automation": {
@@ -44,6 +45,7 @@
             "className": { "type": "string" },
             "apiHost": { "type": "string", "minLength": 1 },
             "consoleHost": { "type": "string", "minLength": 1 },
+            "adminHost": { "type": "string", "minLength": 1 },
             "annotations": { "type": "object" },
             "tls": {
               "type": "object",
@@ -82,6 +84,8 @@
                 "redisUrl": { "type": "string", "minLength": 1 },
                 "oidcClientSecret": { "type": "string", "minLength": 1 },
                 "csrfSecret": { "type": "string", "minLength": 1 },
+                "adminOidcClientSecret": { "type": "string", "minLength": 1 },
+                "adminCsrfSecret": { "type": "string", "minLength": 1 },
                 "gatewaySigningPrivateKeyPemB64": { "type": "string", "minLength": 1 },
                 "orchestrationServiceToken": { "type": "string", "minLength": 1 },
                 "externalIntegrationClientsJson": { "type": "string", "minLength": 1 },
@@ -107,6 +111,13 @@
                 "adminToken": { "type": "string", "minLength": 1 },
                 "secretsKekBase64": { "type": "string", "minLength": 1 },
                 "vaultToken": { "type": "string", "minLength": 1 }
+              }
+            },
+            "platformAdminConsole": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "adminToken": { "type": "string", "minLength": 1 }
               }
             }
           }
@@ -310,6 +321,42 @@
             "existingSecretName": { "type": "string" },
             "tokensJsonKey": { "type": "string" }
           }
+        },
+        "humanAuth": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "required": { "type": "boolean" },
+            "session": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "maxAgeSeconds": { "type": "integer", "minimum": 1 },
+                "idleTimeoutSeconds": { "type": "integer", "minimum": 1 },
+                "reauthSeconds": { "type": "integer", "minimum": 1 }
+              }
+            },
+            "oidc": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "providerName": { "type": "string" },
+                "issuerUrl": { "type": "string" },
+                "publicIssuerUrl": { "type": "string" },
+                "clientId": { "type": "string" },
+                "tokenEndpointAuthMethod": { "type": "string", "enum": ["client_secret_basic", "client_secret_post"] },
+                "authorizationEndpointOverride": { "type": "string" },
+                "tokenEndpointOverride": { "type": "string" },
+                "jwksUriOverride": { "type": "string" },
+                "redirectUri": { "type": "string" },
+                "scopes": { "type": "string" },
+                "allowedRoles": { "type": "string" },
+                "requiredAcrValues": { "type": "string" },
+                "requiredAmrValues": { "type": "string" },
+                "httpTimeoutMs": { "type": "integer", "minimum": 1 }
+              }
+            }
+          }
         }
       },
       "if": {
@@ -448,6 +495,7 @@
               "additionalProperties": false,
               "properties": {
                 "controlPlane": { "$ref": "#/definitions/internalTransportCertificate" },
+                "platformAdminConsole": { "$ref": "#/definitions/internalTransportCertificate" },
                 "executionEngine": { "$ref": "#/definitions/internalTransportCertificate" },
                 "llmGateway": { "$ref": "#/definitions/internalTransportCertificate" }
               }
@@ -505,6 +553,12 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "platformAdminConsole": {
+          "allOf": [
+            { "$ref": "#/definitions/workload" },
+            { "type": "object", "additionalProperties": true }
+          ]
+        },
         "managementConsole": {
           "allOf": [
             { "$ref": "#/definitions/workload" },

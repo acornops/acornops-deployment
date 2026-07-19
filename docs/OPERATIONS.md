@@ -259,24 +259,65 @@ when email delivery is disabled.
 
 ### Admin API and workspace plans
 
-The admin API is off by default. Enable it only for reviewed operator
-environments, and provide token descriptors through the platform Secret:
+The platform-admin console and admin API are off by default. Production exposes
+the console at `https://admin.acornops.dev`; it does not expose `/admin/v1` on
+the public API host. The console BFF reaches those routes over the internal
+control-plane service and every request requires both its workload token and an
+OIDC-authenticated human session.
 
 ```yaml
+platform:
+  adminConsoleUrl: https://admin.acornops.dev
+exposure:
+  ingress:
+    adminHost: admin.acornops.dev
 adminApi:
   enabled: true
   ingress:
-    enabled: true
+    enabled: false
   tokens:
     existingSecretName: acornops-platform-secrets
     tokensJsonKey: CONTROL_PLANE_ADMIN_TOKENS_JSON
+  humanAuth:
+    required: true
+    session:
+      maxAgeSeconds: 3600
+      idleTimeoutSeconds: 900
+      reauthSeconds: 900
+    oidc:
+      issuerUrl: https://keycloak.acornops.dev/realms/acornops
+      clientId: acornops-platform-admin
+      allowedRoles: platform-admin,platform-admin-viewer,platform-admin-auditor
+      requiredAmrValues: mfa,otp,webauthn,hwk
+components:
+  platformAdminConsole:
+    enabled: true
 ```
 
-`CONTROL_PLANE_ADMIN_TOKENS_JSON` must contain SHA-256 hash descriptors, not raw
-tokens. Rotate raw tokens out of band, update the Secret hash descriptor, and
-roll the control-plane pods. The chart renders `CONTROL_PLANE_ADMIN_API_ENABLED`
-from `adminApi.enabled` and loads `CONTROL_PLANE_ADMIN_TOKENS_JSON` only from a
-Secret. Ingress renders `/admin` only under `exposure.ingress.apiHost`.
+Create one random BFF token. Store the raw token at the Secret key configured by
+`secrets.keys.platformAdminConsole.adminToken`; store only its SHA-256 descriptor
+in `CONTROL_PLANE_ADMIN_TOKENS_JSON`. Give that descriptor exactly the seven
+console scopes from the contract, never `admin:*`. Store independently generated
+`ADMIN_OIDC_CLIENT_SECRET` and `ADMIN_CSRF_SECRET` values at their configured
+Secret keys. Rotate the raw token and descriptor together, then roll both the
+control plane and console.
+
+In Keycloak, create a confidential `acornops-platform-admin` client using the
+authorization-code flow, exact redirect URI
+`https://admin.acornops.dev/admin-auth/oidc/callback`, and web origin
+`https://admin.acornops.dev`. Require PKCE S256 and MFA. Create only the client
+or realm roles `platform-admin`, `platform-admin-viewer`, and
+`platform-admin-auditor`, assign them to named administrator accounts or tightly
+controlled groups, and include the roles plus `amr` or an accepted `acr` value in
+the ID token. Do not enable direct-access grants, password grants, service-account
+login for humans, wildcard redirects, or self-registration for this client.
+
+When `internalTransport.tls.enabled=true`, also provide
+`internalTransport.tls.certificates.platformAdminConsole.secretName`. The chart
+mounts its CA and client certificate and the BFF uses mTLS for its admin token.
+Keep `adminApi.ingress.enabled=false`; `/admin-auth` is the only control-plane
+path routed on the admin host, while `/admin-console-api` remains same-origin at
+the BFF.
 
 Workspace plans are configured with `workspacePlans` and rendered to
 `WORKSPACE_PLANS_CONFIG_JSON` for the control plane:

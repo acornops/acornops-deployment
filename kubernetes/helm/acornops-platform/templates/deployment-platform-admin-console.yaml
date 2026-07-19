@@ -1,0 +1,110 @@
+{{- if .Values.components.platformAdminConsole.enabled }}
+{{- if not .Values.components.controlPlane.enabled }}
+{{- fail "components.controlPlane.enabled must be true when components.platformAdminConsole.enabled=true" }}
+{{- end }}
+{{- if not .Values.adminApi.enabled }}
+{{- fail "adminApi.enabled must be true when components.platformAdminConsole.enabled=true" }}
+{{- end }}
+{{- if not .Values.adminApi.humanAuth.required }}
+{{- fail "adminApi.humanAuth.required must be true when components.platformAdminConsole.enabled=true" }}
+{{- end }}
+{{- if not .Values.internalTransport.tls.enabled }}
+{{- fail "internalTransport.tls.enabled must be true when components.platformAdminConsole.enabled=true" }}
+{{- end }}
+{{- if not .Values.internalTransport.tls.requireClientCert }}
+{{- fail "internalTransport.tls.requireClientCert must be true when components.platformAdminConsole.enabled=true" }}
+{{- end }}
+{{- if and .Values.exposure.ingress.enabled (not .Values.exposure.ingress.tls.enabled) }}
+{{- fail "exposure.ingress.tls.enabled must be true when the chart exposes the platform admin console" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "acornops-platform.componentFullname" (dict "root" . "component" "platform-admin-console") }}
+  labels:
+    {{- include "acornops-platform.componentLabels" (dict "root" . "component" "platform-admin-console") | nindent 4 }}
+spec:
+  replicas: {{ .Values.components.platformAdminConsole.replicas }}
+  selector:
+    matchLabels:
+      {{- include "acornops-platform.selectorLabels" (dict "root" . "component" "platform-admin-console") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "acornops-platform.selectorLabels" (dict "root" . "component" "platform-admin-console") | nindent 8 }}
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "acornops-platform.componentFullname" (dict "root" . "component" "platform-admin-console") }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.components.platformAdminConsole.podSecurityContext | nindent 8 }}
+      containers:
+        - name: platform-admin-console
+          image: {{ include "acornops-platform.image" (dict "root" . "image" .Values.components.platformAdminConsole.image) | quote }}
+          imagePullPolicy: {{ .Values.components.platformAdminConsole.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.components.platformAdminConsole.containerSecurityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.components.platformAdminConsole.service.targetPort }}
+          {{- if .Values.internalTransport.tls.enabled }}
+          volumeMounts:
+            - name: internal-transport-ca
+              mountPath: {{ printf "%s/ca" (include "acornops-platform.internalTlsMountPath" .) | quote }}
+              readOnly: true
+            - name: internal-transport-platform-admin-console
+              mountPath: {{ printf "%s/platform-admin-console" (include "acornops-platform.internalTlsMountPath" .) | quote }}
+              readOnly: true
+          {{- end }}
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: {{ .Values.components.platformAdminConsole.service.targetPort | quote }}
+            - name: HOST
+              value: 0.0.0.0
+            - name: ADMIN_CONSOLE_DATA_MODE
+              value: control-plane
+            - name: CONTROL_PLANE_ADMIN_BASE_URL
+              value: {{ include "acornops-platform.controlPlaneInternalUrl" . | quote }}
+            {{- if .Values.internalTransport.tls.enabled }}
+            - name: CONTROL_PLANE_ADMIN_TLS_CA_FILE
+              value: {{ include "acornops-platform.internalTlsCaFile" . | quote }}
+            - name: CONTROL_PLANE_ADMIN_TLS_CERT_FILE
+              value: {{ include "acornops-platform.internalTlsCertFile" (dict "root" . "component" "platform-admin-console" "certKey" .Values.internalTransport.tls.certificates.platformAdminConsole.certKey) | quote }}
+            - name: CONTROL_PLANE_ADMIN_TLS_KEY_FILE
+              value: {{ include "acornops-platform.internalTlsKeyFile" (dict "root" . "component" "platform-admin-console" "keyKey" .Values.internalTransport.tls.certificates.platformAdminConsole.keyKey) | quote }}
+            {{- end }}
+            - name: CONTROL_PLANE_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "acornops-platform.secretName" . }}
+                  key: {{ .Values.secrets.keys.platformAdminConsole.adminToken }}
+            {{- with .Values.components.platformAdminConsole.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet: { path: /health/live, port: http }
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+          resources:
+            {{- toYaml .Values.components.platformAdminConsole.resources | nindent 12 }}
+      {{- if .Values.internalTransport.tls.enabled }}
+      volumes:
+        - name: internal-transport-ca
+          secret:
+            secretName: {{ required "internalTransport.tls.ca.secretName is required when internal TLS is enabled" .Values.internalTransport.tls.ca.secretName | quote }}
+            items:
+              - key: {{ .Values.internalTransport.tls.ca.key | quote }}
+                path: {{ .Values.internalTransport.tls.ca.key | quote }}
+        - name: internal-transport-platform-admin-console
+          secret:
+            secretName: {{ required "internalTransport.tls.certificates.platformAdminConsole.secretName is required when internal TLS is enabled" .Values.internalTransport.tls.certificates.platformAdminConsole.secretName | quote }}
+            items:
+              - key: {{ .Values.internalTransport.tls.certificates.platformAdminConsole.certKey | quote }}
+                path: {{ .Values.internalTransport.tls.certificates.platformAdminConsole.certKey | quote }}
+              - key: {{ .Values.internalTransport.tls.certificates.platformAdminConsole.keyKey | quote }}
+                path: {{ .Values.internalTransport.tls.certificates.platformAdminConsole.keyKey | quote }}
+      {{- end }}
+      {{- include "acornops-platform.workloadScheduling" (dict "values" .Values.components.platformAdminConsole) | nindent 6 }}
+{{- end }}

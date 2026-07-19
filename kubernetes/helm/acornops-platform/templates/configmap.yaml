@@ -23,7 +23,7 @@ data:
   AUTOMATION_CANARY_WORKSPACE_IDS: {{ .Values.automation.canaryWorkspaceIds | quote }}
   AUTOMATION_WORKER_INTERVAL_MS: {{ .Values.automation.workerIntervalMs | quote }}
   AGENT_WS_MAX_PAYLOAD_BYTES: {{ .Values.agent.routing.maxWebSocketPayloadBytes | int | quote }}
-  CORS_ORIGIN: {{ default (include "acornops-platform.managementConsoleUrl" .) .Values.components.controlPlane.corsOrigin | quote }}
+  CORS_ORIGIN: {{ default (ternary (printf "%s,%s" (include "acornops-platform.managementConsoleUrl" .) .Values.platform.adminConsoleUrl) (include "acornops-platform.managementConsoleUrl" .) .Values.components.platformAdminConsole.enabled) .Values.components.controlPlane.corsOrigin | quote }}
   SESSION_COOKIE_NAME: {{ .Values.auth.session.cookieName | quote }}
   SESSION_MAX_AGE_SECONDS: {{ .Values.auth.session.maxAgeSeconds | quote }}
   SESSION_IDLE_TIMEOUT_SECONDS: {{ .Values.auth.session.idleTimeoutSeconds | quote }}
@@ -90,6 +90,25 @@ data:
   WORKSPACE_ROLES_CONFIG_JSON: {{ toJson (default dict .Values.workspaceRoles) | quote }}
   WORKSPACE_PLANS_CONFIG_JSON: {{ toJson .Values.workspacePlans | quote }}
   CONTROL_PLANE_ADMIN_API_ENABLED: {{ .Values.adminApi.enabled | quote }}
+  CONTROL_PLANE_ADMIN_HUMAN_AUTH_REQUIRED: {{ .Values.adminApi.humanAuth.required | quote }}
+  PLATFORM_ADMIN_CONSOLE_BASE_URL: {{ .Values.platform.adminConsoleUrl | quote }}
+  ADMIN_SESSION_MAX_AGE_SECONDS: {{ .Values.adminApi.humanAuth.session.maxAgeSeconds | quote }}
+  ADMIN_SESSION_IDLE_TIMEOUT_SECONDS: {{ .Values.adminApi.humanAuth.session.idleTimeoutSeconds | quote }}
+  ADMIN_SESSION_REAUTH_SECONDS: {{ .Values.adminApi.humanAuth.session.reauthSeconds | quote }}
+  ADMIN_OIDC_PROVIDER_NAME: {{ .Values.adminApi.humanAuth.oidc.providerName | quote }}
+  ADMIN_OIDC_ISSUER_URL: {{ .Values.adminApi.humanAuth.oidc.issuerUrl | quote }}
+  ADMIN_OIDC_PUBLIC_ISSUER_URL: {{ .Values.adminApi.humanAuth.oidc.publicIssuerUrl | quote }}
+  ADMIN_OIDC_CLIENT_ID: {{ .Values.adminApi.humanAuth.oidc.clientId | quote }}
+  ADMIN_OIDC_TOKEN_ENDPOINT_AUTH_METHOD: {{ .Values.adminApi.humanAuth.oidc.tokenEndpointAuthMethod | quote }}
+  ADMIN_OIDC_AUTHORIZATION_ENDPOINT_OVERRIDE: {{ .Values.adminApi.humanAuth.oidc.authorizationEndpointOverride | quote }}
+  ADMIN_OIDC_TOKEN_ENDPOINT_OVERRIDE: {{ .Values.adminApi.humanAuth.oidc.tokenEndpointOverride | quote }}
+  ADMIN_OIDC_JWKS_URI_OVERRIDE: {{ .Values.adminApi.humanAuth.oidc.jwksUriOverride | quote }}
+  ADMIN_OIDC_REDIRECT_URI: {{ default (printf "%s/admin-auth/oidc/callback" .Values.platform.adminConsoleUrl) .Values.adminApi.humanAuth.oidc.redirectUri | quote }}
+  ADMIN_OIDC_SCOPES: {{ .Values.adminApi.humanAuth.oidc.scopes | quote }}
+  ADMIN_OIDC_ALLOWED_ROLES: {{ .Values.adminApi.humanAuth.oidc.allowedRoles | quote }}
+  ADMIN_OIDC_REQUIRED_ACR_VALUES: {{ .Values.adminApi.humanAuth.oidc.requiredAcrValues | quote }}
+  ADMIN_OIDC_REQUIRED_AMR_VALUES: {{ .Values.adminApi.humanAuth.oidc.requiredAmrValues | quote }}
+  ADMIN_OIDC_HTTP_TIMEOUT_MS: {{ .Values.adminApi.humanAuth.oidc.httpTimeoutMs | quote }}
   AGENT_CONTEXT_MAX_TOKENS: {{ .Values.agent.runtime.contextMaxTokens | quote }}
   AGENT_BUDGET_CENTS: {{ .Values.agent.runtime.budgetCents | quote }}
   AGENT_LLM_TEMPERATURE: {{ .Values.agent.runtime.temperature | quote }}

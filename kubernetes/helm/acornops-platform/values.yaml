@@ -21,6 +21,8 @@ platform:
   publicUrl: https://api.acornops.dev
   # Public browser URL for the management console.
   consoleUrl: https://console.acornops.dev
+  # Dedicated privileged browser origin.
+  adminConsoleUrl: https://admin.acornops.dev
 
 automation:
   # off, shadow, canary, or on. Keep off until migrations/backfill complete.
@@ -38,6 +40,8 @@ exposure:
     apiHost: api.acornops.dev
     # Public host for the browser console. Same-origin /api is routed to control-plane.
     consoleHost: console.acornops.dev
+    # Public host for the platform administration console.
+    adminHost: admin.acornops.dev
     # Annotations for ingress-controller-specific behavior.
     annotations: {}
     tls:
@@ -61,6 +65,8 @@ secrets:
       redisUrl: CONTROL_PLANE_REDIS_URL
       oidcClientSecret: OIDC_CLIENT_SECRET
       csrfSecret: CSRF_SECRET
+      adminOidcClientSecret: ADMIN_OIDC_CLIENT_SECRET
+      adminCsrfSecret: ADMIN_CSRF_SECRET
       gatewaySigningPrivateKeyPemB64: GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64
       orchestrationServiceToken: ORCH_SERVICE_TOKEN
       externalIntegrationClientsJson: EXTERNAL_INTEGRATION_CLIENTS_JSON
@@ -76,6 +82,8 @@ secrets:
       adminToken: LLM_GATEWAY_ADMIN_TOKEN
       secretsKekBase64: SECRETS_KEK_BASE64
       vaultToken: VAULT_TOKEN
+    platformAdminConsole:
+      adminToken: CONTROL_PLANE_ADMIN_TOKEN
 
 auth:
   session:
@@ -188,6 +196,27 @@ adminApi:
   tokens:
     existingSecretName: ""
     tokensJsonKey: CONTROL_PLANE_ADMIN_TOKENS_JSON
+  humanAuth:
+    required: true
+    session:
+      maxAgeSeconds: 3600
+      idleTimeoutSeconds: 900
+      reauthSeconds: 900
+    oidc:
+      providerName: keycloak
+      issuerUrl: https://keycloak.acornops.dev/realms/acornops
+      publicIssuerUrl: ""
+      clientId: acornops-platform-admin
+      tokenEndpointAuthMethod: client_secret_basic
+      authorizationEndpointOverride: ""
+      tokenEndpointOverride: ""
+      jwksUriOverride: ""
+      redirectUri: ""
+      scopes: openid profile email
+      allowedRoles: platform-admin,platform-admin-viewer,platform-admin-auditor
+      requiredAcrValues: ""
+      requiredAmrValues: mfa,otp,webauthn,hwk
+      httpTimeoutMs: 10000
 
 agent:
   routing:
@@ -250,6 +279,10 @@ internalTransport:
       llmGatewayPort: 18001
     certificates:
       controlPlane:
+        secretName: ""
+        certKey: tls.crt
+        keyKey: tls.key
+      platformAdminConsole:
         secretName: ""
         certKey: tls.crt
         keyKey: tls.key
@@ -372,6 +405,41 @@ networkPolicies:
     llmGatewayMigrate: []
 
 components:
+  platformAdminConsole:
+    enabled: false
+    replicas: 2
+    image:
+      repository: ghcr.io/acornops/platform-admin-console
+      tag: 0.1.0
+      pullPolicy: IfNotPresent
+    service:
+      port: 80
+      targetPort: 4173
+    podAnnotations: {}
+    podLabels: {}
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+      seccompProfile:
+        type: RuntimeDefault
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    resources:
+      requests: { cpu: 50m, memory: 64Mi }
+      limits: { cpu: 250m, memory: 256Mi }
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    topologySpreadConstraints: []
+    priorityClassName: ""
+    extraEnv: []
+    extraEnvFrom: []
+
   managementConsole:
     enabled: true
     replicas: 3

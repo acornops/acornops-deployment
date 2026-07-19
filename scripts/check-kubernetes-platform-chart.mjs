@@ -55,6 +55,15 @@ const internalTlsArgs = [
   '--set-string',
   'internalTransport.tls.certificates.llmGateway.secretName=llm-gateway-tls'
 ];
+const platformAdminConsoleArgs = [
+  '--set',
+  'components.platformAdminConsole.enabled=true',
+  '--set',
+  'adminApi.enabled=true',
+  ...internalTlsArgs,
+  '--set-string',
+  'internalTransport.tls.certificates.platformAdminConsole.secretName=platform-admin-console-tls'
+];
 const externalIngressArgs = ['--set', 'exposure.ingress.enabled=false'];
 const emptyIngressControllerArgs = [
   '--set-json',
@@ -288,6 +297,7 @@ for (const args of [
   ['--set', 'components.managementConsole.enabled=false'],
   ['--set', 'components.controlPlane.enabled=false'],
   internalTlsArgs,
+  platformAdminConsoleArgs,
   [...internalTlsArgs, ...externalIngressArgs],
   [...internalTlsArgs, ...emptyIngressControllerArgs]
 ]) {
@@ -333,6 +343,22 @@ for (const [args, message] of [
   [['--set', 'components.controlPlane.logLevel=verbose'], 'unsupported control-plane log level should be rejected'],
   [['--set', 'components.llmGateway.secretsBackend=memory'], 'unsupported llm-gateway secret backend should be rejected'],
   [['--set', 'components.executionEngine.replicas=0'], 'zero replicas should be rejected'],
+  [
+    ['--set', 'components.platformAdminConsole.enabled=true'],
+    'platform admin console should require the admin API and internal mTLS'
+  ],
+  [
+    [...platformAdminConsoleArgs, '--set', 'adminApi.humanAuth.required=false'],
+    'platform admin console should require human administrator sessions'
+  ],
+  [
+    [...platformAdminConsoleArgs, '--set', 'internalTransport.tls.requireClientCert=false'],
+    'platform admin console should require mutual TLS to the control plane'
+  ],
+  [
+    [...platformAdminConsoleArgs, '--set', 'exposure.ingress.tls.enabled=false'],
+    'chart-managed platform admin ingress should require TLS'
+  ],
   [['--set', 'ai.gatewayTimeoutMs=0'], 'invalid gateway timeout should be rejected'],
   [['--set', 'components.llmGateway.rateLimits.windowSeconds=0'], 'invalid rate limit window should be rejected'],
   [['--set', 'components.llmGateway.maxRequestBodyBytes=0'], 'invalid llm-gateway request body limit should be rejected'],
@@ -669,6 +695,17 @@ assertMatch(
   /name: acornops-acornops-platform-control-plane-egress[\s\S]*?app.kubernetes.io\/component: execution-engine[\s\S]*?port: 8080[\s\S]*?app.kubernetes.io\/component: llm-gateway[\s\S]*?port: 8001/,
   'control-plane egress should allow internal calls only to execution-engine and llm-gateway service ports'
 );
+const platformAdminConsoleRender = helmTemplate(platformAdminConsoleArgs);
+const platformAdminConsoleEgress = manifestDocument(
+  platformAdminConsoleRender,
+  'NetworkPolicy',
+  'acornops-acornops-platform-platform-admin-console-egress'
+);
+assertIncludes(platformAdminConsoleRender, 'path: /health/live', 'platform admin deployment should use a local liveness probe');
+assertIncludes(platformAdminConsoleRender, 'path: /health/ready', 'platform admin deployment should use an upstream-aware readiness probe');
+assertIncludes(platformAdminConsoleEgress, 'app.kubernetes.io/component: control-plane', 'platform admin egress should allow only the control-plane application dependency');
+assertIncludes(platformAdminConsoleEgress, 'kubernetes.io/metadata.name: kube-system', 'platform admin egress should permit DNS resolution');
+assertExcludes(platformAdminConsoleEgress, 'cidr: 0.0.0.0/0', 'platform admin egress should not permit arbitrary Internet access');
 const defaultPrefix = 'acornops-acornops-platform';
 const managementConsolePolicyName = `${defaultPrefix}-management-console-ingress`;
 const controlPlanePolicyName = `${defaultPrefix}-control-plane-ingress`;

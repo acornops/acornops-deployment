@@ -3,6 +3,7 @@
   "version": 1,
   "runtimeDependencies": [
     "management-console",
+    "platform-admin-console",
     "control-plane",
     "execution-engine",
     "llm-gateway",
@@ -11,8 +12,8 @@
   ],
   "contractSurfaces": {
     "composeProfiles": ["local", "prod", "oidc-dex", "oidc-keycloak", "local-vault"],
-    "publicHosts": ["console.acornops.dev", "docs.acornops.dev", "api.acornops.dev"],
-    "publicRoutes": ["/", "/api/v1", "/api/v1/auth/oidc/callback", "/admin/v1"],
+    "publicHosts": ["console.acornops.dev", "admin.acornops.dev", "docs.acornops.dev", "api.acornops.dev"],
+    "publicRoutes": ["/", "/api/v1", "/api/v1/auth/oidc/callback", "/admin-auth", "/admin-console-api"],
     "envTracks": ["local", "vm", "k8s"],
     "emailVerificationEnv": [
       "PASSWORD_EMAIL_VERIFICATION_REQUIRED",
@@ -38,7 +39,19 @@
       "CONTROL_PLANE_ADMIN_API_ENABLED",
       "CONTROL_PLANE_ADMIN_TOKENS_JSON",
       "CONTROL_PLANE_ADMIN_AUTH_FAILURE_WINDOW_SECONDS",
-      "CONTROL_PLANE_ADMIN_AUTH_FAILURE_MAX_ATTEMPTS"
+      "CONTROL_PLANE_ADMIN_AUTH_FAILURE_MAX_ATTEMPTS",
+      "CONTROL_PLANE_ADMIN_HUMAN_AUTH_REQUIRED",
+      "PLATFORM_ADMIN_CONSOLE_BASE_URL",
+      "ADMIN_OIDC_CLIENT_ID",
+      "ADMIN_OIDC_CLIENT_SECRET",
+      "ADMIN_OIDC_ALLOWED_ROLES",
+      "ADMIN_SESSION_MAX_AGE_SECONDS",
+      "ADMIN_SESSION_IDLE_TIMEOUT_SECONDS",
+      "ADMIN_SESSION_REAUTH_SECONDS",
+      "ADMIN_CSRF_SECRET",
+      "CONTROL_PLANE_ADMIN_TLS_CA_FILE",
+      "CONTROL_PLANE_ADMIN_TLS_CERT_FILE",
+      "CONTROL_PLANE_ADMIN_TLS_KEY_FILE"
     ],
     "externalIntegrationEnv": [
       "EXTERNAL_INTEGRATION_CLIENTS_JSON",
@@ -64,7 +77,16 @@
       "adminApi.enabled",
       "adminApi.ingress.enabled",
       "adminApi.tokens.existingSecretName",
-      "adminApi.tokens.tokensJsonKey"
+      "adminApi.tokens.tokensJsonKey",
+      "adminApi.humanAuth.required",
+      "adminApi.humanAuth.session.maxAgeSeconds",
+      "adminApi.humanAuth.session.idleTimeoutSeconds",
+      "adminApi.humanAuth.session.reauthSeconds",
+      "adminApi.humanAuth.oidc.clientId",
+      "adminApi.humanAuth.oidc.allowedRoles",
+      "components.platformAdminConsole.enabled",
+      "exposure.ingress.adminHost",
+      "internalTransport.tls.certificates.platformAdminConsole.secretName"
     ],
     "externalIntegrationHelmValues": [
       "secrets.keys.controlPlane.externalIntegrationClientsJson"

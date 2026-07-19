@@ -6,6 +6,8 @@ platform:
   publicUrl: https://api.acornops.dev
   # Public browser URL for the management console.
   consoleUrl: https://console.acornops.dev
+  # Dedicated privileged browser origin.
+  adminConsoleUrl: https://admin.acornops.dev
 
 exposure:
   ingress:
@@ -13,6 +15,7 @@ exposure:
     className: nginx
     apiHost: api.acornops.dev
     consoleHost: console.acornops.dev
+    adminHost: admin.acornops.dev
     tls:
       enabled: true
       secretName: acornops-platform-tls
@@ -28,6 +31,8 @@ secrets:
       redisUrl: CONTROL_PLANE_REDIS_URL
       oidcClientSecret: OIDC_CLIENT_SECRET
       csrfSecret: CSRF_SECRET
+      adminOidcClientSecret: ADMIN_OIDC_CLIENT_SECRET
+      adminCsrfSecret: ADMIN_CSRF_SECRET
       gatewaySigningPrivateKeyPemB64: GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64
       orchestrationServiceToken: ORCH_SERVICE_TOKEN
       externalIntegrationClientsJson: EXTERNAL_INTEGRATION_CLIENTS_JSON
@@ -43,6 +48,8 @@ secrets:
       adminToken: LLM_GATEWAY_ADMIN_TOKEN
       secretsKekBase64: SECRETS_KEK_BASE64
       vaultToken: VAULT_TOKEN
+    platformAdminConsole:
+      adminToken: CONTROL_PLANE_ADMIN_TOKEN
 
 auth:
   oidc:
@@ -80,6 +87,13 @@ adminApi:
     # Store CONTROL_PLANE_ADMIN_TOKENS_JSON in this Secret as hash descriptors.
     existingSecretName: acornops-platform-secrets
     tokensJsonKey: CONTROL_PLANE_ADMIN_TOKENS_JSON
+  humanAuth:
+    required: true
+    oidc:
+      issuerUrl: https://keycloak.acornops.dev/realms/acornops
+      clientId: acornops-platform-admin
+      allowedRoles: platform-admin,platform-admin-viewer,platform-admin-auditor
+      requiredAmrValues: mfa,otp,webauthn,hwk
 
 workspacePlans:
   defaultPlanKey: default
@@ -125,6 +139,8 @@ internalTransport:
     certificates:
       controlPlane:
         secretName: ""
+      platformAdminConsole:
+        secretName: ""
       executionEngine:
         secretName: ""
       llmGateway:
@@ -163,6 +179,11 @@ networkPolicies:
     llmGatewayMigrate: []
 
 components:
+  # Enabling this also requires adminApi.enabled=true, internal mTLS with all
+  # certificate Secrets, and a valid TLS certificate for adminHost.
+  platformAdminConsole:
+    enabled: false
+    replicas: 2
   managementConsole:
     replicas: 3
     podDisruptionBudget:
