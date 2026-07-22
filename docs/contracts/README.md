@@ -160,6 +160,11 @@ The deployment contract for external integration account linking is:
   bearer tokens are generated and distributed out of band, are never committed,
   and only authorize the external integration link, resolve, revoke, and
   linked-user bot endpoints.
+- Keep descriptor examples read-only by default with
+  `read_workspace_data`, `create_sessions`, and `create_read_only_runs`.
+  Operators may explicitly add `create_read_write_runs` for clients allowed to
+  launch read-write or approval-gated Workflows and decide approvals for their
+  exact-origin executions.
 
 ## Validation
 

@@ -328,7 +328,16 @@ from the existing platform Secret. The JSON contains installed client
 descriptors with SHA-256 token hashes only, never raw bearer tokens. Descriptors
 may include `allowedCapabilities` to set an operator-side maximum for the
 client; users still approve per-workspace grants in the management console. The
-key name is configured with
+default ceiling remains read-only. A descriptor must explicitly add
+`create_read_write_runs` before that client can launch read-write or
+approval-gated Workflows and decide exact-origin approvals. For example, keep a
+read-only client descriptor shaped like:
+
+```json
+[{"id":"external-chat","provider":"external","displayName":"External chat","sha256":"<64-lowercase-hex-token-sha256>","enabled":true,"allowedCapabilities":["read_workspace_data","create_sessions","create_read_only_runs"]}]
+```
+
+The key name is configured with
 `secrets.keys.controlPlane.externalIntegrationClientsJson`; the default key is
 `EXTERNAL_INTEGRATION_CLIENTS_JSON`.
 
