@@ -108,6 +108,17 @@ spec:
             - name: ADDITIONAL_CA_BUNDLE_FILE
               value: {{ include "acornops-platform.additionalCaPath" . | quote }}
             {{- end }}
+            {{- range $index, $source := .Values.components.llmGateway.catalog.bootstrapSources }}
+            {{- $auth := default dict $source.auth }}
+            {{- if ne (default "none" $auth.type) "none" }}
+            {{- $secretRef := required (printf "components.llmGateway.catalog.bootstrapSources[%d].auth.secretKeyRef is required for authenticated sources" $index) $auth.secretKeyRef }}
+            - name: {{ printf "CATALOG_BOOTSTRAP_SOURCE_%d_CREDENTIAL" $index }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required (printf "components.llmGateway.catalog.bootstrapSources[%d].auth.secretKeyRef.name is required" $index) $secretRef.name | quote }}
+                  key: {{ required (printf "components.llmGateway.catalog.bootstrapSources[%d].auth.secretKeyRef.key is required" $index) $secretRef.key | quote }}
+            {{- end }}
+            {{- end }}
             {{- with .Values.components.llmGateway.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

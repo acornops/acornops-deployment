@@ -2,11 +2,13 @@ apiVersion: acornops.dev/v1alpha1
 kind: StackVersionMatrix
 metadata:
   name: acornops-stack
-  updatedAt: "2026-07-17"
+  updatedAt: "2026-07-21"
 
 stacks:
   - name: local-dev
     description: Local full-stack source-mounted development profile.
+    executionContractVersion: 2
+    workflowSchemaEpoch: workflow-v2-greenfield-1
     components:
       managementConsole: acornops/management-console:local
       controlPlane: acornops/control-plane:local
@@ -15,26 +17,31 @@ stacks:
       agentK: acornops/agentk:local
 
   - name: vm-prod-v1
-    description: Baseline Docker-on-VM production stack.
+    description: Pinned greenfield Workflow V2 Docker-on-VM production stack.
+    executionContractVersion: 2
+    workflowSchemaEpoch: workflow-v2-greenfield-1
     components:
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.20
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.20
-      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.9
-      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.11
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.21
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.21
+      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.10
+      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.12
 
   - name: k8s-platform-v1
-    description: Kubernetes platform stack deployed with the acornops-platform Helm chart.
+    description: Pinned greenfield Workflow V2 Kubernetes stack deployed with the acornops-platform Helm chart.
+    executionContractVersion: 2
+    workflowSchemaEpoch: workflow-v2-greenfield-1
     chart:
-      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.13
-      acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.9
+      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.14
+      acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.10
     components:
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.20
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.20
-      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.9
-      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.11
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.21
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.21
+      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.10
+      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.12
 
 compatibility:
   notes:
-    - Keep control-plane, execution-engine, and llm-gateway on the same stack version.
-    - Treat database-backed services as resettable while AcornOps remains pre-release.
+    - Deploy control-plane, execution-engine, and llm-gateway only as one pinned matrix with execution contract version 2.
+    - This greenfield schema epoch is a first-install or explicit-reset cutover, not a rolling upgrade.
+    - Back up if needed, then explicitly drop and recreate both external application databases.
     - Treat this matrix as release source-of-truth for docs and deployment examples.

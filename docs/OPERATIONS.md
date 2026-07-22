@@ -61,6 +61,30 @@ Prepare:
 cp env/vm/.env.example env/vm/.env.prod
 ```
 
+This version establishes a greenfield schema epoch. Back up if needed, then
+explicitly drop and recreate both application databases before deploying:
+
+```bash
+pg_dump --format=custom --file acornops-control-plane-backup.dump "$CONTROL_PLANE_DATABASE_URL"
+dropdb --force --dbname "$POSTGRES_ADMIN_URL" "$CONTROL_PLANE_DATABASE_NAME"
+createdb --dbname "$POSTGRES_ADMIN_URL" "$CONTROL_PLANE_DATABASE_NAME"
+```
+
+Use provider-specific snapshots instead where appropriate. This cutover does not
+preserve pre-release data. Deploy the pinned
+control-plane, execution-engine, and llm-gateway matrix together; mixed versions
+are unsupported.
+
+During the maintenance window, stop new run admission and schedulers, drain
+active runs, set `REMOTE_MCP_ENABLED=false`, and back up the gateway database and
+secret namespace. Smoke test built-in tools plus workspace and individual
+credential lifecycles before re-enabling remote MCP.
+
+Vault KV v2 cleanup must delete metadata beneath the configured namespace,
+mount, `VAULT_PATH_PREFIX`, and workspace path. Limit the cleanup token to that
+boundary. Platform OIDC is independent: it signs users into AcornOps and is not
+a remote MCP credential or callback.
+
 Deploy:
 
 ```bash
@@ -114,7 +138,10 @@ helm upgrade --install acornops kubernetes/helm/acornops-platform \
   -f kubernetes/helm/acornops-platform/examples/values-production.yaml
 ```
 
-Kubernetes deployments require external Postgres and Redis plus a pre-created platform Secret.
+Kubernetes deployments require external Postgres and Redis plus a pre-created
+platform Secret. Recreate both application databases before this first-install
+cutover; it is not a rolling upgrade. All pinned stack images must be deployed
+together.
 NetworkPolicies are enabled by default. Before installing or upgrading, set
 `networkPolicies.ingressController.from` for the cluster ingress controller and
 allow any private Postgres, Redis, OIDC, Vault, webhook, or MCP destinations in
@@ -235,6 +262,11 @@ kubectl -n acornops delete networkpolicy \
 
 ### Roll back
 
+Workflow schema epoch 2 is not rollback-safe to a V1 stack. Helm rollback is
+supported only between releases that declare the same `workflowSchemaEpoch` and
+execution contract version 2. Restoring V1 requires restoring the pre-cutover
+database backup and the complete pinned V1 image matrix during an outage.
+
 Use Helm history to select the preceding published chart revision, then roll
 back and repeat the policy, Service, EndpointSlice, and route checks:
 
@@ -333,14 +365,25 @@ When a local full stack is running, run the local-only release smoke:
 task local-smoke
 ```
 
+Use `task local-up` for the full local stack with seeded Kubernetes and VM
+targets plus AgentK and AgentV. Use `task local-up-cluster-fixture` when only
+AgentK should connect; both target records remain seeded, but the VM stays
+offline. `task local-up-target-fixtures` is the explicit equivalent of the
+default target setup.
+
+Starter automation is not a target fixture. The control plane provisions it for
+every workspace and backfills existing workspaces before readiness, regardless
+of `SEED_DEVELOPMENT_DATA` or the selected local startup profile.
+
 The smoke script connects to the local edge proxy at `http://127.0.0.1:8088`
 and sends `*.acornops.localhost` Host headers, so it does not rely on production
 DNS. It refuses non-local endpoints unless explicitly overridden. Use it after
-`task local-up` to verify edge routing, service readiness, same-origin API auth,
-seeded workspace/target API paths, VM inventory/issues/metrics/logs, VM MCP
-server registration, and a completed read-only VM troubleshooting run with a VM
-tool call. It also resets the local `acornops-demo-unhealthy` Deployment to the
-seeded bad image, requires the assistant to read and patch the exact Deployment,
-approves the pending `patch_resource` call, and verifies a healthy rollout. Set
+`task local-up` or `task local-up-target-fixtures` to verify edge routing,
+service readiness, same-origin API auth, VM
+inventory/issues/metrics/logs, target MCP registration, and a completed
+read-only VM troubleshooting run with a VM tool call. It can also reset the
+local `acornops-demo-unhealthy` Deployment, require the assistant to read and
+patch that exact Deployment, approve the pending write, and verify a healthy
+rollout. Set
 `ACORNOPS_SMOKE_RUN_REMEDIATION=false` to skip that mutation scenario. It does
 not touch production.

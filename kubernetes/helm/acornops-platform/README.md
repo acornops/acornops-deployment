@@ -41,7 +41,10 @@ The chart values are organized by operator concern:
 - `global.trust.additionalCaBundle`: default existing ConfigMap or Secret with
   additive CA trust for server-side platform components
 - `ai`: default provider/model policy
-- `agent`: control-plane defaults for agent routing, runtime limits, and agent Helm installs
+- `agentGateway`: shared control-plane connectivity for AgentK and AgentV
+- `assistantRuntime`: AI assistant budgets, limits, and write-approval defaults
+- `targetAgents.agentk.helm`: defaults for generated AgentK install commands
+- `builtinTargetMcp`: shared AgentK and AgentV target-tool bridge identity
 - `automation`: durable runtime mode, canary workspace allow-list, and worker poll interval
 - `internalTransport.tls`: optional operator-supplied internal HTTPS/mTLS for service-to-service traffic
 - `internalAuth`: gateway token claims and signing-key metadata
@@ -52,6 +55,30 @@ The chart values are organized by operator concern:
 - `components.{controlPlane,executionEngine,llmGateway}.trust.additionalCaBundle`:
   optional component override for the global trust bundle
 - `components.llmGateway.mcpEgress`: remote MCP hostname policy
+- `components.llmGateway.remoteMcp.enabled`: emergency external MCP discovery
+  and execution kill switch; built-in tools remain available when false
+- `components.llmGateway.rateLimits.mcpConnectionPerWindow`: per-owner,
+  per-installation connect/verify attempt budget within the shared window
+- `components.llmGateway.catalog`: official-registry policy, workspace-managed
+  source policy, and secret-backed bootstrap sources for private or air-gapped
+  MCP registries
+
+Authenticated MCP installations explicitly select workspace-managed or
+individual credential ownership. Credentials are supplied through the
+control-plane API; the chart has no MCP authentication callback configuration.
+
+## Greenfield database epoch
+
+This version is a first-install or explicit-reset cutover, not a rolling
+upgrade. Back up if needed, then drop and recreate both external application
+databases before installing the pinned control-plane, execution-engine, and
+llm-gateway matrix. Do not deploy any image independently.
+
+For local Compose data, use `task local-reset`. For external Kubernetes
+Postgres, use a provider snapshot or `pg_dump`, then explicitly drop and recreate
+the database with an administrative connection before retrying Helm. A rollback
+requires restoring a matching backup and full image matrix; chart rollback
+alone is unsafe across schema epochs.
 
 Control-plane HA requires external Redis for agent ownership, cross-pod
 JSON-RPC command routing, run event fanout, and renewed scheduler leases. The
@@ -119,8 +146,9 @@ layer 3/4, so its destinations use selectors or CIDRs rather than hostnames.
 Private MCP endpoints require all three controls: an exact hostname in
 `components.llmGateway.mcpEgress.allowedHosts`, a matching private destination
 under `networkPolicies.extraEgress.llmGateway`, and TLS trust for the issuing
-organization CA. Configure the trust file from exactly one existing ConfigMap
-or Secret in the release namespace:
+organization CA. Use the LLM gateway's existing additive trust setting to
+configure the trust file from exactly one existing ConfigMap or Secret in the
+release namespace:
 
 ```yaml
 components:
@@ -241,33 +269,34 @@ the Service `port` value in a policy override.
 
 Write confirmation defaults are controlled by:
 
-- `agent.runtime.writeConfirmationRequired` -> `AGENT_WRITE_CONFIRMATION_REQUIRED`
-- `agent.runtime.writeConfirmationTimeoutSeconds` -> `AGENT_WRITE_CONFIRMATION_TIMEOUT_SECONDS`
+- `assistantRuntime.writeConfirmationRequired` -> `ASSISTANT_WRITE_CONFIRMATION_REQUIRED`
+- `assistantRuntime.writeConfirmationTimeoutSeconds` -> `ASSISTANT_WRITE_CONFIRMATION_TIMEOUT_SECONDS`
 
 The default is confirmation required. Individual clusters can inherit this value or override it from the control plane. Required confirmations are enforced by the execution runtime before write tool execution; browser and external adapter UIs only submit approve/reject decisions.
 
 ## Generated AgentK Install Defaults
 
-`agent.helm` controls the Helm command returned when a user connects a workload
-cluster. Air-gapped platforms can point both the chart and AgentK image at
+`targetAgents.agentk.helm` controls the Helm command returned when a user
+connects a Kubernetes cluster. Air-gapped platforms can point both the chart and AgentK image at
 internal mirrors and can include an organization CA from the machine that runs
 the generated command:
 
 ```yaml
-agent:
-  helm:
-    chartRef: oci://docker.artifact.internal.org/acornops/charts/acornops-agentk
-    chartVersion: 0.0.1-experimental.9
-    values:
-      image:
-        repository: docker.artifact.internal.org/ghcr.io/acornops/agentk
-        tag: 0.0.1-experimental.9
-        pullPolicy: IfNotPresent
-      imagePullSecrets:
-        - name: internal-registry
-    files:
-      additionalCaBundle:
-        sourcePath: /path/to/organization-ca.pem
+targetAgents:
+  agentk:
+    helm:
+      chartRef: oci://docker.artifact.internal.org/acornops/charts/acornops-agentk
+      chartVersion: 0.0.1-experimental.10
+      values:
+        image:
+          repository: docker.artifact.internal.org/ghcr.io/acornops/agentk
+          tag: 0.0.1-experimental.10
+          pullPolicy: IfNotPresent
+        imagePullSecrets:
+          - name: internal-registry
+      files:
+        additionalCaBundle:
+          sourcePath: /path/to/organization-ca.pem
 ```
 
 Entries under `values` become safely quoted downstream `--set-json` arguments.
@@ -283,6 +312,8 @@ directly under `values`; use supported Kubernetes Secret references such as
 `imagePullSecrets`.
 
 Target chat coordination warnings are controlled by `components.controlPlane.recentActivity.windowSeconds`, which renders to `TARGET_CHAT_RECENT_ACTIVITY_WINDOW_SECONDS`. The default is `300` seconds.
+
+Workflow and target-chat PDF report retention is controlled by `components.controlPlane.reportArtifacts.maxRetentionDays`, which renders to `TARGET_CHAT_REPORT_RETENTION_DAYS`. The default is `30` days, and the chart accepts values from `1` through `365` days. Workflow requests cannot override this deployment policy. Execution duration remains controlled only by `agent.runtime.maxRuntimeMs`, rendered as `AGENT_MAX_RUNTIME_MS`.
 
 External integration account linking uses `EXTERNAL_INTEGRATION_CLIENTS_JSON`
 from the existing platform Secret. The JSON contains installed client

@@ -27,14 +27,37 @@ tasks:
       - ./scripts/doctor.sh
 
   local-up:
-    desc: Start full local stack
+    desc: Start the local stack with seeded Kubernetes and VM targets plus AgentK and AgentV
     env:
       LOCAL_OIDC_PROFILE: '{{.LOCAL_OIDC_PROFILE}}'
-      LOCAL_EXTRA_PROFILES: '{{.LOCAL_EXTRA_PROFILES}}'
-      LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES: '{{env "LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES"}}'
-      ACORNOPS_DEV_SEED_OPENAI_API_KEY: '{{env "ACORNOPS_DEV_SEED_OPENAI_API_KEY"}}'
-      ACORNOPS_DEV_SEED_ANTHROPIC_API_KEY: '{{env "ACORNOPS_DEV_SEED_ANTHROPIC_API_KEY"}}'
-      ACORNOPS_DEV_SEED_GEMINI_API_KEY: '{{env "ACORNOPS_DEV_SEED_GEMINI_API_KEY"}}'
+      LOCAL_EXTRA_PROFILES: 'target-fixtures {{.LOCAL_EXTRA_PROFILES}}'
+      SEED_DEVELOPMENT_DATA: 'true'
+      SEED_AGENT_KEY: ak_local_dev_shared_key
+      SEED_VM_AGENT_KEY: ak_local_vm_dev_shared_key
+    cmds:
+      - ./scripts/local-up.sh {{.ENV_LOCAL}} {{.ENV_LOCAL_AGENT}}
+
+  local-up-cluster-fixture:
+    desc: Start the local stack with the seeded development cluster and AgentK
+    env:
+      LOCAL_OIDC_PROFILE: '{{.LOCAL_OIDC_PROFILE}}'
+      LOCAL_EXTRA_PROFILES: cluster-fixture
+      SEED_DEVELOPMENT_DATA: 'true'
+      SEED_AGENT_KEY: ak_local_dev_shared_key
+      LOCAL_CLUSTER_ID: 5b006e4c-509c-458a-9f02-5aafbdc01ade
+      LOCAL_AGENT_KEY: ak_local_dev_shared_key
+      SEED_DEMO_K3S_WORKLOADS: '{{default "true" .SEED_DEMO_K3S_WORKLOADS}}'
+    cmds:
+      - ./scripts/local-up.sh {{.ENV_LOCAL}} {{.ENV_LOCAL_AGENT}}
+
+  local-up-target-fixtures:
+    desc: Start the local stack with seeded Kubernetes and VM targets plus AgentK and AgentV
+    env:
+      LOCAL_OIDC_PROFILE: '{{.LOCAL_OIDC_PROFILE}}'
+      LOCAL_EXTRA_PROFILES: target-fixtures
+      SEED_DEVELOPMENT_DATA: 'true'
+      SEED_AGENT_KEY: ak_local_dev_shared_key
+      SEED_VM_AGENT_KEY: ak_local_vm_dev_shared_key
     cmds:
       - ./scripts/local-up.sh {{.ENV_LOCAL}} {{.ENV_LOCAL_AGENT}}
 
@@ -104,6 +127,14 @@ tasks:
     cmds:
       - node scripts/local-smoke.mjs
 
+  local-agentv-smoke:
+    desc: Run the focused local cross-service AgentV and VM smoke
+    env:
+      ACORNOPS_SMOKE_AGENTV_ONLY: 'true'
+      ACORNOPS_SMOKE_RUN_REMEDIATION: 'false'
+    cmds:
+      - node scripts/local-smoke.mjs
+
   prod-up:
     desc: Deploy production stack
     cmds:
@@ -143,6 +174,11 @@ tasks:
     desc: Validate repository harness documentation and agent entrypoints
     cmds:
       - node scripts/check-harness.mjs
+
+  local-fixtures:check:
+    desc: Render and verify default, cluster-fixture, and target-fixtures local profiles
+    cmds:
+      - node scripts/check-local-fixture-profiles.mjs
 
   contracts-check:
     desc: Compatibility alias for contracts:check
@@ -184,6 +220,7 @@ tasks:
     cmds:
       - task contracts:check
       - task harness:check
+      - task local-fixtures:check
       - node scripts/check-install-linux.mjs
       - task python-standards-check
       - task k8s-chart-check

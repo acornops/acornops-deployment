@@ -10,6 +10,7 @@ This repository owns deployment and compatibility contracts rather than service 
 - Admin API enablement, token Secret wiring, and API-host-only `/admin` routing
 - Workspace plan and quota config rendered into control-plane runtime env
 - AI provider/model and reasoning summary policy rendered into control-plane runtime env
+- Deployment-owned workflow execution and report-retention policy rendered into control-plane runtime env
 - Deployment-track environment templates
 - External integration account-link token wiring for VM Compose and Helm
 - Helm Ingress ownership and NetworkPolicy peer authorization for public workloads
@@ -19,6 +20,8 @@ This repository owns deployment and compatibility contracts rather than service 
 - Password email verification/reset and SMTP environment wiring
 - Release image compatibility metadata
 - agentk rollout env expectations for Kubernetes cluster installs
+- Universal starter automation provisioning is owned by control plane and is independent of optional development target fixtures
+- MCP registry bootstrap and workspace-management policy, with no public registry enabled by default
 
 ## Internal Transport TLS
 
@@ -129,6 +132,12 @@ reasoning summary policy to
 `LLM_ALLOWED_REASONING_EFFORTS`. These values are a deployment ceiling only;
 new workspaces default to `auto` when summaries are enabled and allowed, and
 workspace admins can tune or disable summaries through AI Settings.
+
+## MCP Registry Bootstrap
+
+`components.llmGateway.catalog` and the matching Compose variables configure optional deployment-managed MCP registries. The Official MCP Registry is opt-in. Bootstrap registries use HTTPS roots or path prefixes without `/v0.1`, URL credentials, query parameters, or fragments; only direct routing is supported.
+
+The gateway reconciles bootstrap sources by display name. Changed entries are updated and synchronized, while removed or disabled entries become disabled instead of being deleted. Registry credentials stay in referenced Secrets or environment-backed secret inputs and must never appear in rendered ConfigMaps, API responses, or logs. Registry availability remains outside platform readiness.
 
 ## External integration account linking
 

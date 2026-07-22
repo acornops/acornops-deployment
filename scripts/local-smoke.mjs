@@ -39,6 +39,7 @@ const config = {
   intervalMs: Number(env('ACORNOPS_SMOKE_INTERVAL_MS', String(DEFAULTS.intervalMs))),
   allowNonLocal: env('ACORNOPS_SMOKE_ALLOW_NON_LOCAL', 'false') === 'true',
   runRemediation: env('ACORNOPS_SMOKE_RUN_REMEDIATION', 'true') === 'true',
+  agentvOnly: env('ACORNOPS_SMOKE_AGENTV_ONLY', 'false') === 'true',
   remediationOnly: env('ACORNOPS_SMOKE_REMEDIATION_ONLY', 'false') === 'true',
   remediationRuns: positiveIntegerEnv('ACORNOPS_SMOKE_REMEDIATION_RUNS', 1),
   remediationMetricsPushUrl: env('ACORNOPS_SMOKE_REMEDIATION_METRICS_PUSH_URL', ''),
@@ -428,6 +429,7 @@ if (workspaceIssues.length > 0) {
   });
 }
 
+if (!config.agentvOnly) {
 const cluster = await waitFor('cluster list', async () => {
   const { text } = await request('cluster list', config.consoleHost, `/api/v1/workspaces/${workspace.id}/kubernetes-clusters`, {
     headers: { cookie }
@@ -997,6 +999,7 @@ if (workflowMcpServers.length > 0) {
     );
     requireListItems(parseJson('workspace workflow MCP server tools', text), 'workspace workflow MCP server tools');
   });
+}
 }
 
 const vm = await waitFor('virtual machine list', async () => {
