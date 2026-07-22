@@ -11,9 +11,9 @@ exposure:
       enabled: false
       secretName: ""
 
-agent:
-  routing:
-    distributedEnabled: false
+agentGateway:
+  distributedRouting:
+    enabled: false
 
 auth:
   oidc:

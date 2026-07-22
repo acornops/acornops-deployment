@@ -33,7 +33,10 @@ Start from [docs/index.md](docs/index.md) for the repo-local knowledge base.
 
 ## Agent-Assisted Development
 
-This repository supports human and agent-assisted development. Start coding agents from this repository root for deployment-only work, and from the `acornops-workspace` root for changes that touch multiple AcornOps repositories.
+This repository supports human and agent-assisted development. Start coding
+agents from this repository root for deployment-only work, and from the
+AcornOps workspace cloned from the [`acornops`](https://github.com/acornops/acornops)
+repository for changes that touch multiple AcornOps repositories.
 
 ## Contracts
 
@@ -150,7 +153,7 @@ The production baseline runs the management console, control-plane, execution-en
 
 Deployment defaults use OpenAI with `gpt-5.5`; OpenAI 4.x models are not in the default allow list. Workspace reasoning summaries default to `auto` when enabled by deployment policy.
 
-Write confirmations for Agent, Workflow, and target write tools are enabled by default in the platform chart through `agent.runtime.writeConfirmationRequired` and `agent.runtime.writeConfirmationTimeoutSeconds`, which render to `AGENT_WRITE_CONFIRMATION_REQUIRED` and `AGENT_WRITE_CONFIRMATION_TIMEOUT_SECONDS`. The production timeout is 900 seconds. The setting is the deployment default; clusters can inherit it or set a per-cluster override in the control plane.
+Write confirmations for Agent, Workflow, and target write tools are enabled by default in the platform chart through `assistantRuntime.writeConfirmationRequired` and `assistantRuntime.writeConfirmationTimeoutSeconds`, which render to `ASSISTANT_WRITE_CONFIRMATION_REQUIRED` and `ASSISTANT_WRITE_CONFIRMATION_TIMEOUT_SECONDS`. The production timeout is 900 seconds. The setting is the deployment default; clusters can inherit it or set a per-cluster override in the control plane.
 
 The durable automation runtime is controlled by `automation.runtimeMode`, `automation.canaryWorkspaceIds`, and `automation.workerIntervalMs`. Production starts in `off`; apply migrations and verify template backfill before progressing through `shadow`, `canary`, and `on`. Load `observability/prometheus/alerts/control-plane-automation.rules.yaml` into the environment's Prometheus-compatible rule evaluator.
 
@@ -187,7 +190,11 @@ task doctor
 task local-up
 ```
 
-`local-up` runs the llm-gateway init job (`llm-gateway-init`) and the control-plane init job (`control-plane-init`) on every bring-up before starting the full stack. During the pre-release phase, reset local volumes when schema files have been rewritten. It also checks for the local k3d cluster defined by `LOCAL_K3D_CLUSTER_NAME` and creates it automatically when missing.
+`local-up` runs the llm-gateway and control-plane migrations before starting the full stack with deterministic local Kubernetes and Linux VM targets. It creates k3d, starts AgentK and AgentV with local-only development keys, and applies demo workloads by default. The seeded workspace receives the same universal starter automation as every workspace created through normal product flows. Set `SEED_DEMO_K3S_WORKLOADS=false` to skip the workloads.
+
+Use `task local-up-cluster-fixture` when only AgentK should connect. The same Kubernetes and VM records are seeded, but the VM remains offline because the profile does not start AgentV.
+
+`task local-up-target-fixtures` is the explicit equivalent of the default local startup. IDs and keys can still be overridden in the ignored `env/local/.env.agent` when testing alternate local registrations.
 
 3. Verify:
 
@@ -201,11 +208,11 @@ proxy at `http://127.0.0.1:8088` and sends Host headers for
 `console.acornops.localhost`, `acornops.localhost`, and the direct local service
 hosts. It refuses non-local endpoints unless `ACORNOPS_SMOKE_ALLOW_NON_LOCAL=true`
 is set deliberately. It checks the console app shell, same-origin `/api`
-routing, service readiness, dev login, workspace/target seed data, and public
+routing, service readiness, authentication, connected-target behavior, and public
 API host JWKS routing. It also resets the local repairable demo Deployment to
 its misspelled image, drives a read-write assistant run through
 `get_resource`, `patch_resource`, operator approval, and rollout verification,
-then checks the Deployment is healthy. Set
+then checks the Deployment is healthy when the explicit target fixture profile is active. Set
 `ACORNOPS_SMOKE_RUN_REMEDIATION=false` only when intentionally skipping this
 local mutation coverage.
 
@@ -231,7 +238,7 @@ Notes:
 - set `LOCAL_K3D_AUTO_CREATE=false` to skip k3d bootstrap and use an existing kubeconfig instead
 - conversation history retention defaults to 30 days (`CONVERSATION_RETENTION_DAYS`)
 - recent target chat activity warnings default to 5 minutes (`TARGET_CHAT_RECENT_ACTIVITY_WINDOW_SECONDS=300`)
-- AI agent behavior can be tuned from the deployment env with `AGENT_SYSTEM_INSTRUCTION`, `AGENT_CONTEXT_MAX_TOKENS`, `AGENT_BUDGET_CENTS`, `AGENT_LLM_TEMPERATURE`, `AGENT_MAX_RUNTIME_MS`, `AGENT_MAX_STEPS`, `AGENT_MAX_TOOL_CALLS`, `AGENT_MAX_DUPLICATE_TOOL_CALLS`, and `AGENT_TOOL_DEFAULT_TIMEOUT_MS`
+- AI assistant behavior can be tuned from the deployment env with `ASSISTANT_CONTEXT_MAX_TOKENS`, `ASSISTANT_BUDGET_CENTS`, `ASSISTANT_LLM_TEMPERATURE`, `ASSISTANT_MAX_RUNTIME_MS`, `ASSISTANT_MAX_STEPS`, `ASSISTANT_MAX_TOOL_CALLS`, `ASSISTANT_MAX_DUPLICATE_TOOL_CALLS`, and `ASSISTANT_TOOL_DEFAULT_TIMEOUT_MS`; target instructions come from the registered target adapter, workspace Agent instructions come from the selected versioned Agent, and Workflow and target-chat PDF retention uses `TARGET_CHAT_REPORT_RETENTION_DAYS`
 
 ### Production (Docker-on-VM)
 

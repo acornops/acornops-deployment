@@ -26,7 +26,6 @@ secrets:
     controlPlane:
       databaseUrl: CONTROL_PLANE_DATABASE_URL
       redisUrl: CONTROL_PLANE_REDIS_URL
-      oidcClientSecret: OIDC_CLIENT_SECRET
       csrfSecret: CSRF_SECRET
       gatewaySigningPrivateKeyPemB64: GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64
       orchestrationServiceToken: ORCH_SERVICE_TOKEN
@@ -46,12 +45,20 @@ secrets:
 
 auth:
   oidc:
+    enabled: true
     providerName: oidc
     issuerUrl: https://keycloak.acornops.dev/realms/acornops
     publicIssuerUrl: ""
     clientId: acornops-control-plane
+    clientSecret:
+      existingSecret: acornops-platform-secrets
+      key: OIDC_CLIENT_SECRET
     httpTimeoutMs: 10000
-    requireVerifiedEmail: true
+    admission:
+      requireVerifiedEmail: true
+    logout:
+      endSessionEndpointOverride: https://keycloak.acornops.dev/realms/acornops/protocol/openid-connect/logout
+      postLogoutRedirectUri: https://console.example.com/api/v1/auth/oidc/logout/callback
   password:
     # Disable this if production should be OIDC-only.
     enabled: true
@@ -99,22 +106,26 @@ ai:
   allowedProviderModels: "openai:gpt-5.5|gpt-5.4|gpt-5.4-mini|gpt-5.4-nano|gpt-5|gpt-5-mini|gpt-5-nano;anthropic:claude-fable-5|claude-opus-4-8|claude-sonnet-4-6|claude-haiku-4-5;gemini:gemini-3.5-flash|gemini-3.5-flash-lite|gemini-3.1-pro|gemini-3.1-flash|gemini-3.1-flash-lite|gemini-2.5-pro|gemini-2.5-flash|gemini-2.5-flash-lite|gemini-2.0-flash|gemini-2.0-flash-lite"
   gatewayTimeoutMs: 120000
 
-agent:
-  routing:
-    distributedEnabled: true
+agentGateway:
+  distributedRouting:
+    enabled: true
     ownerTtlSeconds: 90
-    snapshotIntervalSeconds: 60
-    maxWebSocketPayloadBytes: 3145728
-  runtime:
-    contextMaxTokens: 120000
-    budgetCents: 25
-    maxRuntimeMs: 600000
-    writeConfirmationRequired: true
-    writeConfirmationTimeoutSeconds: 900
-  helm:
-    releaseName: acornops-agentk
-    chartRef: oci://ghcr.io/acornops/charts/acornops-agentk
-    namespace: acornops-agentk
+  snapshotIntervalSeconds: 60
+  maxWebSocketPayloadBytes: 3145728
+
+assistantRuntime:
+  contextMaxTokens: 120000
+  budgetCents: 25
+  maxRuntimeMs: 600000
+  writeConfirmationRequired: true
+  writeConfirmationTimeoutSeconds: 900
+
+targetAgents:
+  agentk:
+    helm:
+      releaseName: acornops-agentk
+      chartRef: oci://ghcr.io/acornops/charts/acornops-agentk
+      namespace: acornops-agentk
 
 internalTransport:
   tls:
@@ -207,10 +218,6 @@ components:
     # networkPolicies.extraEgress.llmGateway, and an additional CA bundle.
     # mcpEgress:
     #   allowedHosts: test-mcp.app.internal.org
-    #   caBundle:
-    #     configMapKeyRef:
-    #       name: organization-trust-bundle
-    #       key: ca-bundle.pem
     podDisruptionBudget:
       enabled: true
       minAvailable: 2

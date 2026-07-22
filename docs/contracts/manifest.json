@@ -1,6 +1,8 @@
 {
   "repo": "deployment",
   "version": 1,
+  "executionContractVersion": 2,
+  "workflowSchemaEpoch": "workflow-v2-greenfield-1",
   "runtimeDependencies": [
     "management-console",
     "control-plane",
@@ -12,8 +14,25 @@
   "contractSurfaces": {
     "composeProfiles": ["local", "prod", "oidc-dex", "oidc-keycloak", "local-vault"],
     "publicHosts": ["console.acornops.dev", "docs.acornops.dev", "api.acornops.dev"],
-    "publicRoutes": ["/", "/api/v1", "/api/v1/auth/oidc/callback", "/admin/v1"],
+    "publicRoutes": ["/", "/api/v1", "/api/v1/auth/oidc/callback", "/api/v1/auth/oidc/logout/start", "/api/v1/auth/oidc/logout/callback", "/admin/v1"],
     "envTracks": ["local", "vm", "k8s"],
+    "oidcEnv": [
+      "OIDC_ENABLED",
+      "OIDC_ADMISSION_POLICY_JSON",
+      "OIDC_END_SESSION_ENDPOINT_OVERRIDE",
+      "OIDC_POST_LOGOUT_REDIRECT_URI"
+    ],
+    "oidcHelmValues": [
+      "auth.oidc.enabled",
+      "auth.oidc.clientSecret.existingSecret",
+      "auth.oidc.clientSecret.key",
+      "auth.oidc.authorizationEndpoint",
+      "auth.oidc.tokenEndpoint",
+      "auth.oidc.userInfoEndpoint",
+      "auth.oidc.admission",
+      "auth.oidc.logout.endSessionEndpointOverride",
+      "auth.oidc.logout.postLogoutRedirectUri"
+    ],
     "emailVerificationEnv": [
       "PASSWORD_EMAIL_VERIFICATION_REQUIRED",
       "PASSWORD_EMAIL_VERIFICATION_TOKEN_TTL_SECONDS",
@@ -60,6 +79,10 @@
       "LLM_ALLOWED_REASONING_SUMMARY_MODES",
       "LLM_ALLOWED_REASONING_EFFORTS"
     ],
+    "workflowRuntimePolicyEnv": [
+      "AGENT_MAX_RUNTIME_MS",
+      "TARGET_CHAT_REPORT_RETENTION_DAYS"
+    ],
     "adminApiHelmValues": [
       "adminApi.enabled",
       "adminApi.ingress.enabled",
@@ -85,6 +108,10 @@
       "ai.reasoningSummariesEnabled",
       "ai.allowedReasoningSummaryModes",
       "ai.allowedReasoningEfforts"
+    ],
+    "workflowRuntimePolicyHelmValues": [
+      "agent.runtime.maxRuntimeMs",
+      "components.controlPlane.reportArtifacts.maxRetentionDays"
     ],
     "additionalCaHelmValues": [
       "global.trust.additionalCaBundle.configMapKeyRef.name",
@@ -131,8 +158,8 @@
       "ACORNOPS_AGENT_KEY"
     ],
     "agentKInstallHelmValues": [
-      "agent.helm.chartRef",
-      "agent.helm.chartVersion"
+      "targetAgents.agentk.helm.chartRef",
+      "targetAgents.agentk.helm.chartVersion"
     ],
     "agentVLocalEnv": [
       "ACORNOPS_AGENT_PLATFORM_URL",
@@ -143,10 +170,46 @@
       "ACORNOPS_VM_COLLECTOR_MODE",
       "ACORNOPS_VM_OS_FAMILY",
       "ACORNOPS_VM_SERVICE_MANAGER",
-      "ACORNOPS_VM_ALLOWED_LOG_SOURCES"
+      "ACORNOPS_VM_ALLOWED_LOG_UNITS",
+      "ACORNOPS_AGENT_WRITE_ENABLED"
     ],
     "localAgentInsecureTransportEnv": ["ACORNOPS_AGENT_ALLOW_INSECURE_TRANSPORT"],
-    "localDeterministicLlmEnv": ["LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES"],
+    "starterAutomationProvisioning": {
+      "scope": "every workspace",
+      "developmentFixtureIndependent": true,
+      "seedDevelopmentDataPurpose": "optional local owner, workspace, Kubernetes target, target settings, and AgentK registration"
+    },
+    "databaseEpoch": {
+      "mode": "greenfield_reset",
+      "preservesPreReleaseData": false
+    },
+    "catalogEnv": [
+      "CATALOG_OFFICIAL_REGISTRY_ENABLED",
+      "CATALOG_OFFICIAL_REGISTRY_URL",
+      "CATALOG_WORKSPACE_MANAGED_SOURCES_ENABLED",
+      "CATALOG_BOOTSTRAP_SOURCES_JSON"
+    ],
+    "mcpPatEnv": [
+      "REMOTE_MCP_ENABLED",
+      "MCP_CONNECTION_RATE_LIMIT_PER_WINDOW",
+      "RATE_LIMIT_WINDOW_SECONDS"
+    ],
+    "catalogHelmValues": [
+      "components.llmGateway.catalog.officialRegistryEnabled",
+      "components.llmGateway.catalog.officialRegistryUrl",
+      "components.llmGateway.catalog.allowWorkspaceManagedSources",
+      "components.llmGateway.catalog.bootstrapSources[].{workspaceId,displayName,baseUrl,networkRoute,adapterBasePath,enabled,auth.{type,headerName,secretKeyRef.{name,key}}}",
+      "components.llmGateway.mcpEgress.{allowedHosts,allowPrivateNetworks,allowLocalAddresses}",
+      "components.llmGateway.trust.additionalCaBundle"
+    ],
+    "mcpPatHelmValues": [
+      "components.llmGateway.remoteMcp.enabled",
+      "components.llmGateway.rateLimits.mcpConnectionPerWindow"
+    ],
+    "mcpPatAlertFiles": [
+      "observability/prometheus/alerts/llm-gateway.rules.yaml",
+      "observability/prometheus/alerts/control-plane-automation.rules.yaml"
+    ],
     "internalTransportTlsValues": [
       "internalTransport.tls.enabled",
       "internalTransport.tls.requireClientCert",

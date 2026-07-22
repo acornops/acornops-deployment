@@ -47,15 +47,37 @@ compose defaults follow `release/stack-versions.yaml`; do not use mutable tags
 such as `latest` for `MANAGEMENT_CONSOLE_IMAGE`, `CONTROL_PLANE_IMAGE`,
 `EXECUTION_ENGINE_IMAGE`, or `LLM_GATEWAY_IMAGE` in VM production.
 
-LLM gateway MCP egress is deny-by-default for private networks in production. Keep `MCP_EGRESS_ALLOWED_HOSTS` empty for public remote MCP servers and require HTTPS. For private deployments, add only reviewed internal hostnames to `MCP_EGRESS_ALLOWED_HOSTS`; avoid setting `MCP_EGRESS_ALLOW_PRIVATE_NETWORKS=true` unless the whole gateway network is dedicated to trusted internal MCP traffic.
+LLM gateway MCP egress is deny-by-default for private networks in production. Keep `MCP_EGRESS_ALLOWED_HOSTS` empty for public remote MCP servers and require HTTPS. For private deployments, add only reviewed internal hostnames to `MCP_EGRESS_ALLOWED_HOSTS`; avoid setting `MCP_EGRESS_ALLOW_PRIVATE_NETWORKS=true` unless the whole gateway network is dedicated to trusted internal MCP traffic. `REMOTE_MCP_ENABLED=false` is the emergency kill switch and leaves built-in tools operational. `MCP_CONNECTION_RATE_LIMIT_PER_WINDOW` bounds connect and verify attempts for each credential owner and installation.
 
 ## Deploy
+
+This version establishes a greenfield schema epoch. Back up if needed, then
+explicitly drop and recreate both application databases:
+
+```bash
+pg_dump --format=custom --file acornops-control-plane-backup.dump "$CONTROL_PLANE_DATABASE_URL"
+dropdb --force --dbname "$POSTGRES_ADMIN_URL" "$CONTROL_PLANE_DATABASE_NAME"
+createdb --dbname "$POSTGRES_ADMIN_URL" "$CONTROL_PLANE_DATABASE_NAME"
+```
+
+Pre-release data is not preserved. This is a first-install/reset cutover; deploy
+the control-plane, execution-engine, gateway,
+deployment configuration, and documentation as one pinned matrix.
 
 ```bash
 task prod-up
 ```
 
-`prod-up` runs `llm-gateway-init` and `control-plane-init` before starting application services. During the pre-release phase, schema files may be rewritten directly; inspect job logs or run the control-plane `db:status` command inside the service image when checking migration state.
+`prod-up` runs `llm-gateway-init` and `control-plane-init` before either
+application starts. Inspect logs or
+run the control-plane `db:status` command inside the service image when checking
+migration state.
+
+Perform the credential-model release in a maintenance window: pause admission
+and schedulers, drain runs, disable remote MCP, back up Postgres and the secret
+namespace, then deploy the pinned matrix. Smoke test built-in tools plus
+workspace and individual credential connect, verify, rotation, and disconnect
+before re-enabling remote MCP.
 
 ## Operate
 

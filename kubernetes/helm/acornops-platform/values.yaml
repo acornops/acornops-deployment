@@ -59,7 +59,6 @@ secrets:
     controlPlane:
       databaseUrl: CONTROL_PLANE_DATABASE_URL
       redisUrl: CONTROL_PLANE_REDIS_URL
-      oidcClientSecret: OIDC_CLIENT_SECRET
       csrfSecret: CSRF_SECRET
       gatewaySigningPrivateKeyPemB64: GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64
       orchestrationServiceToken: ORCH_SERVICE_TOKEN
@@ -86,26 +85,39 @@ auth:
     # Sliding browser session idle timeout in seconds.
     idleTimeoutSeconds: 86400
   oidc:
-    # Display/provider identifier used by the control plane.
+    enabled: true
+    # Stable persisted identity namespace. Do not reuse it for an unrelated issuer.
     providerName: oidc
     # Internal issuer URL reachable from the control-plane pod.
     issuerUrl: https://keycloak.acornops.dev/realms/acornops
     # Optional public issuer URL if browser-visible discovery differs from internal issuerUrl.
     publicIssuerUrl: ""
     clientId: acornops-control-plane
+    clientSecret:
+      # Secret reference is used only when OIDC is enabled.
+      existingSecret: acornops-platform-secrets
+      key: OIDC_CLIENT_SECRET
     # Token endpoint client authentication method.
     tokenEndpointAuthMethod: client_secret_basic
     # Optional endpoint overrides for providers behind split internal/public routing.
-    authorizationEndpointOverride: ""
-    tokenEndpointOverride: ""
-    userinfoEndpointOverride: ""
+    authorizationEndpoint: ""
+    tokenEndpoint: ""
+    userInfoEndpoint: ""
     jwksUriOverride: ""
     # Defaults to <platform.consoleUrl>/api/v1/auth/oidc/callback when empty.
     redirectUri: ""
-    scopes: openid profile email
+    scopes:
+      - openid
+      - profile
+      - email
     useUserinfo: true
-    # Keep true unless a trusted provider intentionally emits email_verified=false.
-    requireVerifiedEmail: true
+    # Omitted rules allow any identity that completes OIDC authentication.
+    admission: {}
+    logout:
+      # Optional public browser-facing RP-initiated logout endpoint.
+      endSessionEndpointOverride: ""
+      # Defaults to <platform.consoleUrl>/api/v1/auth/oidc/logout/callback when empty.
+      postLogoutRedirectUri: ""
     httpTimeoutMs: 10000
   password:
     # Username/password auth can run alongside OIDC.
@@ -189,48 +201,62 @@ adminApi:
     existingSecretName: ""
     tokensJsonKey: CONTROL_PLANE_ADMIN_TOKENS_JSON
 
-agent:
-  routing:
-    # Enables HA agent ownership and cross-pod routing through external Redis.
-    distributedEnabled: true
+# Shared control-plane gateway settings for both AgentK and AgentV connections.
+# This does not configure either target-side agent daemon.
+agentGateway:
+  distributedRouting:
+    # Enables HA target ownership and cross-pod routing through external Redis.
+    enabled: true
     ownerTtlSeconds: 90
-    snapshotIntervalSeconds: 60
-    # Accommodates the 2 MiB complete tool result plus its MCP/WebSocket envelope.
-    maxWebSocketPayloadBytes: 3145728
-  runtime:
-    contextMaxTokens: 120000
-    budgetCents: 25
-    temperature: "0.2"
-    maxRuntimeMs: 600000
-    maxSteps: 16
-    maxToolCalls: 24
-    maxDuplicateToolCalls: 2
-    toolDefaultTimeoutMs: 10000
-    # Require explicit user approval before write-capable agent tools execute.
-    writeConfirmationRequired: true
-    writeConfirmationTimeoutSeconds: 900
-  helm:
-    # Defaults used when the control plane creates workload-cluster agent installs.
-    releaseName: acornops-agentk
-    chartRef: oci://ghcr.io/acornops/charts/acornops-agentk
-    # Optional exact version. Leave empty to install the latest chart, including prereleases.
-    chartVersion: ""
-    namespace: acornops-agentk
-    # Literal downstream AgentK chart values added to generated install commands.
-    # Control-plane-owned identity, connection, namespace, and write-mode values
-    # are rejected.
-    values: {}
-    files:
-      additionalCaBundle:
-        # Path on the operator machine that runs the generated Helm command.
-        # When set, Helm reads this PEM bundle with --set-file and the AgentK
-        # chart manages the namespace-local trust ConfigMap.
-        sourcePath: ""
-  builtinMcpServer:
-    name: acornops-cluster-agent
-    # Defaults to the in-cluster control-plane internal MCP endpoint when empty.
-    url: ""
-    displayName: AcornOps Kubernetes Tools
+  snapshotIntervalSeconds: 60
+  # Accommodates the 2 MiB complete tool result plus its MCP/WebSocket envelope.
+  maxWebSocketPayloadBytes: 3145728
+
+# Default limits and approval policy for AI assistant runs in the control plane.
+# These settings are independent of the AgentK and AgentV daemon configuration.
+assistantRuntime:
+  # Optional override. Leave empty to use the control plane's production default.
+  systemInstruction: ""
+  contextMaxTokens: 120000
+  budgetCents: 25
+  temperature: "0.2"
+  maxRuntimeMs: 600000
+  maxSteps: 16
+  maxToolCalls: 24
+  maxDuplicateToolCalls: 2
+  toolDefaultTimeoutMs: 10000
+  # Require explicit user approval before write-capable tools execute.
+  writeConfirmationRequired: true
+  writeConfirmationTimeoutSeconds: 900
+
+# Target-specific installation settings. AgentV is installed on VMs with its
+# systemd archive and therefore intentionally has no Helm configuration here.
+targetAgents:
+  agentk:
+    helm:
+      # Defaults used to generate AgentK install commands for Kubernetes targets.
+      releaseName: acornops-agentk
+      chartRef: oci://ghcr.io/acornops/charts/acornops-agentk
+      # Optional exact version. Leave empty to install the latest chart, including prereleases.
+      chartVersion: ""
+      namespace: acornops-agentk
+      # Literal downstream AgentK chart values added to generated install commands.
+      # Control-plane-owned identity, connection, namespace, and write-mode values
+      # are rejected.
+      values: {}
+      files:
+        additionalCaBundle:
+          # Path on the operator machine that runs the generated Helm command.
+          # When set, Helm reads this PEM bundle with --set-file and the AgentK
+          # chart manages the namespace-local trust ConfigMap.
+          sourcePath: ""
+
+# Internal MCP identity shared by AgentK and AgentV target tools.
+builtinTargetMcp:
+  name: acornops-target-agent
+  # Defaults to the in-cluster control-plane internal MCP endpoint when empty.
+  url: ""
+  displayName: AcornOps Target Tools
 
 internalTransport:
   tls:
@@ -378,7 +404,7 @@ components:
     basePath: /
     image:
       repository: ghcr.io/acornops/management-console
-      tag: 0.0.1-experimental.20
+      tag: 0.0.1-experimental.21
       pullPolicy: IfNotPresent
     service:
       port: 80
@@ -432,6 +458,8 @@ components:
     toolResultArtifacts:
       retentionDays: 7
       maxBytes: 2097152
+    reportArtifacts:
+      maxRetentionDays: 30
     recentActivity:
       windowSeconds: 300
     runEvents:
@@ -443,7 +471,7 @@ components:
       allowedPrivateHosts: []
     image:
       repository: ghcr.io/acornops/control-plane
-      tag: 0.0.1-experimental.20
+      tag: 0.0.1-experimental.21
       pullPolicy: IfNotPresent
     service:
       port: 8081
@@ -513,7 +541,7 @@ components:
     maxRequestBodyBytes: 1000000
     image:
       repository: ghcr.io/acornops/execution-engine
-      tag: 0.0.1-experimental.9
+      tag: 0.0.1-experimental.10
       pullPolicy: IfNotPresent
     service:
       port: 8080
@@ -590,14 +618,39 @@ components:
       allowedHosts: ""
       allowPrivateNetworks: false
       allowLocalAddresses: false
+    remoteMcp:
+      # Emergency kill switch. false blocks external discovery and execution;
+      # built-in platform MCP remains available.
+      enabled: true
+    # Registry discovery is separate from runtime MCP installation. Bootstrap
+    # credentials are injected from Secrets and never rendered into ConfigMaps.
+    catalog:
+      officialRegistryEnabled: false
+      officialRegistryUrl: https://registry.modelcontextprotocol.io
+      allowWorkspaceManagedSources: true
+      bootstrapSources: []
+      # Example entry:
+      # - workspaceId: "*"
+      #   displayName: Internal MCP Registry
+      #   baseUrl: https://registry.internal.example
+      #   networkRoute: direct
+      #   adapterBasePath: /v0.1
+      #   enabled: true
+      #   auth:
+      #     type: bearer_token
+      #     headerName: ""
+      #     secretKeyRef:
+      #       name: internal-registry-credential
+      #       key: token
     rateLimits:
       windowSeconds: 60
       llmPerWindow: 100
       toolPerWindow: 200
+      mcpConnectionPerWindow: 10
       requireRedisInProduction: true
     image:
       repository: ghcr.io/acornops/llm-gateway
-      tag: 0.0.1-experimental.11
+      tag: 0.0.1-experimental.12
       pullPolicy: IfNotPresent
     service:
       port: 8001
