@@ -36,10 +36,24 @@ Central tracking: acornops/acornops#12.
 - 2026-07-22: Existing PRs remain the merge vehicles for attribution.
 - 2026-07-22: Current deployment names, profiles, security defaults, and image
   compatibility matrix are authoritative.
+- 2026-07-22, Wave 2: The old broad
+  `WEBHOOK_ALLOW_INSECURE_DEV_DELIVERY` switch is not part of the current
+  control-plane contract and is intentionally not restored. The deployment
+  already passes `WEBHOOK_EGRESS_ALLOWED_PRIVATE_HOSTS_JSON`; local and VM
+  examples now show how to opt an exact HTTPS Mattermost bot hostname into
+  private-address delivery without weakening URL, DNS, redirect, or reserved-
+  address protections.
 
 ## Validation Log
 
 - Baseline: `task validate` passed on untouched `main`.
+- Wave 1: `task validate` passed after propagating the external integration
+  capability ceiling across local and VM client examples.
+- Wave 2: `task validate` passed after reconciling the obsolete insecure webhook
+  switch to the current exact-private-host contract. Deployment contracts,
+  harness, local fixture profiles, Linux install dry-run, Python standards,
+  Helm chart, release matrix, production edge, and production image checks all
+  passed.
 - Each wave: run targeted rendered-config assertions, `task validate`, platform
   contract checks with sibling repositories, and Helm/Compose render checks.
 - Final: bring up the integrated local stack and exercise Mattermost linking,
