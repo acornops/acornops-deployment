@@ -146,7 +146,9 @@ layer 3/4, so its destinations use selectors or CIDRs rather than hostnames.
 Durable webhook delivery uses a Postgres-backed worker on every control-plane
 replica. Concurrency and per-origin limits apply to each replica; effective
 cluster concurrency scales with replica count, while leased claims and fenced
-completion coordinate ownership. Tune bounded per-replica concurrency, the
+completion coordinate ownership. The effective same-origin limit is the lower
+of `concurrency` and `perOriginConcurrency`; leases are sized for a full batch
+to drain at that effective limit. Tune bounded per-replica concurrency, the
 retry window, payload limit, and workspace subscription limit under
 `components.controlPlane.webhookDelivery`. Set `enabled: false` during
 maintenance to pause new claims while events continue to enqueue, then restore
