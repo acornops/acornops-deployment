@@ -49,6 +49,11 @@ Central tracking: acornops/acornops#12.
   local, VM, Helm, production-example, and contract-manifest surfaces. Pausing
   the worker stops claims without dropping newly enqueued events; the obsolete
   insecure-delivery switch remains absent.
+- 2026-07-22, Wave 4: External clients remain read-only by default. Operators
+  must add `create_read_write_runs` to a client's deployment-owned capability
+  ceiling before a user can grant write-run and exact-origin approval access.
+  Descriptor examples retain the current `sha256` and `enabled` fields rather
+  than restoring the older `tokenSha256` shape.
 
 ## Validation Log
 
@@ -63,6 +68,11 @@ Central tracking: acornops/acornops#12.
 - Wave 3: `task validate` passed after durable worker contract propagation.
   Contract, harness, local fixture, Linux install, Python standards, Helm,
   release matrix, production edge, and production image checks all passed.
+- Wave 4: `task validate` passed after documenting the opt-in write-run
+  capability ceiling and aligning the Helm descriptor example with the current
+  control-plane parser. Contract, harness, local fixture, Linux install, Python
+  standards, Helm, release matrix, production edge, and production image checks
+  all passed.
 - Each wave: run targeted rendered-config assertions, `task validate`, platform
   contract checks with sibling repositories, and Helm/Compose render checks.
 - Final: bring up the integrated local stack and exercise Mattermost linking,

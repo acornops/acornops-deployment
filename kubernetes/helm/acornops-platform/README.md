@@ -334,7 +334,7 @@ approval-gated Workflows and decide exact-origin approvals. For example, keep a
 read-only client descriptor shaped like:
 
 ```json
-[{"id":"external-chat","provider":"external","displayName":"External chat","tokenSha256":"<sha256>","allowedCapabilities":["read_workspace_data","create_sessions","create_read_only_runs"]}]
+[{"id":"external-chat","provider":"external","displayName":"External chat","sha256":"<64-lowercase-hex-token-sha256>","enabled":true,"allowedCapabilities":["read_workspace_data","create_sessions","create_read_only_runs"]}]
 ```
 
 The key name is configured with
