@@ -44,7 +44,7 @@ Central tracking: acornops/acornops#12.
   private-address delivery without weakening URL, DNS, redirect, or reserved-
   address protections.
 - 2026-07-22, Wave 3: Durable delivery remains Postgres-backed and runs on each
-  control-plane replica with bounded global and per-origin concurrency. The
+  control-plane replica with bounded per-replica and per-origin concurrency. The
   eight worker, retry, payload, and subscription settings are propagated across
   local, VM, Helm, production-example, and contract-manifest surfaces. Pausing
   the worker stops claims without dropping newly enqueued events; the obsolete
@@ -54,6 +54,11 @@ Central tracking: acornops/acornops#12.
   ceiling before a user can grant write-run and exact-origin approval access.
   Descriptor examples retain the current `sha256` and `enabled` fields rather
   than restoring the older `tokenSha256` shape.
+- 2026-07-23, production sweep: Clarified that worker concurrency is bounded
+  per control-plane replica, not globally, and that the configured lease must
+  cover the worst-case same-origin batch. This keeps scaling guidance aligned
+  with the implemented worker rather than implying cross-replica coordination
+  that the deployment does not provide.
 
 ## Validation Log
 
@@ -73,6 +78,10 @@ Central tracking: acornops/acornops#12.
   control-plane parser. Contract, harness, local fixture, Linux install, Python
   standards, Helm, release matrix, production edge, and production image checks
   all passed.
+- Production sweep: `task validate` passed after the worker scaling and lease
+  guidance was reconciled. Contract, harness, local fixture, Linux install,
+  Python standards, Helm, release matrix, production edge, and production
+  image checks all passed.
 - Each wave: run targeted rendered-config assertions, `task validate`, platform
   contract checks with sibling repositories, and Helm/Compose render checks.
 - Final: bring up the integrated local stack and exercise Mattermost linking,

@@ -144,8 +144,10 @@ connection; webhook redirects are not followed. Kubernetes NetworkPolicy is
 layer 3/4, so its destinations use selectors or CIDRs rather than hostnames.
 
 Durable webhook delivery uses a Postgres-backed worker on every control-plane
-replica. Tune its bounded concurrency, retry window, payload limit, and
-workspace subscription limit under
+replica. Concurrency and per-origin limits apply to each replica; effective
+cluster concurrency scales with replica count, while leased claims and fenced
+completion coordinate ownership. Tune bounded per-replica concurrency, the
+retry window, payload limit, and workspace subscription limit under
 `components.controlPlane.webhookDelivery`. Set `enabled: false` during
 maintenance to pause new claims while events continue to enqueue, then restore
 it to drain the backlog. Endpoint failures do not make control-plane readiness
