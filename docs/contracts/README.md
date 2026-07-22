@@ -92,6 +92,13 @@ after trust-bundle changes. Rotation uses an old/new CA overlap followed by a
 restart at each bundle transition because Node.js reads `NODE_EXTRA_CA_CERTS`
 only at process startup.
 
+Durable webhook delivery is also a deployment-owned contract. Local Compose,
+VM Compose, Helm values and ConfigMap output expose the same bounded worker,
+retry, payload, and subscription settings listed in
+`durableWebhookDeliveryRuntimeEnv` and
+`durableWebhookDeliveryHelmValues` in the deployment manifest. Disabling the
+worker pauses claims but does not discard events queued by the control plane.
+
 ## Admin API And Workspace Plans
 
 The deployment contract for the control-plane admin API is:

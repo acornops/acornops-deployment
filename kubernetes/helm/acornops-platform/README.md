@@ -143,6 +143,14 @@ address. DNS answers are validated before a selected address is pinned for the
 connection; webhook redirects are not followed. Kubernetes NetworkPolicy is
 layer 3/4, so its destinations use selectors or CIDRs rather than hostnames.
 
+Durable webhook delivery uses a Postgres-backed worker on every control-plane
+replica. Tune its bounded concurrency, retry window, payload limit, and
+workspace subscription limit under
+`components.controlPlane.webhookDelivery`. Set `enabled: false` during
+maintenance to pause new claims while events continue to enqueue, then restore
+it to drain the backlog. Endpoint failures do not make control-plane readiness
+fail.
+
 Private MCP endpoints require all three controls: an exact hostname in
 `components.llmGateway.mcpEgress.allowedHosts`, a matching private destination
 under `networkPolicies.extraEgress.llmGateway`, and TLS trust for the issuing

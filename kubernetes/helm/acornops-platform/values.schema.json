@@ -760,6 +760,16 @@
                 "webhookDelivery": {
                   "type": "object",
                   "additionalProperties": false,
+                  "required": [
+                    "enabled",
+                    "batchSize",
+                    "concurrency",
+                    "perOriginConcurrency",
+                    "maxAttempts",
+                    "maxRetryAgeSeconds",
+                    "maxPayloadBytes",
+                    "maxSubscriptionsPerWorkspace"
+                  ],
                   "properties": {
                     "enabled": { "type": "boolean" },
                     "batchSize": { "type": "integer", "minimum": 1, "maximum": 200 },

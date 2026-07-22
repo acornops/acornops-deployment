@@ -94,6 +94,36 @@ expect(
     stable(['WEBHOOK_EGRESS_ALLOWED_PRIVATE_HOSTS_JSON']),
   'Deployment manifest should expose the exact private webhook runtime environment contract'
 );
+const durableWebhookDeliveryHelmValues = [
+  'components.controlPlane.webhookDelivery.enabled',
+  'components.controlPlane.webhookDelivery.batchSize',
+  'components.controlPlane.webhookDelivery.concurrency',
+  'components.controlPlane.webhookDelivery.perOriginConcurrency',
+  'components.controlPlane.webhookDelivery.maxAttempts',
+  'components.controlPlane.webhookDelivery.maxRetryAgeSeconds',
+  'components.controlPlane.webhookDelivery.maxPayloadBytes',
+  'components.controlPlane.webhookDelivery.maxSubscriptionsPerWorkspace'
+];
+const durableWebhookDeliveryRuntimeEnv = [
+  'WEBHOOK_WORKER_ENABLED',
+  'WEBHOOK_WORKER_BATCH_SIZE',
+  'WEBHOOK_WORKER_CONCURRENCY',
+  'WEBHOOK_WORKER_PER_ORIGIN_CONCURRENCY',
+  'WEBHOOK_MAX_ATTEMPTS',
+  'WEBHOOK_MAX_RETRY_AGE_SECONDS',
+  'WEBHOOK_MAX_PAYLOAD_BYTES',
+  'WEBHOOK_MAX_SUBSCRIPTIONS_PER_WORKSPACE'
+];
+expect(
+  stable(deploymentManifest.contractSurfaces?.durableWebhookDeliveryHelmValues) ===
+    stable(durableWebhookDeliveryHelmValues),
+  'Deployment manifest should expose the exact durable webhook Helm values contract'
+);
+expect(
+  stable(deploymentManifest.contractSurfaces?.durableWebhookDeliveryRuntimeEnv) ===
+    stable(durableWebhookDeliveryRuntimeEnv),
+  'Deployment manifest should expose the exact durable webhook runtime environment contract'
+);
 
 const chartSchema = readJson(
   path.join(root, 'kubernetes/helm/acornops-platform/values.schema.json')
@@ -139,6 +169,14 @@ expect(
     ?.webhookEgress?.properties?.allowedPrivateHosts,
   'Chart schema should expose the private webhook hostname allowlist'
 );
+const webhookDeliverySchema =
+  chartSchema.properties?.components?.properties?.controlPlane?.allOf?.[1]?.properties
+    ?.webhookDelivery;
+expect(
+  stable(webhookDeliverySchema?.required) ===
+    stable(durableWebhookDeliveryHelmValues.map((valuePath) => valuePath.split('.').at(-1))),
+  'Chart schema should require the complete durable webhook delivery contract'
+);
 
 const privateEgressTemplate = readFileSync(
   path.join(root, 'kubernetes/helm/acornops-platform/templates/networkpolicy.yaml'),
@@ -159,6 +197,16 @@ expect(
     controlPlaneConfigMap.includes('.Values.components.controlPlane.webhookEgress.allowedPrivateHosts'),
   'Control-plane ConfigMap should render the private webhook hostname policy'
 );
+for (const [runtimeEnv, helmValue] of durableWebhookDeliveryRuntimeEnv.map((runtimeEnv, index) => [
+  runtimeEnv,
+  durableWebhookDeliveryHelmValues[index]
+])) {
+  expect(
+    controlPlaneConfigMap.includes(runtimeEnv) &&
+      controlPlaneConfigMap.includes(`.Values.${helmValue}`),
+    `Control-plane ConfigMap should render ${runtimeEnv} from ${helmValue}`
+  );
+}
 
 const additionalCaTemplateSource = [
   readFileSync(
@@ -231,6 +279,11 @@ const platformChartConfig = readFileSync(
 const localAgentEnvExample = readFileSync(path.join(root, 'env/local/.env.agent.example'), 'utf8');
 const localEnvExample = readFileSync(path.join(root, 'env/local/.env.example'), 'utf8');
 const vmEnvExample = readFileSync(path.join(root, 'env/vm/.env.example'), 'utf8');
+for (const marker of durableWebhookDeliveryRuntimeEnv) {
+  for (const source of [localCompose, vmCompose, localEnvExample, vmEnvExample]) {
+    expect(source.includes(marker), `Deployment surfaces should preserve ${marker}`);
+  }
+}
 for (const marker of [
   'REMOTE_MCP_ENABLED',
   'MCP_CONNECTION_RATE_LIMIT_PER_WINDOW'

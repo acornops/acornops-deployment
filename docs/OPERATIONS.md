@@ -21,8 +21,11 @@ enqueue events safely. Re-enable it after maintenance to drain the backlog.
 
 The default worker claims 50 jobs per sweep, runs 20 deliveries globally and no
 more than 4 per destination origin, and stops retrying after 10 attempts or 24
-hours. Keep `WEBHOOK_ALLOW_INSECURE_DEV_DELIVERY=false` outside explicit local
-development. External endpoint failures are not readiness failures.
+hours. Delivery remains HTTPS-only. A private Mattermost bot must use an exact
+hostname in `WEBHOOK_EGRESS_ALLOWED_PRIVATE_HOSTS_JSON` together with the
+matching packet-level egress rule; this does not weaken DNS, redirect, or
+reserved-address protections. External endpoint failures are not readiness
+failures.
 
 ## Production Domains
 

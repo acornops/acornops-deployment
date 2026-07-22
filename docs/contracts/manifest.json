@@ -152,6 +152,26 @@
       "components.controlPlane.webhookEgress.allowedPrivateHosts"
     ],
     "privateWebhookRuntimeEnv": ["WEBHOOK_EGRESS_ALLOWED_PRIVATE_HOSTS_JSON"],
+    "durableWebhookDeliveryHelmValues": [
+      "components.controlPlane.webhookDelivery.enabled",
+      "components.controlPlane.webhookDelivery.batchSize",
+      "components.controlPlane.webhookDelivery.concurrency",
+      "components.controlPlane.webhookDelivery.perOriginConcurrency",
+      "components.controlPlane.webhookDelivery.maxAttempts",
+      "components.controlPlane.webhookDelivery.maxRetryAgeSeconds",
+      "components.controlPlane.webhookDelivery.maxPayloadBytes",
+      "components.controlPlane.webhookDelivery.maxSubscriptionsPerWorkspace"
+    ],
+    "durableWebhookDeliveryRuntimeEnv": [
+      "WEBHOOK_WORKER_ENABLED",
+      "WEBHOOK_WORKER_BATCH_SIZE",
+      "WEBHOOK_WORKER_CONCURRENCY",
+      "WEBHOOK_WORKER_PER_ORIGIN_CONCURRENCY",
+      "WEBHOOK_MAX_ATTEMPTS",
+      "WEBHOOK_MAX_RETRY_AGE_SECONDS",
+      "WEBHOOK_MAX_PAYLOAD_BYTES",
+      "WEBHOOK_MAX_SUBSCRIPTIONS_PER_WORKSPACE"
+    ],
     "agentKRolloutEnv": [
       "ACORNOPS_AGENT_PLATFORM_URL",
       "ACORNOPS_CLUSTER_ID",

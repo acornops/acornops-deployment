@@ -43,6 +43,12 @@ Central tracking: acornops/acornops#12.
   examples now show how to opt an exact HTTPS Mattermost bot hostname into
   private-address delivery without weakening URL, DNS, redirect, or reserved-
   address protections.
+- 2026-07-22, Wave 3: Durable delivery remains Postgres-backed and runs on each
+  control-plane replica with bounded global and per-origin concurrency. The
+  eight worker, retry, payload, and subscription settings are propagated across
+  local, VM, Helm, production-example, and contract-manifest surfaces. Pausing
+  the worker stops claims without dropping newly enqueued events; the obsolete
+  insecure-delivery switch remains absent.
 
 ## Validation Log
 
@@ -54,6 +60,9 @@ Central tracking: acornops/acornops#12.
   harness, local fixture profiles, Linux install dry-run, Python standards,
   Helm chart, release matrix, production edge, and production image checks all
   passed.
+- Wave 3: `task validate` passed after durable worker contract propagation.
+  Contract, harness, local fixture, Linux install, Python standards, Helm,
+  release matrix, production edge, and production image checks all passed.
 - Each wave: run targeted rendered-config assertions, `task validate`, platform
   contract checks with sibling repositories, and Helm/Compose render checks.
 - Final: bring up the integrated local stack and exercise Mattermost linking,
