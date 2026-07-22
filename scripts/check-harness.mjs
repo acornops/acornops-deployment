@@ -149,6 +149,7 @@ expectIncludes(taskfile, 'contracts:check:', 'Taskfile canonical contract check 
 expectIncludes(taskfile, 'harness:check:', 'Taskfile canonical harness check task');
 expectIncludes(taskfile, 'platform-contracts:', 'Taskfile platform contract check task');
 expectIncludes(taskfile, 'local-smoke:', 'Taskfile local full-stack smoke task');
+expectIncludes(taskfile, 'local-agentv-smoke:', 'Taskfile focused AgentV smoke task');
 expectIncludes(readme, 'task local-smoke', 'README local full-stack smoke command');
 
 for (const metadataPath of [

@@ -28,6 +28,24 @@ groups:
           summary: "LLM gateway secret backend is failing"
           description: "Provider or MCP secrets may be unavailable."
 
+      - alert: LlmGatewayMcpSecretCleanupFailing
+        expr: sum(increase(gateway_mcp_secret_cleanup_total{outcome="error"}[10m])) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MCP credential cleanup failed"
+          description: "A disconnect, uninstall, or trust-boundary cleanup could not delete an MCP credential."
+
+      - alert: LlmGatewayMcpRuntimeAuthRejectionsSustained
+        expr: sum(rate(gateway_mcp_runtime_auth_rejections_total[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Remote MCP authentication rejections are sustained"
+          description: "Remote MCP servers are repeatedly returning 401 or 403 for credential connections."
+
       - alert: LlmGatewayProviderErrorsElevated
         expr: |
           sum(rate(gateway_llm_provider_requests_total{status="error"}[5m]))

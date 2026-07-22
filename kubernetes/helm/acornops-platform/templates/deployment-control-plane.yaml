@@ -93,11 +93,13 @@ spec:
                 secretKeyRef:
                   name: {{ include "acornops-platform.secretName" . }}
                   key: {{ .Values.secrets.keys.controlPlane.redisUrl }}
+            {{- if .Values.auth.oidc.enabled }}
             - name: OIDC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "acornops-platform.secretName" . }}
-                  key: {{ .Values.secrets.keys.controlPlane.oidcClientSecret }}
+                  name: {{ required "auth.oidc.clientSecret.existingSecret is required when OIDC is enabled" .Values.auth.oidc.clientSecret.existingSecret | quote }}
+                  key: {{ required "auth.oidc.clientSecret.key is required when OIDC is enabled" .Values.auth.oidc.clientSecret.key | quote }}
+            {{- end }}
             - name: CSRF_SECRET
               valueFrom:
                 secretKeyRef:

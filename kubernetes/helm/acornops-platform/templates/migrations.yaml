@@ -36,7 +36,10 @@ spec:
           imagePullPolicy: {{ .Values.components.controlPlane.image.pullPolicy }}
           securityContext:
             {{- toYaml .Values.components.controlPlane.containerSecurityContext | nindent 12 }}
-          command: ["node", "dist/scripts/control-plane-db.js", "migrate"]
+          command:
+            - sh
+            - -c
+            - node dist/scripts/control-plane-db.js migrate
           volumeMounts:
             - name: tmp
               mountPath: /tmp

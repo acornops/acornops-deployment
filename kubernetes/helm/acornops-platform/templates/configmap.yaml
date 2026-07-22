@@ -16,13 +16,13 @@ data:
   TRUST_PROXY: {{ .Values.components.controlPlane.trustProxy | quote }}
   CONTROL_PLANE_BASE_URL: {{ include "acornops-platform.publicUrl" . | quote }}
   MANAGEMENT_CONSOLE_BASE_URL: {{ include "acornops-platform.managementConsoleUrl" . | quote }}
-  CONTROL_PLANE_DISTRIBUTED_ROUTING_ENABLED: {{ .Values.agent.routing.distributedEnabled | quote }}
-  CONTROL_PLANE_AGENT_OWNER_TTL_SECONDS: {{ .Values.agent.routing.ownerTtlSeconds | quote }}
-  CONTROL_PLANE_AGENT_SNAPSHOT_INTERVAL_SECONDS: {{ .Values.agent.routing.snapshotIntervalSeconds | quote }}
+  CONTROL_PLANE_DISTRIBUTED_ROUTING_ENABLED: {{ .Values.agentGateway.distributedRouting.enabled | quote }}
+  CONTROL_PLANE_AGENT_OWNER_TTL_SECONDS: {{ .Values.agentGateway.distributedRouting.ownerTtlSeconds | quote }}
+  CONTROL_PLANE_AGENT_SNAPSHOT_INTERVAL_SECONDS: {{ .Values.agentGateway.snapshotIntervalSeconds | quote }}
   AUTOMATION_RUNTIME_MODE: {{ .Values.automation.runtimeMode | quote }}
   AUTOMATION_CANARY_WORKSPACE_IDS: {{ .Values.automation.canaryWorkspaceIds | quote }}
   AUTOMATION_WORKER_INTERVAL_MS: {{ .Values.automation.workerIntervalMs | quote }}
-  AGENT_WS_MAX_PAYLOAD_BYTES: {{ .Values.agent.routing.maxWebSocketPayloadBytes | int | quote }}
+  AGENT_WS_MAX_PAYLOAD_BYTES: {{ .Values.agentGateway.maxWebSocketPayloadBytes | int | quote }}
   CORS_ORIGIN: {{ default (include "acornops-platform.managementConsoleUrl" .) .Values.components.controlPlane.corsOrigin | quote }}
   SESSION_COOKIE_NAME: {{ .Values.auth.session.cookieName | quote }}
   SESSION_MAX_AGE_SECONDS: {{ .Values.auth.session.maxAgeSeconds | quote }}
@@ -31,6 +31,7 @@ data:
   CONVERSATION_RETENTION_JOB_INTERVAL_SECONDS: {{ .Values.components.controlPlane.conversationRetention.jobIntervalSeconds | quote }}
   TOOL_RESULT_ARTIFACT_RETENTION_DAYS: {{ .Values.components.controlPlane.toolResultArtifacts.retentionDays | quote }}
   TOOL_RESULT_ARTIFACT_MAX_BYTES: {{ .Values.components.controlPlane.toolResultArtifacts.maxBytes | quote }}
+  TARGET_CHAT_REPORT_RETENTION_DAYS: {{ .Values.components.controlPlane.reportArtifacts.maxRetentionDays | quote }}
   WORKSPACE_AUDIT_LOGGING_MODE: {{ .Values.auditLogging.mode | quote }}
   WORKSPACE_AUDIT_RETENTION_DAYS: {{ .Values.auditLogging.retentionDays | quote }}
   TARGET_CHAT_RECENT_ACTIVITY_WINDOW_SECONDS: {{ .Values.components.controlPlane.recentActivity.windowSeconds | quote }}
@@ -45,26 +46,33 @@ data:
   WEBHOOK_MAX_PAYLOAD_BYTES: {{ .Values.components.controlPlane.webhookDelivery.maxPayloadBytes | quote }}
   WEBHOOK_MAX_SUBSCRIPTIONS_PER_WORKSPACE: {{ .Values.components.controlPlane.webhookDelivery.maxSubscriptionsPerWorkspace | quote }}
   SEED_DEVELOPMENT_DATA: "false"
-  AGENT_HELM_RELEASE_NAME: {{ .Values.agent.helm.releaseName | quote }}
-  AGENT_HELM_CHART_REF: {{ .Values.agent.helm.chartRef | quote }}
-  AGENT_HELM_CHART_VERSION: {{ .Values.agent.helm.chartVersion | quote }}
-  AGENT_HELM_NAMESPACE: {{ .Values.agent.helm.namespace | quote }}
-  AGENT_HELM_VALUES_JSON: {{ .Values.agent.helm.values | toJson | quote }}
-  AGENT_HELM_ADDITIONAL_CA_FILE_PATH: {{ .Values.agent.helm.files.additionalCaBundle.sourcePath | quote }}
+  AGENTK_HELM_RELEASE_NAME: {{ .Values.targetAgents.agentk.helm.releaseName | quote }}
+  AGENTK_HELM_CHART_REF: {{ .Values.targetAgents.agentk.helm.chartRef | quote }}
+  AGENTK_HELM_CHART_VERSION: {{ .Values.targetAgents.agentk.helm.chartVersion | quote }}
+  AGENTK_HELM_NAMESPACE: {{ .Values.targetAgents.agentk.helm.namespace | quote }}
+  AGENTK_HELM_VALUES_JSON: {{ .Values.targetAgents.agentk.helm.values | toJson | quote }}
+  AGENTK_HELM_ADDITIONAL_CA_FILE_PATH: {{ .Values.targetAgents.agentk.helm.files.additionalCaBundle.sourcePath | quote }}
+  OIDC_ENABLED: {{ .Values.auth.oidc.enabled | quote }}
+  {{- if .Values.auth.oidc.enabled }}
   OIDC_PROVIDER_NAME: {{ .Values.auth.oidc.providerName | quote }}
   OIDC_ISSUER_URL: {{ .Values.auth.oidc.issuerUrl | quote }}
   OIDC_PUBLIC_ISSUER_URL: {{ .Values.auth.oidc.publicIssuerUrl | quote }}
   OIDC_CLIENT_ID: {{ .Values.auth.oidc.clientId | quote }}
   OIDC_TOKEN_ENDPOINT_AUTH_METHOD: {{ .Values.auth.oidc.tokenEndpointAuthMethod | quote }}
-  OIDC_AUTHORIZATION_ENDPOINT_OVERRIDE: {{ .Values.auth.oidc.authorizationEndpointOverride | quote }}
-  OIDC_TOKEN_ENDPOINT_OVERRIDE: {{ .Values.auth.oidc.tokenEndpointOverride | quote }}
-  OIDC_USERINFO_ENDPOINT_OVERRIDE: {{ .Values.auth.oidc.userinfoEndpointOverride | quote }}
+  OIDC_AUTHORIZATION_ENDPOINT_OVERRIDE: {{ .Values.auth.oidc.authorizationEndpoint | quote }}
+  OIDC_TOKEN_ENDPOINT_OVERRIDE: {{ .Values.auth.oidc.tokenEndpoint | quote }}
+  OIDC_USERINFO_ENDPOINT_OVERRIDE: {{ .Values.auth.oidc.userInfoEndpoint | quote }}
   OIDC_JWKS_URI_OVERRIDE: {{ .Values.auth.oidc.jwksUriOverride | quote }}
+  OIDC_END_SESSION_ENDPOINT_OVERRIDE: {{ .Values.auth.oidc.logout.endSessionEndpointOverride | quote }}
   OIDC_REDIRECT_URI: {{ default (printf "%s/api/v1/auth/oidc/callback" (include "acornops-platform.managementConsoleUrl" .)) .Values.auth.oidc.redirectUri | quote }}
-  OIDC_SCOPES: {{ .Values.auth.oidc.scopes | quote }}
+  OIDC_POST_LOGOUT_REDIRECT_URI: {{ default (printf "%s/api/v1/auth/oidc/logout/callback" (include "acornops-platform.managementConsoleUrl" .)) .Values.auth.oidc.logout.postLogoutRedirectUri | quote }}
+  OIDC_SCOPES: {{ join " " .Values.auth.oidc.scopes | quote }}
   OIDC_USE_USERINFO: {{ .Values.auth.oidc.useUserinfo | quote }}
-  OIDC_REQUIRE_VERIFIED_EMAIL: {{ .Values.auth.oidc.requireVerifiedEmail | quote }}
+  OIDC_ADMISSION_POLICY_JSON: {{ .Values.auth.oidc.admission | toJson | quote }}
   OIDC_HTTP_TIMEOUT_MS: {{ .Values.auth.oidc.httpTimeoutMs | quote }}
+  {{- else }}
+  OIDC_ADMISSION_POLICY_JSON: "{}"
+  {{- end }}
   WEBHOOK_EGRESS_ALLOWED_PRIVATE_HOSTS_JSON: {{ .Values.components.controlPlane.webhookEgress.allowedPrivateHosts | toJson | quote }}
   PASSWORD_AUTH_ENABLED: {{ .Values.auth.password.enabled | quote }}
   PASSWORD_SIGNUP_ENABLED: {{ .Values.auth.password.signupEnabled | quote }}
@@ -98,19 +106,20 @@ data:
   WORKSPACE_ROLES_CONFIG_JSON: {{ toJson (default dict .Values.workspaceRoles) | quote }}
   WORKSPACE_PLANS_CONFIG_JSON: {{ toJson .Values.workspacePlans | quote }}
   CONTROL_PLANE_ADMIN_API_ENABLED: {{ .Values.adminApi.enabled | quote }}
-  AGENT_CONTEXT_MAX_TOKENS: {{ .Values.agent.runtime.contextMaxTokens | quote }}
-  AGENT_BUDGET_CENTS: {{ .Values.agent.runtime.budgetCents | quote }}
-  AGENT_LLM_TEMPERATURE: {{ .Values.agent.runtime.temperature | quote }}
-  AGENT_MAX_RUNTIME_MS: {{ .Values.agent.runtime.maxRuntimeMs | quote }}
-  AGENT_MAX_STEPS: {{ .Values.agent.runtime.maxSteps | quote }}
-  AGENT_MAX_TOOL_CALLS: {{ .Values.agent.runtime.maxToolCalls | quote }}
-  AGENT_MAX_DUPLICATE_TOOL_CALLS: {{ .Values.agent.runtime.maxDuplicateToolCalls | quote }}
-  AGENT_TOOL_DEFAULT_TIMEOUT_MS: {{ .Values.agent.runtime.toolDefaultTimeoutMs | quote }}
-  AGENT_WRITE_CONFIRMATION_REQUIRED: {{ .Values.agent.runtime.writeConfirmationRequired | quote }}
-  AGENT_WRITE_CONFIRMATION_TIMEOUT_SECONDS: {{ .Values.agent.runtime.writeConfirmationTimeoutSeconds | quote }}
-  BUILTIN_MCP_SERVER_NAME: {{ .Values.agent.builtinMcpServer.name | quote }}
-  BUILTIN_MCP_SERVER_URL: {{ default (printf "%s/internal/v1/mcp" (include "acornops-platform.controlPlaneInternalUrl" .)) .Values.agent.builtinMcpServer.url | quote }}
-  BUILTIN_MCP_SERVER_DISPLAY_NAME: {{ .Values.agent.builtinMcpServer.displayName | quote }}
+  ASSISTANT_SYSTEM_INSTRUCTION: {{ .Values.assistantRuntime.systemInstruction | quote }}
+  ASSISTANT_CONTEXT_MAX_TOKENS: {{ .Values.assistantRuntime.contextMaxTokens | quote }}
+  ASSISTANT_BUDGET_CENTS: {{ .Values.assistantRuntime.budgetCents | quote }}
+  ASSISTANT_LLM_TEMPERATURE: {{ .Values.assistantRuntime.temperature | quote }}
+  ASSISTANT_MAX_RUNTIME_MS: {{ .Values.assistantRuntime.maxRuntimeMs | quote }}
+  ASSISTANT_MAX_STEPS: {{ .Values.assistantRuntime.maxSteps | quote }}
+  ASSISTANT_MAX_TOOL_CALLS: {{ .Values.assistantRuntime.maxToolCalls | quote }}
+  ASSISTANT_MAX_DUPLICATE_TOOL_CALLS: {{ .Values.assistantRuntime.maxDuplicateToolCalls | quote }}
+  ASSISTANT_TOOL_DEFAULT_TIMEOUT_MS: {{ .Values.assistantRuntime.toolDefaultTimeoutMs | quote }}
+  ASSISTANT_WRITE_CONFIRMATION_REQUIRED: {{ .Values.assistantRuntime.writeConfirmationRequired | quote }}
+  ASSISTANT_WRITE_CONFIRMATION_TIMEOUT_SECONDS: {{ .Values.assistantRuntime.writeConfirmationTimeoutSeconds | quote }}
+  BUILTIN_TARGET_MCP_SERVER_NAME: {{ .Values.builtinTargetMcp.name | quote }}
+  BUILTIN_TARGET_MCP_SERVER_URL: {{ default (printf "%s/internal/v1/mcp" (include "acornops-platform.controlPlaneInternalUrl" .)) .Values.builtinTargetMcp.url | quote }}
+  BUILTIN_TARGET_MCP_SERVER_DISPLAY_NAME: {{ .Values.builtinTargetMcp.displayName | quote }}
   INTERNAL_TRANSPORT_TLS_ENABLED: {{ .Values.internalTransport.tls.enabled | quote }}
   INTERNAL_TRANSPORT_TLS_REQUIRE_CLIENT_CERT: {{ .Values.internalTransport.tls.requireClientCert | quote }}
   INTERNAL_TRANSPORT_TLS_CA_FILE: {{ ternary (include "acornops-platform.internalTlsCaFile" .) "" .Values.internalTransport.tls.enabled | quote }}
@@ -164,6 +173,27 @@ data:
   MAX_REQUEST_BODY_BYTES: {{ .Values.components.executionEngine.maxRequestBodyBytes | int | quote }}
 {{- end }}
 {{- if .Values.components.llmGateway.enabled }}
+{{- $catalogBootstrapSources := list -}}
+{{- range $index, $source := .Values.components.llmGateway.catalog.bootstrapSources -}}
+{{- $auth := default dict $source.auth -}}
+{{- $authType := default "none" $auth.type -}}
+{{- $authConfig := dict "type" $authType -}}
+{{- if eq $authType "custom_header" -}}
+{{- $_ := set $authConfig "headerName" (required (printf "components.llmGateway.catalog.bootstrapSources[%d].auth.headerName is required for custom_header" $index) $auth.headerName) -}}
+{{- end -}}
+{{- if ne $authType "none" -}}
+{{- $secretRef := required (printf "components.llmGateway.catalog.bootstrapSources[%d].auth.secretKeyRef is required for authenticated sources" $index) $auth.secretKeyRef -}}
+{{- $_ := required (printf "components.llmGateway.catalog.bootstrapSources[%d].auth.secretKeyRef.name is required" $index) $secretRef.name -}}
+{{- $_ := required (printf "components.llmGateway.catalog.bootstrapSources[%d].auth.secretKeyRef.key is required" $index) $secretRef.key -}}
+{{- $_ := set $authConfig "credentialEnv" (printf "CATALOG_BOOTSTRAP_SOURCE_%d_CREDENTIAL" $index) -}}
+{{- end -}}
+{{- $sourceEnabled := true -}}
+{{- if hasKey $source "enabled" -}}
+{{- $sourceEnabled = $source.enabled -}}
+{{- end -}}
+{{- $entry := dict "workspaceId" (default "*" $source.workspaceId) "displayName" $source.displayName "baseUrl" $source.baseUrl "networkRoute" (default "direct" $source.networkRoute) "adapterBasePath" (default "/v0.1" $source.adapterBasePath) "enabled" $sourceEnabled "auth" $authConfig -}}
+{{- $catalogBootstrapSources = append $catalogBootstrapSources $entry -}}
+{{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -184,8 +214,8 @@ data:
   LLM_PROVIDER_ANTHROPIC_BASE_URL: {{ .Values.components.llmGateway.providerBaseUrls.anthropic | quote }}
   LLM_PROVIDER_GEMINI_BASE_URL: {{ .Values.components.llmGateway.providerBaseUrls.gemini | quote }}
   AUTH_JWKS_URL: {{ printf "%s/api/v1/auth/jwks.json" (include "acornops-platform.controlPlaneInternalUrl" .) | quote }}
-  BUILTIN_MCP_SERVER_NAME: {{ .Values.agent.builtinMcpServer.name | quote }}
-  BUILTIN_MCP_SERVER_URL: {{ default (printf "%s/internal/v1/mcp" (include "acornops-platform.controlPlaneInternalUrl" .)) .Values.agent.builtinMcpServer.url | quote }}
+  BUILTIN_TARGET_MCP_SERVER_NAME: {{ .Values.builtinTargetMcp.name | quote }}
+  BUILTIN_TARGET_MCP_SERVER_URL: {{ default (printf "%s/internal/v1/mcp" (include "acornops-platform.controlPlaneInternalUrl" .)) .Values.builtinTargetMcp.url | quote }}
   INTERNAL_TRANSPORT_TLS_ENABLED: {{ .Values.internalTransport.tls.enabled | quote }}
   INTERNAL_TRANSPORT_TLS_REQUIRE_CLIENT_CERT: {{ .Values.internalTransport.tls.requireClientCert | quote }}
   INTERNAL_TRANSPORT_TLS_CA_FILE: {{ ternary (include "acornops-platform.internalTlsCaFile" .) "" .Values.internalTransport.tls.enabled | quote }}
@@ -210,8 +240,14 @@ data:
   MCP_EGRESS_ALLOWED_HOSTS: {{ .Values.components.llmGateway.mcpEgress.allowedHosts | quote }}
   MCP_EGRESS_ALLOW_PRIVATE_NETWORKS: {{ .Values.components.llmGateway.mcpEgress.allowPrivateNetworks | quote }}
   MCP_EGRESS_ALLOW_LOCAL_ADDRESSES: {{ .Values.components.llmGateway.mcpEgress.allowLocalAddresses | quote }}
+  REMOTE_MCP_ENABLED: {{ .Values.components.llmGateway.remoteMcp.enabled | quote }}
+  CATALOG_OFFICIAL_REGISTRY_ENABLED: {{ .Values.components.llmGateway.catalog.officialRegistryEnabled | quote }}
+  CATALOG_OFFICIAL_REGISTRY_URL: {{ .Values.components.llmGateway.catalog.officialRegistryUrl | quote }}
+  CATALOG_WORKSPACE_MANAGED_SOURCES_ENABLED: {{ .Values.components.llmGateway.catalog.allowWorkspaceManagedSources | quote }}
+  CATALOG_BOOTSTRAP_SOURCES_JSON: {{ $catalogBootstrapSources | toJson | quote }}
   RATE_LIMIT_WINDOW_SECONDS: {{ .Values.components.llmGateway.rateLimits.windowSeconds | quote }}
   LLM_RATE_LIMIT_PER_WINDOW: {{ .Values.components.llmGateway.rateLimits.llmPerWindow | quote }}
   TOOL_RATE_LIMIT_PER_WINDOW: {{ .Values.components.llmGateway.rateLimits.toolPerWindow | quote }}
+  MCP_CONNECTION_RATE_LIMIT_PER_WINDOW: {{ .Values.components.llmGateway.rateLimits.mcpConnectionPerWindow | quote }}
   REQUIRE_REDIS_RATE_LIMITS_IN_PRODUCTION: {{ .Values.components.llmGateway.rateLimits.requireRedisInProduction | quote }}
 {{- end }}
