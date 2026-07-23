@@ -332,6 +332,14 @@ for (const [args, message] of [
   ],
   [['--set', 'components.controlPlane.logLevel=verbose'], 'unsupported control-plane log level should be rejected'],
   [['--set', 'components.llmGateway.secretsBackend=memory'], 'unsupported llm-gateway secret backend should be rejected'],
+  [
+    ['--set', 'components.llmGateway.openaiApiSurface=auto'],
+    'unsupported OpenAI API surface should be rejected'
+  ],
+  [
+    ['--set', 'components.controlPlane.openaiApiSurface=chat_completions'],
+    'OpenAI API surface should be rejected under the wrong component'
+  ],
   [['--set', 'components.executionEngine.replicas=0'], 'zero replicas should be rejected'],
   [['--set', 'ai.gatewayTimeoutMs=0'], 'invalid gateway timeout should be rejected'],
   [['--set', 'components.llmGateway.rateLimits.windowSeconds=0'], 'invalid rate limit window should be rejected'],
@@ -604,6 +612,20 @@ assertExcludes(
 assertIncludes(defaultRender, 'app.kubernetes.io/component: execution-engine', 'execution-engine should render');
 assertIncludes(defaultRender, 'app.kubernetes.io/component: llm-gateway', 'llm-gateway should render');
 assertIncludes(defaultRender, 'SECRETS_CACHE_TTL_SEC: "0"', 'llm-gateway production secret cache must default to disabled');
+assertIncludes(
+  defaultRender,
+  'LLM_PROVIDER_OPENAI_API_SURFACE: "responses"',
+  'llm-gateway should default to the OpenAI Responses API'
+);
+const chatCompletionsRender = helmTemplate([
+  '--set',
+  'components.llmGateway.openaiApiSurface=chat_completions'
+]);
+assertIncludes(
+  chatCompletionsRender,
+  'LLM_PROVIDER_OPENAI_API_SURFACE: "chat_completions"',
+  'llm-gateway should render the explicit Chat Completions API surface'
+);
 assertMatch(
   defaultRender,
   /name: acornops-acornops-platform-llm-gateway[\s\S]*?MAX_REQUEST_BODY_BYTES: "1000000"/,

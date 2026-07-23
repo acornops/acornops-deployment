@@ -52,6 +52,29 @@ expect(
   'HA smoke should install AgentK with the registered cluster ID'
 );
 
+const providerRouteEnv = [
+  'LLM_PROVIDER_OPENAI_BASE_URL',
+  'LLM_PROVIDER_OPENAI_API_SURFACE',
+  'LLM_PROVIDER_ANTHROPIC_BASE_URL',
+  'LLM_PROVIDER_GEMINI_BASE_URL'
+];
+const providerRouteHelmValues = [
+  'components.llmGateway.providerBaseUrls.openai',
+  'components.llmGateway.openaiApiSurface',
+  'components.llmGateway.providerBaseUrls.anthropic',
+  'components.llmGateway.providerBaseUrls.gemini'
+];
+expect(
+  stable(deploymentManifest.contractSurfaces?.providerRouteEnv) ===
+    stable(providerRouteEnv),
+  'Deployment manifest should expose the exact provider-route runtime environment contract'
+);
+expect(
+  stable(deploymentManifest.contractSurfaces?.providerRouteHelmValues) ===
+    stable(providerRouteHelmValues),
+  'Deployment manifest should expose the exact provider-route Helm values contract'
+);
+
 const additionalCaHelmValues = [
   'global.trust.additionalCaBundle',
   'components.controlPlane.trust.additionalCaBundle',
@@ -169,6 +192,14 @@ expect(
     ?.webhookEgress?.properties?.allowedPrivateHosts,
   'Chart schema should expose the private webhook hostname allowlist'
 );
+const openaiApiSurfaceSchema =
+  chartSchema.properties?.components?.properties?.llmGateway?.allOf?.[1]?.properties
+    ?.openaiApiSurface;
+expect(
+  stable(openaiApiSurfaceSchema?.enum) ===
+    stable(['responses', 'chat_completions']),
+  'Chart schema should constrain the OpenAI API surface'
+);
 const webhookDeliverySchema =
   chartSchema.properties?.components?.properties?.controlPlane?.allOf?.[1]?.properties
     ?.webhookDelivery;
@@ -279,6 +310,14 @@ const platformChartConfig = readFileSync(
 const localAgentEnvExample = readFileSync(path.join(root, 'env/local/.env.agent.example'), 'utf8');
 const localEnvExample = readFileSync(path.join(root, 'env/local/.env.example'), 'utf8');
 const vmEnvExample = readFileSync(path.join(root, 'env/vm/.env.example'), 'utf8');
+for (const marker of providerRouteEnv) {
+  for (const source of [localCompose, vmCompose, platformChartConfig]) {
+    expect(source.includes(marker), `Provider-route deployment surfaces should preserve ${marker}`);
+  }
+}
+for (const marker of ['providerBaseUrls:', 'openaiApiSurface: responses']) {
+  expect(platformChartValues.includes(marker), `Chart values should preserve ${marker}`);
+}
 for (const marker of durableWebhookDeliveryRuntimeEnv) {
   for (const source of [localCompose, vmCompose, localEnvExample, vmEnvExample]) {
     expect(source.includes(marker), `Deployment surfaces should preserve ${marker}`);

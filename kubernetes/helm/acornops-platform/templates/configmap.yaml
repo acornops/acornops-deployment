@@ -211,6 +211,7 @@ data:
   SECRETS_BACKEND: {{ .Values.components.llmGateway.secretsBackend | quote }}
   SECRETS_CACHE_TTL_SEC: {{ .Values.components.llmGateway.secretsCacheTtlSeconds | quote }}
   LLM_PROVIDER_OPENAI_BASE_URL: {{ .Values.components.llmGateway.providerBaseUrls.openai | quote }}
+  LLM_PROVIDER_OPENAI_API_SURFACE: {{ .Values.components.llmGateway.openaiApiSurface | quote }}
   LLM_PROVIDER_ANTHROPIC_BASE_URL: {{ .Values.components.llmGateway.providerBaseUrls.anthropic | quote }}
   LLM_PROVIDER_GEMINI_BASE_URL: {{ .Values.components.llmGateway.providerBaseUrls.gemini | quote }}
   AUTH_JWKS_URL: {{ printf "%s/api/v1/auth/jwks.json" (include "acornops-platform.controlPlaneInternalUrl" .) | quote }}

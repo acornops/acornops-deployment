@@ -46,8 +46,21 @@ expect(
   'default local profile must prelink the seeded owner to the fixed Dex OIDC subject'
 );
 expect(defaultConfig.services['management-console'].environment.VITE_APP_DATA_MODE === 'control-plane', 'full-stack management console must use control-plane data mode');
+expect(
+  defaultConfig.services['llm-gateway'].environment.LLM_PROVIDER_OPENAI_API_SURFACE === 'responses',
+  'default local profile must use the OpenAI Responses API'
+);
 expect(!defaultConfig.services.agentk, 'default local profile must not include AgentK');
 expect(!defaultConfig.services.agentv, 'default local profile must not include AgentV');
+
+const chatCompletionsConfig = render([], {
+  LLM_PROVIDER_OPENAI_API_SURFACE: 'chat_completions'
+});
+expect(
+  chatCompletionsConfig.services['llm-gateway'].environment.LLM_PROVIDER_OPENAI_API_SURFACE ===
+    'chat_completions',
+  'local profile must pass the explicit OpenAI Chat Completions API surface'
+);
 
 const clusterFixtureConfig = render(['cluster-fixture'], {
   SEED_DEVELOPMENT_DATA: 'true',

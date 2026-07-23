@@ -603,6 +603,7 @@ components:
     builtinMcpMaxResponseBytes: 3145728
     secretsBackend: database
     secretsCacheTtlSeconds: 0
+    openaiApiSurface: responses
     providerBaseUrls:
       openai: ""
       anthropic: ""

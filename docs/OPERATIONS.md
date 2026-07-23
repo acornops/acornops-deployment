@@ -54,8 +54,17 @@ without changing workspace credentials. For VM Compose, set any of
 `LLM_PROVIDER_GEMINI_BASE_URL`. For Helm, set the corresponding
 `components.llmGateway.providerBaseUrls` value. Empty values retain the vendor
 endpoint defaults. Provider SDK-specific environment variables are not part of
-the AcornOps configuration contract. Custom endpoints must implement the native API used by the gateway;
-an OpenAI endpoint must support the Responses API, not only Chat Completions.
+the AcornOps configuration contract.
+
+OpenAI uses the Responses API by default. To route through an endpoint that
+implements Chat Completions, set
+`LLM_PROVIDER_OPENAI_API_SURFACE=chat_completions` for VM Compose or
+`components.llmGateway.openaiApiSurface=chat_completions` for Helm. API-surface
+selection is explicit and deployment-wide; the gateway never probes or falls
+back between the two endpoints. Roll back by restoring `responses`. Chat
+Completions supports normalized text and custom function calls but rejects
+AcornOps native tools, and reasoning-summary requests return an unavailable
+event.
 The `/admin` route is only routed on the API host and must not be proxied from
 the management console host.
 

@@ -52,6 +52,8 @@ The chart values are organized by operator concern:
 - `components`: workload and component-local settings for management-console, control-plane, execution-engine, and llm-gateway
 - `components.llmGateway.providerBaseUrls`: optional deployment-wide OpenAI,
   Anthropic, and Gemini native API base URL overrides
+- `components.llmGateway.openaiApiSurface`: deployment-wide OpenAI outbound API
+  surface, either `responses` (default) or `chat_completions`
 - `components.{controlPlane,executionEngine,llmGateway}.trust.additionalCaBundle`:
   optional component override for the global trust bundle
 - `components.llmGateway.mcpEgress`: remote MCP hostname policy

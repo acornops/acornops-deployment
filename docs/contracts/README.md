@@ -10,6 +10,8 @@ This repository owns deployment and compatibility contracts rather than service 
 - Admin API enablement, token Secret wiring, and API-host-only `/admin` routing
 - Workspace plan and quota config rendered into control-plane runtime env
 - AI provider/model and reasoning summary policy rendered into control-plane runtime env
+- Provider base URLs and the OpenAI outbound API surface rendered into
+  llm-gateway runtime env
 - Deployment-owned workflow execution and report-retention policy rendered into control-plane runtime env
 - Deployment-track environment templates
 - External integration account-link token wiring for VM Compose and Helm
@@ -139,6 +141,13 @@ reasoning summary policy to
 `LLM_ALLOWED_REASONING_EFFORTS`. These values are a deployment ceiling only;
 new workspaces default to `auto` when summaries are enabled and allowed, and
 workspace admins can tune or disable summaries through AI Settings.
+
+Provider routing is independent of workspace AI policy. Compose exposes the
+four values listed in `providerRouteEnv`; Helm exposes the matching
+`providerRouteHelmValues`. `components.llmGateway.openaiApiSurface` accepts only
+`responses` or `chat_completions` and defaults to `responses`. The value and
+OpenAI base URL are deployment-wide. Switching back to `responses` is the
+configuration-only rollback path.
 
 ## MCP Registry Bootstrap
 
