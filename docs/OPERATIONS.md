@@ -65,6 +65,35 @@ back between the two endpoints. Roll back by restoring `responses`. Chat
 Completions supports normalized text and custom function calls but rejects
 AcornOps native tools, and reasoning-summary requests return an unavailable
 event.
+
+## LLM Provider Policy
+
+Helm configures allowed providers and their model allow lists through one map:
+
+```yaml
+ai:
+  defaultProvider: openai
+  defaultModel: gpt-5.5
+  providers:
+    openai:
+      - gpt-5.5
+      - gpt-5.4
+    anthropic:
+      - claude-fable-5
+```
+
+Provider keys are the deployment allow list. Every value must be a non-empty
+array of unique model names. `defaultProvider` must be present and
+`defaultModel` must belong to its array; Helm rejects an inconsistent render.
+The default chart enables OpenAI, Anthropic, and Gemini. Helm merges maps, so
+an override that removes a default provider must set that provider key to
+`null`.
+
+The chart serializes the map to `LLM_PROVIDERS_JSON` for the control plane.
+Compose uses the same JSON environment variable directly. The removed
+`LLM_ALLOWED_PROVIDERS` and `LLM_ALLOWED_PROVIDER_MODELS` variables are not
+supported.
+
 The `/admin` route is only routed on the API host and must not be proxied from
 the management console host.
 

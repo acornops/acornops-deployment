@@ -1,5 +1,9 @@
 # Provider-scoped model configuration
 
+> Superseded by
+> [Structured LLM provider configuration](structured-llm-provider-config.md),
+> which replaces the serialized Helm values and environment variables.
+
 ## Goal
 
 Expose provider-scoped model policy as a first-class deployment setting and

@@ -130,12 +130,14 @@ default. The chart renders `auditLogging.retentionDays` to
 `WORKSPACE_AUDIT_RETENTION_DAYS`; it must be a positive integer and defaults to
 `365`.
 
-AI provider/model policy is configured by Helm `ai.allowedProviders` and
-`ai.allowedProviderModels` or the matching Compose environment variables.
-Provider-scoped models use the control-plane-native
-`provider:model|model;provider:model` serialization. The chart renders them to
-`LLM_ALLOWED_PROVIDERS` and `LLM_ALLOWED_PROVIDER_MODELS`. The chart renders
-reasoning summary policy to
+AI provider/model policy is configured by the Helm `ai.providers` map. Each map
+key is an allowed provider and its non-empty array is that provider's model
+allow list. The explicit `ai.defaultProvider` key must exist in the map and
+`ai.defaultModel` must belong to its array. The chart serializes this map to
+`LLM_PROVIDERS_JSON`; Compose accepts the same JSON environment variable. The
+chart defaults all three providers on. Because Helm merges maps, set an
+unwanted default provider key to `null` in an override before deployment; the
+rendered JSON omits that key. The chart renders reasoning summary policy to
 `LLM_REASONING_SUMMARIES_ENABLED`,
 `LLM_ALLOWED_REASONING_SUMMARY_MODES`, and
 `LLM_ALLOWED_REASONING_EFFORTS`. These values are a deployment ceiling only;

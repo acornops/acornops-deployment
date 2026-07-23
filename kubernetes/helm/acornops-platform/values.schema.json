@@ -316,11 +316,35 @@
     "ai": {
       "type": "object",
       "additionalProperties": false,
+      "required": ["defaultProvider", "defaultModel", "providers"],
       "properties": {
-        "defaultProvider": { "type": "string", "minLength": 1 },
+        "defaultProvider": { "type": "string", "enum": ["openai", "anthropic", "gemini"] },
         "defaultModel": { "type": "string", "minLength": 1 },
-        "allowedProviders": { "type": "string", "minLength": 1 },
-        "allowedProviderModels": { "type": "string", "minLength": 1 },
+        "providers": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": false,
+          "properties": {
+            "openai": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "anthropic": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "gemini": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
         "reasoningSummariesEnabled": { "type": "boolean" },
         "allowedReasoningSummaryModes": {
           "type": "string",

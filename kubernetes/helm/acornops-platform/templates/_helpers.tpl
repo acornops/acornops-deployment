@@ -164,6 +164,20 @@ true
 {{- end -}}
 {{- end -}}
 
+{{/* Validate and serialize the deployment-wide provider/model policy. */}}
+{{- define "acornops-platform.llmProvidersJson" -}}
+{{- $provider := .Values.ai.defaultProvider -}}
+{{- $model := .Values.ai.defaultModel -}}
+{{- if not (hasKey .Values.ai.providers $provider) -}}
+{{- fail (printf "ai.defaultProvider %q must be configured in ai.providers" $provider) -}}
+{{- end -}}
+{{- $models := index .Values.ai.providers $provider -}}
+{{- if not (has $model $models) -}}
+{{- fail (printf "ai.defaultModel %q must be configured under ai.providers.%s" $model $provider) -}}
+{{- end -}}
+{{- toJson .Values.ai.providers -}}
+{{- end -}}
+
 {{- define "acornops-platform.workloadScheduling" -}}
 {{- with .values.priorityClassName }}
 priorityClassName: {{ . | quote }}
