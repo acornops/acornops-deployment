@@ -5,3 +5,4 @@ Move completed deployment plans here when the implementation and validation are 
 - [Platform additional CA trust](platform-additional-ca-trust.md)
 - [OpenAI Chat Completions API surface](openai-chat-completions-surface.md)
 - [Connected local platform admin profile](local-platform-admin-profile.md)
+- [Platform admin demo release](platform-admin-demo-release.md)

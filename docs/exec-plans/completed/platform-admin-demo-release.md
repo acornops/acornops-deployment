@@ -37,8 +37,9 @@ privileged administration topology without changing the default deployment.
 
 ## Status
 
-Source implementation and local validation are complete. Publication and the
-requested destructive demo rebuild are in progress.
+Complete. The immutable console image and chart are published, demo-infra
+defaults to the console being disabled, and the opt-in deployment is live and
+connected to the control plane over mTLS.
 
 Local evidence:
 
@@ -53,3 +54,15 @@ Local evidence:
 - The enabled Keycloak render contains the dedicated client and owner role; the
   default render contains neither the client nor an enabled admin workload.
 - Workspace cross-repository contract checks passed.
+- `ghcr.io/acornops/platform-admin-console:0.0.1-experimental.1` and
+  `oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.16`
+  were published successfully.
+- The control-plane mTLS listener fix was published as
+  `ghcr.io/acornops/control-plane:0.0.1-experimental.24`.
+- The demo cluster was torn down with `--confirm`, rebuilt from clean
+  platform/data/identity namespaces, and redeployed with
+  `PLATFORM_ADMIN_CONSOLE=true`.
+- Live verification found all five platform workloads ready, the admin
+  readiness route healthy, an unauthenticated admin API request correctly
+  bounded with `ADMIN_SESSION_REQUIRED`, and the demo owner able to sign in and
+  load platform insights.
