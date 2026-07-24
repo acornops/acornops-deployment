@@ -12,6 +12,32 @@ This repository owns operator workflows for:
 
 Component repositories own service internals. This repository owns how those components are assembled and exposed.
 
+## Local Platform Admin Profile
+
+The platform-admin console is excluded from ordinary local startup. Enable the
+connected profile explicitly:
+
+```bash
+task local-up PLATFORM_ADMIN_CONSOLE=true
+task local-ps PLATFORM_ADMIN_CONSOLE=true
+```
+
+The profile publishes `http://127.0.0.1:4173`, enables the private
+control-plane admin API, configures the BFF's exact seven-scope local token, and
+requires sign-in through a deployment-owned Keycloak realm. The local
+administrator is `admin@acornops.local / devpass`.
+
+Operate or stop the same profile with:
+
+```bash
+task local-logs PLATFORM_ADMIN_CONSOLE=true
+task local-down PLATFORM_ADMIN_CONSOLE=true
+```
+
+The loopback binding, raw token, client secret, CSRF secret, and test user are
+local-development material only. Production remains governed by the generated
+Secret, TLS, MFA, ingress, and NetworkPolicy requirements below.
+
 ## Durable Webhook Delivery
 
 Every control-plane replica may run the Postgres-backed webhook worker. Claims

@@ -58,6 +58,17 @@ Optional profiles:
 2. Local Vault testing: `SECRETS_BACKEND=vault task local-up LOCAL_EXTRA_PROFILES=local-vault`
 3. Connected development cluster: `task local-up-cluster-fixture`
 4. Explicit seeded Kubernetes + VM targets: `task local-up-target-fixtures`
+5. Connected platform administration:
+   `task local-up PLATFORM_ADMIN_CONSOLE=true`
+
+The platform-admin option is disabled by default. It adds the
+`platform-admin-console` service in `control-plane` mode, enables the local
+control-plane admin API with exactly the console's seven scopes, and starts a
+dedicated Keycloak realm for the required human administrator session. Open
+`http://127.0.0.1:4173` and sign in with
+`admin@acornops.local / devpass`. The admin port binds only to the loopback
+interface. The local BFF token and OIDC credentials are development-only and
+must never be reused outside this profile.
 
 ## Stop / Reset
 
@@ -67,6 +78,9 @@ task local-reset
 ```
 
 `local-reset` removes named volumes and cleans demo namespace resources when either fixture profile was used.
+When the connected admin profile is active, use
+`task local-down PLATFORM_ADMIN_CONSOLE=true`; `local-reset` always includes
+the optional profile.
 
 ## Smoke Coverage
 

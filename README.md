@@ -192,6 +192,20 @@ task local-up
 
 `local-up` runs the llm-gateway and control-plane migrations before starting the full stack with deterministic local Kubernetes and Linux VM targets. It creates k3d, starts AgentK and AgentV with local-only development keys, and applies demo workloads by default. The seeded workspace receives the same universal starter automation as every workspace created through normal product flows. Set `SEED_DEMO_K3S_WORKLOADS=false` to skip the workloads.
 
+The platform-admin console stays out of the default local topology. Start it
+against the real local control plane with:
+
+```bash
+task local-up PLATFORM_ADMIN_CONSOLE=true
+```
+
+This opt-in profile enables only the seven-scope platform-admin BFF contract,
+requires a browser administrator session, and starts a dedicated local Keycloak
+realm without changing the management console's selected OIDC profile. Open
+`http://127.0.0.1:4173` and sign in with
+`admin@acornops.local / devpass`. Use the same flag with `local-ps`,
+`local-logs`, and `local-down` when operating the optional profile.
+
 Use `task local-up-cluster-fixture` when only AgentK should connect. The same Kubernetes and VM records are seeded, but the VM remains offline because the profile does not start AgentV.
 
 `task local-up-target-fixtures` is the explicit equivalent of the default local startup. IDs and keys can still be overridden in the ignored `env/local/.env.agent` when testing alternate local registrations.
@@ -312,6 +326,7 @@ task agent-remove
 When running local profile through edge-proxy:
 
 - Management console: `http://console.acornops.localhost:8088/`
+- Platform-admin console when `PLATFORM_ADMIN_CONSOLE=true`: `http://127.0.0.1:4173/`
 - Control plane API (same-origin path): `http://acornops.localhost:8088/api/v1`
 - Control plane API (direct host): `http://control-plane.acornops.localhost:8088/api/v1`
 - Control plane Swagger UI: `http://control-plane.acornops.localhost:8088/docs`
@@ -321,6 +336,7 @@ When running local profile through edge-proxy:
 - LLM gateway Swagger UI: `http://llm-gateway.acornops.localhost:8088/docs`
 - Dex (`LOCAL_OIDC_PROFILE=oidc-dex`): `http://localhost:5556/dex`
 - Keycloak (`LOCAL_OIDC_PROFILE=oidc-keycloak`): `http://localhost:8082`
+- Platform-admin Keycloak realm when `PLATFORM_ADMIN_CONSOLE=true`: `http://localhost:8082/realms/acornops-platform-admin`
 
 Production public routes are narrower than local development. The default production DNS layout uses subdomains under `acornops.dev`:
 

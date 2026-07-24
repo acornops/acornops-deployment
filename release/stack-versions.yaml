@@ -2,7 +2,7 @@ apiVersion: acornops.dev/v1alpha1
 kind: StackVersionMatrix
 metadata:
   name: acornops-stack
-  updatedAt: "2026-07-21"
+  updatedAt: "2026-07-25"
 
 stacks:
   - name: local-dev
@@ -10,6 +10,7 @@ stacks:
     executionContractVersion: 2
     workflowSchemaEpoch: workflow-v2-greenfield-1
     components:
+      platformAdminConsole: acornops/platform-admin-console:local
       managementConsole: acornops/management-console:local
       controlPlane: acornops/control-plane:local
       executionEngine: acornops/execution-engine:local
@@ -31,9 +32,10 @@ stacks:
     executionContractVersion: 2
     workflowSchemaEpoch: workflow-v2-greenfield-1
     chart:
-      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.15
+      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.16
       acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.10
     components:
+      platformAdminConsole: ghcr.io/acornops/platform-admin-console:0.0.1-experimental.1
       managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.21
       controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.21
       executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.10

@@ -41,7 +41,7 @@ if [[ -n "${CLI_EXTRA_PROFILES}" ]]; then
 fi
 LOCAL_EXTRA_PROFILES="${LOCAL_EXTRA_PROFILES:-}"
 
-COMPOSE_PROFILE_ARGS=(--profile local --profile oidc-dex --profile oidc-keycloak --profile local-vault)
+COMPOSE_PROFILE_ARGS=(--profile local --profile oidc-dex --profile oidc-keycloak --profile platform-admin --profile local-vault)
 if [[ -n "${LOCAL_EXTRA_PROFILES}" ]]; then
   EXTRA_PROFILE_LIST="${LOCAL_EXTRA_PROFILES//,/ }"
   for profile in ${EXTRA_PROFILE_LIST}; do

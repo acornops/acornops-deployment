@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 
 const composeFiles = [
   '-f', 'compose/vm-prod/compose.yaml',
@@ -52,6 +53,8 @@ expect(
 );
 expect(!defaultConfig.services.agentk, 'default local profile must not include AgentK');
 expect(!defaultConfig.services.agentv, 'default local profile must not include AgentV');
+expect(!defaultConfig.services['platform-admin-console'], 'default local profile must not include the platform-admin console');
+expect(defaultConfig.services['control-plane'].environment.CONTROL_PLANE_ADMIN_API_ENABLED === 'false', 'default local profile must keep the admin API disabled');
 
 const chatCompletionsConfig = render([], {
   LLM_PROVIDER_OPENAI_API_SURFACE: 'chat_completions'
@@ -88,5 +91,46 @@ expect(Boolean(targetFixtureConfig.services.agentk), 'target-fixtures profile mu
 expect(Boolean(targetFixtureConfig.services.agentv), 'target-fixtures profile must include AgentV');
 expect(targetFixtureConfig.services.agentk.environment.ACORNOPS_CLUSTER_ID === '5b006e4c-509c-458a-9f02-5aafbdc01ade', 'target-fixtures AgentK must use the seeded cluster ID');
 expect(targetFixtureConfig.services.agentv.environment.ACORNOPS_TARGET_ID === '9254df42-4d9b-4e63-8bb6-93442e7d9a45', 'target-fixtures AgentV must use the seeded VM ID');
+
+const localAdminToken = 'acornops-local-platform-admin-bff-token';
+const localAdminTokenHash = createHash('sha256').update(localAdminToken).digest('hex');
+const platformAdminConfig = render(['platform-admin'], {
+  CONTROL_PLANE_ADMIN_API_ENABLED: 'true',
+  CONTROL_PLANE_ADMIN_HUMAN_AUTH_REQUIRED: 'true',
+  PLATFORM_ADMIN_BFF_TOKEN: localAdminToken,
+  CONTROL_PLANE_ADMIN_TOKENS_JSON: JSON.stringify([
+    {
+      id: 'platform-admin-console',
+      name: 'Local platform admin console',
+      sha256: localAdminTokenHash,
+      scopes: [
+        'admin:self',
+        'admin:system:read',
+        'admin:workspace:read',
+        'admin:workspace:write',
+        'admin:user:read',
+        'admin:member:write',
+        'admin:audit:read'
+      ],
+      enabled: true
+    }
+  ])
+});
+const platformAdminService = platformAdminConfig.services['platform-admin-console'];
+const platformAdminDescriptors = JSON.parse(platformAdminConfig.services['control-plane'].environment.CONTROL_PLANE_ADMIN_TOKENS_JSON);
+expect(Boolean(platformAdminService), 'platform-admin profile must include the platform-admin console');
+expect(Boolean(platformAdminConfig.services.keycloak), 'platform-admin profile must include its dedicated Keycloak identity provider');
+expect(Boolean(platformAdminConfig.services['keycloak-postgres']), 'platform-admin profile must include the Keycloak database');
+expect(platformAdminService.environment.ADMIN_CONSOLE_DATA_MODE === 'control-plane', 'platform-admin console must use control-plane data mode');
+expect(platformAdminService.environment.CONTROL_PLANE_ADMIN_BASE_URL === 'http://control-plane:8081', 'platform-admin console must use the internal control-plane URL');
+expect(platformAdminService.environment.CONTROL_PLANE_ADMIN_TOKEN === localAdminToken, 'platform-admin console must receive the local BFF token');
+expect(platformAdminService.ports[0].host_ip === '127.0.0.1', 'platform-admin console must bind only to the loopback interface');
+expect(platformAdminConfig.services['control-plane'].environment.CONTROL_PLANE_ADMIN_API_ENABLED === 'true', 'platform-admin profile must enable the admin API');
+expect(platformAdminConfig.services['control-plane'].environment.CONTROL_PLANE_ADMIN_HUMAN_AUTH_REQUIRED === 'true', 'platform-admin profile must require a human admin session');
+expect(platformAdminDescriptors.length === 1 && platformAdminDescriptors[0].sha256 === localAdminTokenHash, 'platform-admin BFF token must match its SHA-256 descriptor');
+expect(
+  platformAdminDescriptors[0].scopes.join(',') === 'admin:self,admin:system:read,admin:workspace:read,admin:workspace:write,admin:user:read,admin:member:write,admin:audit:read',
+  'platform-admin BFF descriptor must contain only the seven console scopes'
+);
 
 console.log('local fixture compose profile checks passed');

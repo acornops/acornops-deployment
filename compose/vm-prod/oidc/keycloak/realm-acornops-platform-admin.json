@@ -1,0 +1,89 @@
+{
+  "realm": "acornops-platform-admin",
+  "enabled": true,
+  "displayName": "AcornOps Local Platform Admin",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "loginWithEmailAllowed": true,
+  "attributes": {
+    "frontendUrl": "http://localhost:8082"
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "platform-admin",
+        "description": "Full local platform governance access"
+      },
+      {
+        "name": "platform-admin-viewer",
+        "description": "Read-only local platform governance access"
+      },
+      {
+        "name": "platform-admin-auditor",
+        "description": "Local platform governance audit access"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "acornops-platform-admin",
+      "name": "AcornOps Local Platform Admin Console",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "acornops-platform-admin-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://127.0.0.1:4173/admin-auth/oidc/callback"
+      ],
+      "webOrigins": [
+        "http://127.0.0.1:4173"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String"
+          }
+        }
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://127.0.0.1:4173/*"
+      }
+    }
+  ],
+  "users": [
+    {
+      "id": "20000000-0000-4000-8000-000000000001",
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Local",
+      "lastName": "Platform Admin",
+      "email": "admin@acornops.local",
+      "realmRoles": [
+        "platform-admin"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "devpass",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
