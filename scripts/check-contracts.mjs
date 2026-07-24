@@ -35,8 +35,8 @@ const localSmoke = readFileSync(path.join(root, 'scripts/local-smoke.mjs'), 'utf
 expect(deploymentManifest.repo === 'deployment', 'Deployment manifest repo should be deployment');
 expect(deploymentManifest.version === 1, 'Deployment manifest version should be 1');
 expect(
-  deploymentManifest.runtimeDependencies?.length === 6,
-  'Deployment manifest should list the six runtime component dependencies'
+  deploymentManifest.runtimeDependencies?.length === 7,
+  'Deployment manifest should list the seven runtime component dependencies'
 );
 expect(
   deploymentManifest.contractSurfaces?.agentKRolloutEnv?.includes('ACORNOPS_CLUSTER_ID'),
@@ -525,8 +525,8 @@ const repoManifests = {
   'management-console': 'management-console/docs/contracts/manifest.json',
   'execution-engine': 'execution-engine/docs/contracts/manifest.json',
   'llm-gateway': 'llm-gateway/docs/contracts/manifest.json',
-  'agentk': 'agentk/docs/contracts/manifest.json',
-  'agentv': 'agentv/docs/contracts/manifest.json'
+  'agentk': 'k8s-agent/docs/contracts/manifest.json',
+  'agentv': 'vm-agent/docs/contracts/manifest.json'
 };
 
 const missing = Object.values(repoManifests).filter((relativePath) => {

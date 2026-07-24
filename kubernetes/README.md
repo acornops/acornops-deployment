@@ -41,7 +41,7 @@ Default required keys:
 
 - `CONTROL_PLANE_DATABASE_URL`
 - `CONTROL_PLANE_REDIS_URL`
-- `OIDC_CLIENT_SECRET` when OIDC is enabled; reference its Secret and key through `auth.oidc.clientSecret`
+- `OIDC_CLIENT_SECRET` when OIDC is enabled; reference its Secret and key through `userAccess.oidc.clientSecret`
 - `CSRF_SECRET`
 - `GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64`
 - `ORCH_SERVICE_TOKEN`
@@ -115,15 +115,15 @@ Override at least:
 - `exposure.ingress.consoleHost`
 - `exposure.ingress.className`
 - `exposure.ingress.tls.secretName`
-- `auth.oidc.issuerUrl`
-- `auth.oidc.clientId`
-- `auth.oidc.clientSecret.existingSecret` and `auth.oidc.clientSecret.key` when OIDC is enabled
-- `auth.oidc.enabled` when running password-only authentication
-- `auth.oidc.admission` for verified-email, exact email-domain, or required-claim admission rules; an empty policy allows any authenticated OIDC identity
-- `auth.oidc.logout.endSessionEndpointOverride` when discovery advertises an internal hostname that browsers cannot reach
-- `auth.oidc.logout.postLogoutRedirectUri` with the exact URI registered at the provider
-- `auth.password.enabled` if you do not want username/password login alongside OIDC
-- `auth.password.signupEnabled=true` only after SMTP delivery is configured and tested
+- `userAccess.oidc.issuerUrl`
+- `userAccess.oidc.clientId`
+- `userAccess.oidc.clientSecret.existingSecret` and `userAccess.oidc.clientSecret.key` when OIDC is enabled
+- `userAccess.oidc.enabled` when running password-only authentication
+- `userAccess.oidc.admission` for verified-email, exact email-domain, or required-claim admission rules; an empty policy allows any authenticated OIDC identity
+- `userAccess.oidc.logout.endSessionEndpointOverride` when discovery advertises an internal hostname that browsers cannot reach
+- `userAccess.oidc.logout.postLogoutRedirectUri` with the exact URI registered at the provider
+- `userAccess.password.enabled` if you do not want username/password login alongside OIDC
+- `userAccess.password.signupEnabled=true` only after SMTP delivery is configured and tested
 - `email.deliveryMode=smtp`, `email.from`, `email.smtp.host`, and `SMTP_USERNAME`/`SMTP_PASSWORD` when enabling password self-service signup
 - `networkPolicies.ingressController.from` to match the actual
   ingress-controller namespace and, for a shared namespace, its pod labels
@@ -145,8 +145,8 @@ Only disposable demo environments should automatically delete stuck pending
 release metadata.
 
 When Keycloak runs inside the same cluster but browsers reach it through a public
-identity hostname, use a private `auth.oidc.issuerUrl`, a browser-visible
-`auth.oidc.publicIssuerUrl`, public authorization endpoint override, and internal
+identity hostname, use a private `userAccess.oidc.issuerUrl`, a browser-visible
+`userAccess.oidc.publicIssuerUrl`, public authorization endpoint override, and internal
 token/userinfo/JWKS endpoint overrides. Also allow control-plane egress to the
 Keycloak namespace with `networkPolicies.extraEgress.controlPlane`.
 
@@ -332,7 +332,7 @@ Password reset is enabled by default for password-backed accounts. Password
 self-service signup is disabled by default. Configure SMTP, use a verified
 sender address in `email.from`, and set `email.publicBaseUrl` only if the public
 verification/reset-link base differs from `platform.consoleUrl`. When enabling
-signup, keep `auth.password.emailVerificationRequired=true`.
+signup, keep `userAccess.password.emailVerificationRequired=true`.
 
 For local or private test installs, `email.deliveryMode=log` prints verification
 and reset links from the control-plane pod. Do not use log delivery in

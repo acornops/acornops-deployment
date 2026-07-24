@@ -5,6 +5,7 @@
   "workflowSchemaEpoch": "workflow-v2-greenfield-1",
   "runtimeDependencies": [
     "management-console",
+    "platform-admin-console",
     "control-plane",
     "execution-engine",
     "llm-gateway",
@@ -13,8 +14,8 @@
   ],
   "contractSurfaces": {
     "composeProfiles": ["local", "prod", "oidc-dex", "oidc-keycloak", "local-vault"],
-    "publicHosts": ["console.acornops.dev", "docs.acornops.dev", "api.acornops.dev"],
-    "publicRoutes": ["/", "/api/v1", "/api/v1/auth/oidc/callback", "/api/v1/auth/oidc/logout/start", "/api/v1/auth/oidc/logout/callback", "/admin/v1"],
+    "publicHosts": ["console.acornops.dev", "admin.acornops.dev", "docs.acornops.dev", "api.acornops.dev"],
+    "publicRoutes": ["/", "/api/v1", "/api/v1/auth/oidc/callback", "/api/v1/auth/oidc/logout/start", "/api/v1/auth/oidc/logout/callback", "/admin/v1", "/admin-auth", "/admin-console-api"],
     "envTracks": ["local", "vm", "k8s"],
     "oidcEnv": [
       "OIDC_ENABLED",
@@ -23,15 +24,15 @@
       "OIDC_POST_LOGOUT_REDIRECT_URI"
     ],
     "oidcHelmValues": [
-      "auth.oidc.enabled",
-      "auth.oidc.clientSecret.existingSecret",
-      "auth.oidc.clientSecret.key",
-      "auth.oidc.authorizationEndpoint",
-      "auth.oidc.tokenEndpoint",
-      "auth.oidc.userInfoEndpoint",
-      "auth.oidc.admission",
-      "auth.oidc.logout.endSessionEndpointOverride",
-      "auth.oidc.logout.postLogoutRedirectUri"
+      "userAccess.oidc.enabled",
+      "userAccess.oidc.clientSecret.existingSecret",
+      "userAccess.oidc.clientSecret.key",
+      "userAccess.oidc.authorizationEndpoint",
+      "userAccess.oidc.tokenEndpoint",
+      "userAccess.oidc.userInfoEndpoint",
+      "userAccess.oidc.admission",
+      "userAccess.oidc.logout.endSessionEndpointOverride",
+      "userAccess.oidc.logout.postLogoutRedirectUri"
     ],
     "emailVerificationEnv": [
       "PASSWORD_EMAIL_VERIFICATION_REQUIRED",
@@ -57,7 +58,21 @@
       "CONTROL_PLANE_ADMIN_API_ENABLED",
       "CONTROL_PLANE_ADMIN_TOKENS_JSON",
       "CONTROL_PLANE_ADMIN_AUTH_FAILURE_WINDOW_SECONDS",
-      "CONTROL_PLANE_ADMIN_AUTH_FAILURE_MAX_ATTEMPTS"
+      "CONTROL_PLANE_ADMIN_AUTH_FAILURE_MAX_ATTEMPTS",
+      "CONTROL_PLANE_ADMIN_HUMAN_AUTH_REQUIRED",
+      "PLATFORM_ADMIN_CONSOLE_BASE_URL",
+      "ADMIN_OIDC_CLIENT_ID",
+      "ADMIN_OIDC_ISSUER_URL",
+      "ADMIN_OIDC_PUBLIC_ISSUER_URL",
+      "ADMIN_OIDC_CLIENT_SECRET",
+      "ADMIN_OIDC_ALLOWED_ROLES",
+      "ADMIN_SESSION_MAX_AGE_SECONDS",
+      "ADMIN_SESSION_IDLE_TIMEOUT_SECONDS",
+      "ADMIN_SESSION_REAUTH_SECONDS",
+      "ADMIN_CSRF_SECRET",
+      "CONTROL_PLANE_ADMIN_TLS_CA_FILE",
+      "CONTROL_PLANE_ADMIN_TLS_CERT_FILE",
+      "CONTROL_PLANE_ADMIN_TLS_KEY_FILE"
     ],
     "externalIntegrationEnv": [
       "EXTERNAL_INTEGRATION_CLIENTS_JSON",
@@ -92,7 +107,20 @@
       "adminApi.enabled",
       "adminApi.ingress.enabled",
       "adminApi.tokens.existingSecretName",
-      "adminApi.tokens.tokensJsonKey"
+      "adminApi.tokens.tokensJsonKey",
+      "platformAdminAccess.enabled",
+      "platformAdminAccess.session.maxAgeSeconds",
+      "platformAdminAccess.session.idleTimeoutSeconds",
+      "platformAdminAccess.session.reauthSeconds",
+      "platformAdminAccess.oidc.issuerUrl",
+      "platformAdminAccess.oidc.publicIssuerUrl",
+      "platformAdminAccess.oidc.clientId",
+      "platformAdminAccess.oidc.allowedRoles",
+      "platformAdminAccess.oidc.requiredAcrValues",
+      "platformAdminAccess.oidc.requiredAmrValues",
+      "components.platformAdminConsole.enabled",
+      "exposure.ingress.adminHost",
+      "internalTransport.tls.certificates.platformAdminConsole.secretName"
     ],
     "externalIntegrationHelmValues": [
       "secrets.keys.controlPlane.externalIntegrationClientsJson"
