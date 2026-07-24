@@ -308,6 +308,10 @@ for (const identifier of [
 const agentDeploy = readFileSync(path.join(root, 'scripts/agent-deploy.sh'), 'utf8');
 const localUp = readFileSync(path.join(root, 'scripts/local-up.sh'), 'utf8');
 const localCompose = readFileSync(path.join(root, 'compose/local/compose.source.yaml'), 'utf8');
+const localPlatformAdminRealm = readFileSync(
+  path.join(root, 'compose/vm-prod/oidc/keycloak/realm-acornops-platform-admin.json'),
+  'utf8'
+);
 const vmAdditionalCaCompose = readFileSync(
   path.join(root, 'compose/vm-prod/compose.additional-ca.yaml'),
   'utf8'
@@ -470,9 +474,46 @@ expect(
   localUp.includes('ensure_local_gateway_signing_key') && localUp.includes('openssl genpkey'),
   'local-up should persist a stable local gateway signing key before starting services'
 );
+for (const marker of [
+  'PLATFORM_ADMIN_CONSOLE',
+  'CONTROL_PLANE_ADMIN_HUMAN_AUTH_REQUIRED',
+  'PLATFORM_ADMIN_BFF_TOKEN',
+  'platform-admin'
+]) {
+  expect(localUp.includes(marker), `local-up should preserve the optional connected platform-admin marker ${marker}`);
+}
+for (const marker of [
+  'platform-admin-console:',
+  'ADMIN_CONSOLE_DATA_MODE: control-plane',
+  'CONTROL_PLANE_ADMIN_BASE_URL: http://control-plane:8081',
+  'exec 3<>/dev/tcp/127.0.0.1/9000',
+  '127.0.0.1:${PLATFORM_ADMIN_CONSOLE_PORT:-4173}:4173'
+]) {
+  expect(localCompose.includes(marker), `Local Compose should preserve the connected platform-admin marker ${marker}`);
+}
+for (const marker of [
+  'acornops-platform-admin',
+  'platform-admin',
+  'directAccessGrantsEnabled',
+  'oidc-usermodel-realm-role-mapper',
+  'realm_access.roles',
+  '"id.token.claim": "true"',
+  'http://127.0.0.1:4173/admin-auth/oidc/callback'
+]) {
+  expect(localPlatformAdminRealm.includes(marker), `Local platform-admin realm should preserve ${marker}`);
+}
+expect(
+  localPlatformAdminRealm.includes('"directAccessGrantsEnabled": false'),
+  'Local platform-admin identity must disable direct password grants'
+);
 expect(
   localEnvExample.includes('GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64=') && localEnvExample.includes('PERSIST_RUN_EVENTS=true'),
   'local env example should preserve restart-safe signing and durable trace defaults'
+);
+expect(
+  localEnvExample.includes('PLATFORM_ADMIN_CONSOLE=false')
+    && localEnvExample.includes('PLATFORM_ADMIN_BFF_TOKEN=acornops-local-platform-admin-bff-token'),
+  'local env example should document the disabled-by-default platform-admin profile and local-only BFF token'
 );
 expect(
   localUp.includes('up -d --force-recreate --no-deps edge-proxy')

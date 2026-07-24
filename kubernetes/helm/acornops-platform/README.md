@@ -70,7 +70,9 @@ The chart values are organized by operator concern:
 
 ## Authentication Values Upgrade
 
-Chart `0.0.1-experimental.15` makes the authentication domains explicit.
+Chart `0.0.1-experimental.16` pins the independently released
+`ghcr.io/acornops/platform-admin-console:0.0.1-experimental.1` image while keeping the
+platform-admin workload disabled by default.
 `userAccess` configures workspace-user and management-console authentication;
 `platformAdminAccess` configures only privileged platform-admin browser access.
 This is a clean-cut values migration and the chart rejects the old paths.

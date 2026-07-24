@@ -10,6 +10,7 @@ ENV_FILE="${1:-}"
 AGENT_ENV_FILE="${2:-}"
 CLI_OIDC_PROFILE="${LOCAL_OIDC_PROFILE:-}"
 CLI_EXTRA_PROFILES="${LOCAL_EXTRA_PROFILES:-}"
+CLI_PLATFORM_ADMIN_CONSOLE="${PLATFORM_ADMIN_CONSOLE:-}"
 COMPOSE_FILES=(-f "${ROOT_DIR}/compose/vm-prod/compose.yaml" -f "${ROOT_DIR}/compose/local/compose.source.yaml")
 
 if [[ -z "${ENV_FILE}" ]]; then
@@ -81,6 +82,9 @@ if [[ -n "${CLI_EXTRA_PROFILES}" ]]; then
   LOCAL_EXTRA_PROFILES="${CLI_EXTRA_PROFILES}"
 fi
 LOCAL_EXTRA_PROFILES="${LOCAL_EXTRA_PROFILES:-target-fixtures}"
+if [[ -n "${CLI_PLATFORM_ADMIN_CONSOLE}" ]]; then
+  PLATFORM_ADMIN_CONSOLE="${CLI_PLATFORM_ADMIN_CONSOLE}"
+fi
 
 profile_enabled() {
   local requested="$1"
@@ -92,6 +96,61 @@ profile_enabled() {
   done
   return 1
 }
+
+enable_profile() {
+  local requested="$1"
+  if profile_enabled "${requested}"; then
+    return
+  fi
+  LOCAL_EXTRA_PROFILES="${LOCAL_EXTRA_PROFILES:+${LOCAL_EXTRA_PROFILES} }${requested}"
+}
+
+configure_local_platform_admin() {
+  : "${PLATFORM_ADMIN_CONSOLE:=false}"
+  case "${PLATFORM_ADMIN_CONSOLE}" in
+    true)
+      ;;
+    false)
+      return
+      ;;
+    *)
+      echo "PLATFORM_ADMIN_CONSOLE must be true or false."
+      exit 1
+      ;;
+  esac
+
+  local token_sha256
+  : "${PLATFORM_ADMIN_BFF_TOKEN:=acornops-local-platform-admin-bff-token}"
+  token_sha256="$(printf '%s' "${PLATFORM_ADMIN_BFF_TOKEN}" | openssl dgst -sha256 | awk '{print $2}')"
+  if [[ ! "${token_sha256}" =~ ^[a-f0-9]{64}$ ]]; then
+    echo "Failed to derive the local platform-admin token descriptor."
+    exit 1
+  fi
+
+  enable_profile platform-admin
+  export PLATFORM_ADMIN_BFF_TOKEN
+  export CONTROL_PLANE_ADMIN_API_ENABLED=true
+  export CONTROL_PLANE_ADMIN_HUMAN_AUTH_REQUIRED=true
+  export PLATFORM_ADMIN_BFF_TOKEN_ID=platform-admin-console
+  export CONTROL_PLANE_ADMIN_TOKENS_JSON="[{\"id\":\"platform-admin-console\",\"name\":\"Local platform admin console\",\"sha256\":\"${token_sha256}\",\"scopes\":[\"admin:self\",\"admin:system:read\",\"admin:workspace:read\",\"admin:workspace:write\",\"admin:user:read\",\"admin:member:write\",\"admin:audit:read\"],\"enabled\":true}]"
+  export PLATFORM_ADMIN_CONSOLE_BASE_URL="${PLATFORM_ADMIN_CONSOLE_BASE_URL:-http://127.0.0.1:4173}"
+  export ADMIN_SESSION_COOKIE_NAME="${ADMIN_SESSION_COOKIE_NAME:-acornops_admin_session}"
+  export ADMIN_CSRF_COOKIE_NAME="${ADMIN_CSRF_COOKIE_NAME:-acornops_admin_csrf}"
+  export ADMIN_CSRF_SECRET="${ADMIN_CSRF_SECRET:-local_admin_csrf_secret_for_development_only}"
+  export ADMIN_OIDC_PROVIDER_NAME="${ADMIN_OIDC_PROVIDER_NAME:-keycloak-local-platform-admin}"
+  export ADMIN_OIDC_ISSUER_URL="${ADMIN_OIDC_ISSUER_URL:-http://keycloak:8080/realms/acornops-platform-admin}"
+  export ADMIN_OIDC_PUBLIC_ISSUER_URL="${ADMIN_OIDC_PUBLIC_ISSUER_URL:-http://localhost:8082/realms/acornops-platform-admin}"
+  export ADMIN_OIDC_CLIENT_ID="${ADMIN_OIDC_CLIENT_ID:-acornops-platform-admin}"
+  export ADMIN_OIDC_CLIENT_SECRET="${ADMIN_OIDC_CLIENT_SECRET:-acornops-platform-admin-secret}"
+  export ADMIN_OIDC_AUTHORIZATION_ENDPOINT_OVERRIDE="${ADMIN_OIDC_AUTHORIZATION_ENDPOINT_OVERRIDE:-http://localhost:8082/realms/acornops-platform-admin/protocol/openid-connect/auth}"
+  export ADMIN_OIDC_TOKEN_ENDPOINT_OVERRIDE="${ADMIN_OIDC_TOKEN_ENDPOINT_OVERRIDE:-http://keycloak:8080/realms/acornops-platform-admin/protocol/openid-connect/token}"
+  export ADMIN_OIDC_JWKS_URI_OVERRIDE="${ADMIN_OIDC_JWKS_URI_OVERRIDE:-http://keycloak:8080/realms/acornops-platform-admin/protocol/openid-connect/certs}"
+  export ADMIN_OIDC_REDIRECT_URI="${ADMIN_OIDC_REDIRECT_URI:-http://127.0.0.1:4173/admin-auth/oidc/callback}"
+  export ADMIN_OIDC_REQUIRED_ACR_VALUES="${ADMIN_OIDC_REQUIRED_ACR_VALUES:-1}"
+  export ADMIN_OIDC_REQUIRED_AMR_VALUES="${ADMIN_OIDC_REQUIRED_AMR_VALUES:-}"
+}
+
+configure_local_platform_admin
 
 if profile_enabled target-fixtures && profile_enabled cluster-fixture; then
   echo "Choose either target-fixtures or cluster-fixture, not both."

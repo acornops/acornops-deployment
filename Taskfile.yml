@@ -7,6 +7,7 @@ vars:
   ENV_AGENT: '{{default "env/vm/.env.agent" .ENV_AGENT}}'
   LOCAL_OIDC_PROFILE: '{{default "oidc-dex" .LOCAL_OIDC_PROFILE}}'
   LOCAL_EXTRA_PROFILES: '{{default "" .LOCAL_EXTRA_PROFILES}}'
+  PLATFORM_ADMIN_CONSOLE: '{{default "false" .PLATFORM_ADMIN_CONSOLE}}'
 
 silent: true
 
@@ -27,10 +28,11 @@ tasks:
       - ./scripts/doctor.sh
 
   local-up:
-    desc: Start the local stack with seeded Kubernetes and VM targets plus AgentK and AgentV
+    desc: Start the local stack with seeded targets; set PLATFORM_ADMIN_CONSOLE=true to include the connected admin console
     env:
       LOCAL_OIDC_PROFILE: '{{.LOCAL_OIDC_PROFILE}}'
       LOCAL_EXTRA_PROFILES: 'target-fixtures {{.LOCAL_EXTRA_PROFILES}}'
+      PLATFORM_ADMIN_CONSOLE: '{{.PLATFORM_ADMIN_CONSOLE}}'
       SEED_DEVELOPMENT_DATA: 'true'
       SEED_AGENT_KEY: ak_local_dev_shared_key
       SEED_VM_AGENT_KEY: ak_local_vm_dev_shared_key
@@ -42,6 +44,7 @@ tasks:
     env:
       LOCAL_OIDC_PROFILE: '{{.LOCAL_OIDC_PROFILE}}'
       LOCAL_EXTRA_PROFILES: cluster-fixture
+      PLATFORM_ADMIN_CONSOLE: '{{.PLATFORM_ADMIN_CONSOLE}}'
       SEED_DEVELOPMENT_DATA: 'true'
       SEED_AGENT_KEY: ak_local_dev_shared_key
       LOCAL_CLUSTER_ID: 5b006e4c-509c-458a-9f02-5aafbdc01ade
@@ -55,6 +58,7 @@ tasks:
     env:
       LOCAL_OIDC_PROFILE: '{{.LOCAL_OIDC_PROFILE}}'
       LOCAL_EXTRA_PROFILES: target-fixtures
+      PLATFORM_ADMIN_CONSOLE: '{{.PLATFORM_ADMIN_CONSOLE}}'
       SEED_DEVELOPMENT_DATA: 'true'
       SEED_AGENT_KEY: ak_local_dev_shared_key
       SEED_VM_AGENT_KEY: ak_local_vm_dev_shared_key
@@ -66,6 +70,7 @@ tasks:
     env:
       LOCAL_OIDC_PROFILE: '{{.LOCAL_OIDC_PROFILE}}'
       LOCAL_EXTRA_PROFILES: '{{.LOCAL_EXTRA_PROFILES}}'
+      PLATFORM_ADMIN_CONSOLE: '{{.PLATFORM_ADMIN_CONSOLE}}'
     cmds:
       - ./scripts/local-down.sh {{.ENV_LOCAL}} {{.ENV_LOCAL_AGENT}}
 
@@ -73,6 +78,7 @@ tasks:
     desc: Reset local stack and wipe data/volumes
     env:
       LOCAL_EXTRA_PROFILES: '{{.LOCAL_EXTRA_PROFILES}}'
+      PLATFORM_ADMIN_CONSOLE: '{{.PLATFORM_ADMIN_CONSOLE}}'
     cmds:
       - ./scripts/local-reset.sh {{.ENV_LOCAL}} {{.ENV_LOCAL_AGENT}}
 
@@ -83,6 +89,7 @@ tasks:
       ENV_LOCAL_AGENT: '{{.ENV_LOCAL_AGENT}}'
       LOCAL_OIDC_PROFILE: '{{.LOCAL_OIDC_PROFILE}}'
       LOCAL_EXTRA_PROFILES: '{{.LOCAL_EXTRA_PROFILES}}'
+      PLATFORM_ADMIN_CONSOLE: '{{.PLATFORM_ADMIN_CONSOLE}}'
     cmds:
       - |
         if [ -f "$ENV_LOCAL_AGENT" ]; then
@@ -91,6 +98,9 @@ tasks:
           set +a
         fi
         EXTRA_ARGS=""
+        if [ "$PLATFORM_ADMIN_CONSOLE" = "true" ]; then
+          EXTRA_ARGS="$EXTRA_ARGS --profile platform-admin"
+        fi
         if [ -n "$LOCAL_EXTRA_PROFILES" ]; then
           for p in $(echo "$LOCAL_EXTRA_PROFILES" | tr ',' ' '); do
             EXTRA_ARGS="$EXTRA_ARGS --profile $p"
@@ -106,6 +116,7 @@ tasks:
       ENV_LOCAL_AGENT: '{{.ENV_LOCAL_AGENT}}'
       LOCAL_OIDC_PROFILE: '{{.LOCAL_OIDC_PROFILE}}'
       LOCAL_EXTRA_PROFILES: '{{.LOCAL_EXTRA_PROFILES}}'
+      PLATFORM_ADMIN_CONSOLE: '{{.PLATFORM_ADMIN_CONSOLE}}'
     cmds:
       - |
         if [ -f "$ENV_LOCAL_AGENT" ]; then
@@ -114,6 +125,9 @@ tasks:
           set +a
         fi
         EXTRA_ARGS=""
+        if [ "$PLATFORM_ADMIN_CONSOLE" = "true" ]; then
+          EXTRA_ARGS="$EXTRA_ARGS --profile platform-admin"
+        fi
         if [ -n "$LOCAL_EXTRA_PROFILES" ]; then
           for p in $(echo "$LOCAL_EXTRA_PROFILES" | tr ',' ' '); do
             EXTRA_ARGS="$EXTRA_ARGS --profile $p"
@@ -230,3 +244,4 @@ tasks:
       - docker compose -f compose/vm-prod/compose.yaml --profile prod --env-file env/vm/.env.example config >/dev/null
       - docker compose -f compose/vm-prod/compose.yaml -f compose/local/compose.source.yaml --profile local --profile oidc-dex --env-file env/local/.env.example config >/dev/null
       - docker compose -f compose/vm-prod/compose.yaml -f compose/local/compose.source.yaml --profile local --profile oidc-keycloak --env-file env/local/.env.example config >/dev/null
+      - docker compose -f compose/vm-prod/compose.yaml -f compose/local/compose.source.yaml --profile local --profile oidc-dex --profile platform-admin --env-file env/local/.env.example config >/dev/null

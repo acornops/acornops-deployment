@@ -22,6 +22,42 @@ services:
     healthcheck:
       disable: true
 
+  platform-admin-console:
+    profiles:
+      - platform-admin
+    build:
+      context: ../../../platform-admin-console
+      dockerfile: Dockerfile
+    image: acornops/platform-admin-console:local
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4173
+      ADMIN_CONSOLE_DATA_MODE: control-plane
+      CONTROL_PLANE_ADMIN_BASE_URL: http://control-plane:8081
+      CONTROL_PLANE_ADMIN_TOKEN: ${PLATFORM_ADMIN_BFF_TOKEN:-acornops-local-platform-admin-bff-token}
+    depends_on:
+      control-plane:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4173/health/ready').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "127.0.0.1:${PLATFORM_ADMIN_CONSOLE_PORT:-4173}:4173"
+    restart: unless-stopped
+    networks:
+      - acornops
+
   edge-proxy:
     profiles:
       - local
@@ -72,6 +108,25 @@ services:
       RUN_EVENT_BUFFER_SIZE: ${RUN_EVENT_BUFFER_SIZE:-200}
       PERSIST_RUN_EVENTS: ${PERSIST_RUN_EVENTS:-true}
       WORKSPACE_ROLES_CONFIG_JSON: ${WORKSPACE_ROLES_CONFIG_JSON:-}
+      CONTROL_PLANE_ADMIN_API_ENABLED: ${CONTROL_PLANE_ADMIN_API_ENABLED:-false}
+      CONTROL_PLANE_ADMIN_TOKENS_JSON: '${CONTROL_PLANE_ADMIN_TOKENS_JSON:-[]}'
+      CONTROL_PLANE_ADMIN_HUMAN_AUTH_REQUIRED: ${CONTROL_PLANE_ADMIN_HUMAN_AUTH_REQUIRED:-false}
+      PLATFORM_ADMIN_BFF_TOKEN_ID: ${PLATFORM_ADMIN_BFF_TOKEN_ID:-platform-admin-console}
+      PLATFORM_ADMIN_CONSOLE_BASE_URL: ${PLATFORM_ADMIN_CONSOLE_BASE_URL:-http://127.0.0.1:4173}
+      ADMIN_SESSION_COOKIE_NAME: ${ADMIN_SESSION_COOKIE_NAME:-acornops_admin_session}
+      ADMIN_CSRF_COOKIE_NAME: ${ADMIN_CSRF_COOKIE_NAME:-acornops_admin_csrf}
+      ADMIN_CSRF_SECRET: ${ADMIN_CSRF_SECRET:-local_admin_csrf_secret_for_development_only}
+      ADMIN_OIDC_PROVIDER_NAME: ${ADMIN_OIDC_PROVIDER_NAME:-keycloak-local-platform-admin}
+      ADMIN_OIDC_ISSUER_URL: ${ADMIN_OIDC_ISSUER_URL:-http://keycloak:8080/realms/acornops-platform-admin}
+      ADMIN_OIDC_PUBLIC_ISSUER_URL: ${ADMIN_OIDC_PUBLIC_ISSUER_URL:-http://localhost:8082/realms/acornops-platform-admin}
+      ADMIN_OIDC_CLIENT_ID: ${ADMIN_OIDC_CLIENT_ID:-acornops-platform-admin}
+      ADMIN_OIDC_CLIENT_SECRET: ${ADMIN_OIDC_CLIENT_SECRET:-acornops-platform-admin-secret}
+      ADMIN_OIDC_AUTHORIZATION_ENDPOINT_OVERRIDE: ${ADMIN_OIDC_AUTHORIZATION_ENDPOINT_OVERRIDE:-http://localhost:8082/realms/acornops-platform-admin/protocol/openid-connect/auth}
+      ADMIN_OIDC_TOKEN_ENDPOINT_OVERRIDE: ${ADMIN_OIDC_TOKEN_ENDPOINT_OVERRIDE:-http://keycloak:8080/realms/acornops-platform-admin/protocol/openid-connect/token}
+      ADMIN_OIDC_JWKS_URI_OVERRIDE: ${ADMIN_OIDC_JWKS_URI_OVERRIDE:-http://keycloak:8080/realms/acornops-platform-admin/protocol/openid-connect/certs}
+      ADMIN_OIDC_REDIRECT_URI: ${ADMIN_OIDC_REDIRECT_URI:-http://127.0.0.1:4173/admin-auth/oidc/callback}
+      ADMIN_OIDC_REQUIRED_ACR_VALUES: ${ADMIN_OIDC_REQUIRED_ACR_VALUES:-1}
+      ADMIN_OIDC_REQUIRED_AMR_VALUES: ${ADMIN_OIDC_REQUIRED_AMR_VALUES:-}
       AGENTK_HELM_RELEASE_NAME: ${AGENTK_HELM_RELEASE_NAME:-acornops-agentk}
       AGENTK_HELM_CHART_REF: ${AGENTK_HELM_CHART_REF:-oci://ghcr.io/acornops/charts/acornops-agentk}
       AGENTK_HELM_CHART_VERSION: ${AGENTK_HELM_CHART_VERSION:-}
@@ -257,6 +312,7 @@ services:
   keycloak:
     profiles:
       - oidc-keycloak
+      - platform-admin
     image: quay.io/keycloak/keycloak:26.1
     command: ["start-dev", "--import-realm", "--http-enabled=true", "--hostname-strict=false"]
     environment:
@@ -270,8 +326,22 @@ services:
     depends_on:
       keycloak-postgres:
         condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000;
+          printf 'GET /health/ready HTTP/1.0\r\nHost: localhost\r\n\r\n' >&3;
+          grep -q 'HTTP/1.0 200' <&3
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
     volumes:
       - ../../../control-plane/deploy/keycloak/realm-acornops.json:/opt/keycloak/data/import/realm-acornops.json:ro
+      - ./oidc/keycloak/realm-acornops-platform-admin.json:/opt/keycloak/data/import/realm-acornops-platform-admin.json:ro
     ports:
       - "${KEYCLOAK_PORT:-8082}:8080"
     restart: unless-stopped
@@ -281,6 +351,7 @@ services:
   keycloak-postgres:
     profiles:
       - oidc-keycloak
+      - platform-admin
     image: postgres:16
     environment:
       POSTGRES_USER: keycloak

@@ -9,6 +9,7 @@ ENV_FILE="${1:-}"
 AGENT_ENV_FILE="${2:-}"
 CLI_OIDC_PROFILE="${LOCAL_OIDC_PROFILE:-}"
 CLI_EXTRA_PROFILES="${LOCAL_EXTRA_PROFILES:-}"
+CLI_PLATFORM_ADMIN_CONSOLE="${PLATFORM_ADMIN_CONSOLE:-}"
 COMPOSE_FILES=(-f "${ROOT_DIR}/compose/vm-prod/compose.yaml" -f "${ROOT_DIR}/compose/local/compose.source.yaml")
 
 if [[ -z "${ENV_FILE}" ]]; then
@@ -44,6 +45,21 @@ if [[ -n "${CLI_EXTRA_PROFILES}" ]]; then
   LOCAL_EXTRA_PROFILES="${CLI_EXTRA_PROFILES}"
 fi
 LOCAL_EXTRA_PROFILES="${LOCAL_EXTRA_PROFILES:-}"
+if [[ -n "${CLI_PLATFORM_ADMIN_CONSOLE}" ]]; then
+  PLATFORM_ADMIN_CONSOLE="${CLI_PLATFORM_ADMIN_CONSOLE}"
+fi
+
+case "${PLATFORM_ADMIN_CONSOLE:-false}" in
+  true)
+    LOCAL_EXTRA_PROFILES="${LOCAL_EXTRA_PROFILES:+${LOCAL_EXTRA_PROFILES} }platform-admin"
+    ;;
+  false)
+    ;;
+  *)
+    echo "PLATFORM_ADMIN_CONSOLE must be true or false."
+    exit 1
+    ;;
+esac
 
 COMPOSE_PROFILE_ARGS=(--profile local --profile "${LOCAL_OIDC_PROFILE}")
 if [[ -n "${LOCAL_EXTRA_PROFILES}" ]]; then

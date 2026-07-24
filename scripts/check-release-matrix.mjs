@@ -77,6 +77,7 @@ const expectedVmProdImages = {
   llmGateway: componentLine(vmProdStack, 'llmGateway')
 };
 const expectedK8sImages = {
+  platformAdminConsole: componentLine(k8sPlatformStack, 'platformAdminConsole'),
   managementConsole: componentLine(k8sPlatformStack, 'managementConsole'),
   controlPlane: componentLine(k8sPlatformStack, 'controlPlane'),
   executionEngine: componentLine(k8sPlatformStack, 'executionEngine'),
@@ -136,6 +137,29 @@ expect(
 );
 
 const rendered = run('helm', ['template', 'acornops', chartPath, '--namespace', 'acornops']);
+const renderedWithPlatformAdmin = run('helm', [
+  'template',
+  'acornops',
+  chartPath,
+  '--namespace',
+  'acornops',
+  '--set',
+  'components.platformAdminConsole.enabled=true',
+  '--set',
+  'adminApi.enabled=true',
+  '--set',
+  'internalTransport.tls.enabled=true',
+  '--set-string',
+  'internalTransport.tls.ca.secretName=acornops-internal-ca',
+  '--set-string',
+  'internalTransport.tls.certificates.controlPlane.secretName=control-plane-tls',
+  '--set-string',
+  'internalTransport.tls.certificates.platformAdminConsole.secretName=platform-admin-console-tls',
+  '--set-string',
+  'internalTransport.tls.certificates.executionEngine.secretName=execution-engine-tls',
+  '--set-string',
+  'internalTransport.tls.certificates.llmGateway.secretName=llm-gateway-tls'
+]);
 const renderedWithAgentPin = run('helm', [
   'template',
   'acornops',
@@ -160,8 +184,9 @@ const renderedWithAgentAirgapDefaults = run('helm', [
   '--set-string',
   'targetAgents.agentk.helm.files.additionalCaBundle.sourcePath=/opt/acornops/organization-ca.pem'
 ]);
-for (const image of Object.values(expectedK8sImages)) {
-  expect(rendered.includes(`image: "${image}"`), `platform chart should render ${image}`);
+for (const [component, image] of Object.entries(expectedK8sImages)) {
+  const output = component === 'platformAdminConsole' ? renderedWithPlatformAdmin : rendered;
+  expect(output.includes(`image: "${image}"`), `platform chart should render ${image}`);
 }
 expect(
   rendered.includes('AGENTK_HELM_CHART_REF: "oci://ghcr.io/acornops/charts/acornops-agentk"'),
