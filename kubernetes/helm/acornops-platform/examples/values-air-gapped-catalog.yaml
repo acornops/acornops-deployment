@@ -1,0 +1,30 @@
+# Air-gapped MCP catalog example. Create the referenced Secrets and ConfigMap
+# before installing the platform chart.
+components:
+  llmGateway:
+    catalog:
+      officialRegistryEnabled: false
+      officialRegistryUrl: https://registry.modelcontextprotocol.io
+      allowWorkspaceManagedSources: true
+      bootstrapSources:
+        - workspaceId: "*"
+          displayName: Internal MCP Registry
+          baseUrl: https://registry.internal.example
+          networkRoute: direct
+          adapterBasePath: /v0.1
+          enabled: true
+          auth:
+            type: bearer_token
+            secretKeyRef:
+              name: internal-registry-credential
+              key: token
+    mcpEgress:
+      allowedHosts: registry.internal.example,mcp.internal.example
+      allowPrivateNetworks: true
+      allowLocalAddresses: false
+    trust:
+      additionalCaBundle:
+        configMapKeyRef:
+          name: internal-platform-ca
+          key: ca-bundle.pem
+        secretKeyRef: null

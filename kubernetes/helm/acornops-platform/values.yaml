@@ -63,7 +63,6 @@ secrets:
     controlPlane:
       databaseUrl: CONTROL_PLANE_DATABASE_URL
       redisUrl: CONTROL_PLANE_REDIS_URL
-      oidcClientSecret: OIDC_CLIENT_SECRET
       csrfSecret: CSRF_SECRET
       adminOidcClientSecret: ADMIN_OIDC_CLIENT_SECRET
       adminCsrfSecret: ADMIN_CSRF_SECRET
@@ -94,26 +93,39 @@ auth:
     # Sliding browser session idle timeout in seconds.
     idleTimeoutSeconds: 86400
   oidc:
-    # Display/provider identifier used by the control plane.
+    enabled: true
+    # Stable persisted identity namespace. Do not reuse it for an unrelated issuer.
     providerName: oidc
     # Internal issuer URL reachable from the control-plane pod.
     issuerUrl: https://keycloak.acornops.dev/realms/acornops
     # Optional public issuer URL if browser-visible discovery differs from internal issuerUrl.
     publicIssuerUrl: ""
     clientId: acornops-control-plane
+    clientSecret:
+      # Secret reference is used only when OIDC is enabled.
+      existingSecret: acornops-platform-secrets
+      key: OIDC_CLIENT_SECRET
     # Token endpoint client authentication method.
     tokenEndpointAuthMethod: client_secret_basic
     # Optional endpoint overrides for providers behind split internal/public routing.
-    authorizationEndpointOverride: ""
-    tokenEndpointOverride: ""
-    userinfoEndpointOverride: ""
+    authorizationEndpoint: ""
+    tokenEndpoint: ""
+    userInfoEndpoint: ""
     jwksUriOverride: ""
     # Defaults to <platform.consoleUrl>/api/v1/auth/oidc/callback when empty.
     redirectUri: ""
-    scopes: openid profile email
+    scopes:
+      - openid
+      - profile
+      - email
     useUserinfo: true
-    # Keep true unless a trusted provider intentionally emits email_verified=false.
-    requireVerifiedEmail: true
+    # Omitted rules allow any identity that completes OIDC authentication.
+    admission: {}
+    logout:
+      # Optional public browser-facing RP-initiated logout endpoint.
+      endSessionEndpointOverride: ""
+      # Defaults to <platform.consoleUrl>/api/v1/auth/oidc/logout/callback when empty.
+      postLogoutRedirectUri: ""
     httpTimeoutMs: 10000
   password:
     # Username/password auth can run alongside OIDC.
@@ -151,9 +163,32 @@ ai:
   # Default provider/model used when a workspace has no override.
   defaultProvider: openai
   defaultModel: gpt-5.5
-  # Comma-separated allow lists enforced by the control plane.
-  allowedProviders: openai,anthropic,gemini
-  allowedModels: gpt-5.5,gpt-5.4,gpt-5.4-mini,gpt-5.4-nano,gpt-5,gpt-5-mini,gpt-5-nano,claude-3-5-sonnet-latest,gemini-2.0-flash
+  # Map keys are allowed providers; each value is that provider's model allow list.
+  providers:
+    openai:
+      - gpt-5.5
+      - gpt-5.4
+      - gpt-5.4-mini
+      - gpt-5.4-nano
+      - gpt-5
+      - gpt-5-mini
+      - gpt-5-nano
+    anthropic:
+      - claude-fable-5
+      - claude-opus-4-8
+      - claude-sonnet-4-6
+      - claude-haiku-4-5
+    gemini:
+      - gemini-3.5-flash
+      - gemini-3.5-flash-lite
+      - gemini-3.1-pro
+      - gemini-3.1-flash
+      - gemini-3.1-flash-lite
+      - gemini-2.5-pro
+      - gemini-2.5-flash
+      - gemini-2.5-flash-lite
+      - gemini-2.0-flash
+      - gemini-2.0-flash-lite
   # Deployment policy ceiling for workspace-level reasoning summaries.
   reasoningSummariesEnabled: true
   allowedReasoningSummaryModes: off,auto,concise,detailed
@@ -218,48 +253,62 @@ adminApi:
       requiredAmrValues: mfa,otp,webauthn,hwk
       httpTimeoutMs: 10000
 
-agent:
-  routing:
-    # Enables HA agent ownership and cross-pod routing through external Redis.
-    distributedEnabled: true
+# Shared control-plane gateway settings for both AgentK and AgentV connections.
+# This does not configure either target-side agent daemon.
+agentGateway:
+  distributedRouting:
+    # Enables HA target ownership and cross-pod routing through external Redis.
+    enabled: true
     ownerTtlSeconds: 90
-    snapshotIntervalSeconds: 60
-    # Accommodates the 2 MiB complete tool result plus its MCP/WebSocket envelope.
-    maxWebSocketPayloadBytes: 3145728
-  runtime:
-    contextMaxTokens: 120000
-    budgetCents: 25
-    temperature: "0.2"
-    maxRuntimeMs: 600000
-    maxSteps: 16
-    maxToolCalls: 24
-    maxDuplicateToolCalls: 2
-    toolDefaultTimeoutMs: 10000
-    # Require explicit user approval before write-capable agent tools execute.
-    writeConfirmationRequired: true
-    writeConfirmationTimeoutSeconds: 900
-  helm:
-    # Defaults used when the control plane creates workload-cluster agent installs.
-    releaseName: acornops-agentk
-    chartRef: oci://ghcr.io/acornops/charts/acornops-agentk
-    # Optional exact version. Leave empty to install the latest chart, including prereleases.
-    chartVersion: ""
-    namespace: acornops-agentk
-    # Literal downstream AgentK chart values added to generated install commands.
-    # Control-plane-owned identity, connection, namespace, and write-mode values
-    # are rejected.
-    values: {}
-    files:
-      additionalCaBundle:
-        # Path on the operator machine that runs the generated Helm command.
-        # When set, Helm reads this PEM bundle with --set-file and the AgentK
-        # chart manages the namespace-local trust ConfigMap.
-        sourcePath: ""
-  builtinMcpServer:
-    name: acornops-cluster-agent
-    # Defaults to the in-cluster control-plane internal MCP endpoint when empty.
-    url: ""
-    displayName: AcornOps Kubernetes Tools
+  snapshotIntervalSeconds: 60
+  # Accommodates the 2 MiB complete tool result plus its MCP/WebSocket envelope.
+  maxWebSocketPayloadBytes: 3145728
+
+# Default limits and approval policy for AI assistant runs in the control plane.
+# These settings are independent of the AgentK and AgentV daemon configuration.
+assistantRuntime:
+  # Optional override. Leave empty to use the control plane's production default.
+  systemInstruction: ""
+  contextMaxTokens: 120000
+  budgetCents: 25
+  temperature: "0.2"
+  maxRuntimeMs: 600000
+  maxSteps: 16
+  maxToolCalls: 24
+  maxDuplicateToolCalls: 2
+  toolDefaultTimeoutMs: 10000
+  # Require explicit user approval before write-capable tools execute.
+  writeConfirmationRequired: true
+  writeConfirmationTimeoutSeconds: 900
+
+# Target-specific installation settings. AgentV is installed on VMs with its
+# systemd archive and therefore intentionally has no Helm configuration here.
+targetAgents:
+  agentk:
+    helm:
+      # Defaults used to generate AgentK install commands for Kubernetes targets.
+      releaseName: acornops-agentk
+      chartRef: oci://ghcr.io/acornops/charts/acornops-agentk
+      # Optional exact version. Leave empty to install the latest chart, including prereleases.
+      chartVersion: ""
+      namespace: acornops-agentk
+      # Literal downstream AgentK chart values added to generated install commands.
+      # Control-plane-owned identity, connection, namespace, and write-mode values
+      # are rejected.
+      values: {}
+      files:
+        additionalCaBundle:
+          # Path on the operator machine that runs the generated Helm command.
+          # When set, Helm reads this PEM bundle with --set-file and the AgentK
+          # chart manages the namespace-local trust ConfigMap.
+          sourcePath: ""
+
+# Internal MCP identity shared by AgentK and AgentV target tools.
+builtinTargetMcp:
+  name: acornops-target-agent
+  # Defaults to the in-cluster control-plane internal MCP endpoint when empty.
+  url: ""
+  displayName: AcornOps Target Tools
 
 internalTransport:
   tls:
@@ -446,7 +495,7 @@ components:
     basePath: /
     image:
       repository: ghcr.io/acornops/management-console
-      tag: 0.0.1-experimental.16
+      tag: 0.0.1-experimental.21
       pullPolicy: IfNotPresent
     service:
       port: 80
@@ -500,6 +549,8 @@ components:
     toolResultArtifacts:
       retentionDays: 7
       maxBytes: 2097152
+    reportArtifacts:
+      maxRetentionDays: 30
     recentActivity:
       windowSeconds: 300
     runEvents:
@@ -509,9 +560,18 @@ components:
       # Exact hosts and leading wildcards (for example, hooks.example.org and *.hooks.example.org).
       # Public webhook hosts remain allowed; this only permits listed hosts to resolve privately.
       allowedPrivateHosts: []
+    webhookDelivery:
+      enabled: true
+      batchSize: 50
+      concurrency: 20
+      perOriginConcurrency: 4
+      maxAttempts: 10
+      maxRetryAgeSeconds: 86400
+      maxPayloadBytes: 65536
+      maxSubscriptionsPerWorkspace: 100
     image:
       repository: ghcr.io/acornops/control-plane
-      tag: 0.0.1-experimental.17
+      tag: 0.0.1-experimental.21
       pullPolicy: IfNotPresent
     service:
       port: 8081
@@ -581,7 +641,7 @@ components:
     maxRequestBodyBytes: 1000000
     image:
       repository: ghcr.io/acornops/execution-engine
-      tag: 0.0.1-experimental.8
+      tag: 0.0.1-experimental.10
       pullPolicy: IfNotPresent
     service:
       port: 8080
@@ -634,6 +694,7 @@ components:
     builtinMcpMaxResponseBytes: 3145728
     secretsBackend: database
     secretsCacheTtlSeconds: 0
+    openaiApiSurface: responses
     providerBaseUrls:
       openai: ""
       anthropic: ""
@@ -658,14 +719,39 @@ components:
       allowedHosts: ""
       allowPrivateNetworks: false
       allowLocalAddresses: false
+    remoteMcp:
+      # Emergency kill switch. false blocks external discovery and execution;
+      # built-in platform MCP remains available.
+      enabled: true
+    # Registry discovery is separate from runtime MCP installation. Bootstrap
+    # credentials are injected from Secrets and never rendered into ConfigMaps.
+    catalog:
+      officialRegistryEnabled: false
+      officialRegistryUrl: https://registry.modelcontextprotocol.io
+      allowWorkspaceManagedSources: true
+      bootstrapSources: []
+      # Example entry:
+      # - workspaceId: "*"
+      #   displayName: Internal MCP Registry
+      #   baseUrl: https://registry.internal.example
+      #   networkRoute: direct
+      #   adapterBasePath: /v0.1
+      #   enabled: true
+      #   auth:
+      #     type: bearer_token
+      #     headerName: ""
+      #     secretKeyRef:
+      #       name: internal-registry-credential
+      #       key: token
     rateLimits:
       windowSeconds: 60
       llmPerWindow: 100
       toolPerWindow: 200
+      mcpConnectionPerWindow: 10
       requireRedisInProduction: true
     image:
       repository: ghcr.io/acornops/llm-gateway
-      tag: 0.0.1-experimental.9
+      tag: 0.0.1-experimental.12
       pullPolicy: IfNotPresent
     service:
       port: 8001

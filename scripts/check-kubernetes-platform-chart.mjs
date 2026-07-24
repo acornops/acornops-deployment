@@ -342,6 +342,14 @@ for (const [args, message] of [
   ],
   [['--set', 'components.controlPlane.logLevel=verbose'], 'unsupported control-plane log level should be rejected'],
   [['--set', 'components.llmGateway.secretsBackend=memory'], 'unsupported llm-gateway secret backend should be rejected'],
+  [
+    ['--set', 'components.llmGateway.openaiApiSurface=auto'],
+    'unsupported OpenAI API surface should be rejected'
+  ],
+  [
+    ['--set', 'components.controlPlane.openaiApiSurface=chat_completions'],
+    'OpenAI API surface should be rejected under the wrong component'
+  ],
   [['--set', 'components.executionEngine.replicas=0'], 'zero replicas should be rejected'],
   [
     ['--set', 'components.platformAdminConsole.enabled=true'],
@@ -394,6 +402,14 @@ for (const [args, message] of [
   [['--set', 'components.llmGateway.maxRequestBodyBytes=0'], 'invalid llm-gateway request body limit should be rejected'],
   [['--set', 'auditLogging.mode=everything'], 'invalid audit logging mode should be rejected'],
   [['--set', 'auditLogging.retentionDays=0'], 'invalid audit logging retention should be rejected'],
+  [
+    ['--set', 'components.controlPlane.reportArtifacts.maxRetentionDays=0'],
+    'report retention should reject values below one day'
+  ],
+  [
+    ['--set', 'components.controlPlane.reportArtifacts.maxRetentionDays=366'],
+    'report retention should reject values above 365 days'
+  ],
   [['--set-json', 'auditLogging.mode=null'], 'missing audit logging mode should be rejected'],
   [['--set-json', 'auditLogging.retentionDays=null'], 'missing audit logging retention should be rejected'],
   [
@@ -640,12 +656,32 @@ assertExcludes(defaultRender, 'image: redis', 'chart must not render Redis workl
 assertMatch(defaultRender, /ENABLE_API_DOCS:\s+"false"/, 'API docs should default to disabled');
 assertIncludes(defaultRender, 'name: acornops-platform-secrets', 'default chart should reference the existing platform Secret');
 assertIncludes(defaultRender, '"helm.sh/hook": pre-install,pre-upgrade', 'migration jobs should run as Helm hooks');
-assertIncludes(defaultRender, 'command: ["node", "dist/scripts/control-plane-db.js", "migrate"]', 'control-plane migration job should render');
+assertExcludes(defaultRender, 'capabilities:preflight', 'pre-release reset preflight must not render');
+assertIncludes(defaultRender, 'node dist/scripts/control-plane-db.js migrate', 'control-plane migration job should render');
 assertIncludes(defaultRender, 'command: ["sh", "-c", "alembic upgrade head"]', 'llm-gateway migration job should render');
+assertExcludes(
+  defaultRender,
+  'ACORNOPS_AGENT_CAPABILITY_CUTOVER_ACK',
+  'greenfield reset migration jobs should not accept a destructive cutover acknowledgement'
+);
 
 assertIncludes(defaultRender, 'app.kubernetes.io/component: execution-engine', 'execution-engine should render');
 assertIncludes(defaultRender, 'app.kubernetes.io/component: llm-gateway', 'llm-gateway should render');
 assertIncludes(defaultRender, 'SECRETS_CACHE_TTL_SEC: "0"', 'llm-gateway production secret cache must default to disabled');
+assertIncludes(
+  defaultRender,
+  'LLM_PROVIDER_OPENAI_API_SURFACE: "responses"',
+  'llm-gateway should default to the OpenAI Responses API'
+);
+const chatCompletionsRender = helmTemplate([
+  '--set',
+  'components.llmGateway.openaiApiSurface=chat_completions'
+]);
+assertIncludes(
+  chatCompletionsRender,
+  'LLM_PROVIDER_OPENAI_API_SURFACE: "chat_completions"',
+  'llm-gateway should render the explicit Chat Completions API surface'
+);
 assertMatch(
   defaultRender,
   /name: acornops-acornops-platform-llm-gateway[\s\S]*?MAX_REQUEST_BODY_BYTES: "1000000"/,
@@ -1200,6 +1236,20 @@ assertIncludes(
   'TARGET_CHAT_RECENT_ACTIVITY_WINDOW_SECONDS: "300"',
   'target chat recent activity window should default to 300 seconds'
 );
+assertIncludes(
+  defaultRender,
+  'TARGET_CHAT_REPORT_RETENTION_DAYS: "30"',
+  'workflow and target-chat report retention should default to 30 days'
+);
+const customReportRetentionRender = helmTemplate([
+  '--set',
+  'components.controlPlane.reportArtifacts.maxRetentionDays=45'
+]);
+assertIncludes(
+  customReportRetentionRender,
+  'TARGET_CHAT_REPORT_RETENTION_DAYS: "45"',
+  'workflow and target-chat report retention should render the configured deployment value'
+);
 const localeRender = helmTemplate(['--set', 'components.managementConsole.locales.existingConfigMap=console-locales']);
 assertMatch(
   localeRender,
@@ -1248,8 +1298,53 @@ assertIncludes(defaultRender, 'LLM_DEFAULT_PROVIDER: "openai"', 'OpenAI should b
 assertIncludes(defaultRender, 'LLM_DEFAULT_MODEL: "gpt-5.5"', 'GPT-5.5 should be the default LLM model');
 assertIncludes(
   defaultRender,
-  'LLM_ALLOWED_MODELS: "gpt-5.5,gpt-5.4,gpt-5.4-mini,gpt-5.4-nano,gpt-5,gpt-5-mini,gpt-5-nano,claude-3-5-sonnet-latest,gemini-2.0-flash"',
-  'default LLM allow list should include GPT-5 OpenAI models'
+  'LLM_PROVIDERS_JSON: "{\\"anthropic\\":[\\"claude-fable-5\\",\\"claude-opus-4-8\\",\\"claude-sonnet-4-6\\",\\"claude-haiku-4-5\\"],\\"gemini\\":[\\"gemini-3.5-flash\\",\\"gemini-3.5-flash-lite\\",\\"gemini-3.1-pro\\",\\"gemini-3.1-flash\\",\\"gemini-3.1-flash-lite\\",\\"gemini-2.5-pro\\",\\"gemini-2.5-flash\\",\\"gemini-2.5-flash-lite\\",\\"gemini-2.0-flash\\",\\"gemini-2.0-flash-lite\\"],\\"openai\\":[\\"gpt-5.5\\",\\"gpt-5.4\\",\\"gpt-5.4-mini\\",\\"gpt-5.4-nano\\",\\"gpt-5\\",\\"gpt-5-mini\\",\\"gpt-5-nano\\"]}"',
+  'default LLM provider map should render as JSON'
+);
+assertExcludes(defaultRender, 'LLM_ALLOWED_PROVIDERS:', 'removed provider allow list should not render');
+assertExcludes(defaultRender, 'LLM_ALLOWED_PROVIDER_MODELS:', 'removed provider-model string should not render');
+const customProvidersRender = helmTemplate([
+  '--set-json',
+  'ai.providers.openai=["workspace-primary","workspace-secondary"]',
+  '--set',
+  'ai.providers.anthropic=null',
+  '--set',
+  'ai.providers.gemini=null',
+  '--set-string',
+  'ai.defaultModel=workspace-primary'
+]);
+assertIncludes(
+  customProvidersRender,
+  'LLM_PROVIDERS_JSON: "{\\"openai\\":[\\"workspace-primary\\",\\"workspace-secondary\\"]}"',
+  'structured provider policy should render from its first-class Helm value'
+);
+expectHelmFailure(
+  ['--set-string', 'ai.allowedModels=workspace-primary'],
+  'legacy ai.allowedModels should be rejected by the chart schema'
+);
+expectHelmFailure(
+  ['--set-string', 'ai.allowedProviders=openai'],
+  'removed ai.allowedProviders should be rejected by the chart schema'
+);
+expectHelmFailure(
+  ['--set-string', 'ai.allowedProviderModels=openai:workspace-primary'],
+  'removed ai.allowedProviderModels should be rejected by the chart schema'
+);
+expectHelmFailure(
+  ['--set-json', 'ai.providers.openai=[]'],
+  'provider model arrays must not be empty'
+);
+expectHelmFailure(
+  ['--set-json', 'ai.providers.openai=["workspace-primary","workspace-primary"]'],
+  'provider model arrays must contain unique models'
+);
+expectHelmFailure(
+  ['--set', 'ai.providers.openai=null'],
+  'the default provider must be present in the provider map'
+);
+expectHelmFailure(
+  ['--set-string', 'ai.defaultModel=not-configured'],
+  'the default model must belong to the default provider'
 );
 assertExcludes(defaultRender, 'gpt-4.1-mini', 'default chart policy should not allow GPT-4 OpenAI models');
 assertExcludes(defaultRender, 'CSRF_COOKIE_NAME:', 'CSRF cookie name is a fixed browser contract and should not be chart-configurable');
@@ -1263,7 +1358,9 @@ assertIncludes(
 assertIncludes(defaultRender, 'name: EXTERNAL_INTEGRATION_CLIENTS_JSON', 'control-plane should render external integration clients env');
 assertIncludes(defaultRender, 'key: EXTERNAL_INTEGRATION_CLIENTS_JSON', 'external integration client descriptors should be read from platform secret');
 assertIncludes(defaultRender, 'GATEWAY_VERIFICATION_JWKS_JSON: ""', 'gateway verification keyring should render');
-assertIncludes(defaultRender, 'OIDC_REQUIRE_VERIFIED_EMAIL: "true"', 'OIDC verified email enforcement should default to enabled');
+assertIncludes(defaultRender, 'OIDC_ENABLED: "true"', 'OIDC should default to enabled');
+assertIncludes(defaultRender, 'OIDC_ADMISSION_POLICY_JSON: "{}"', 'OIDC admission should default to allow authenticated identities');
+assertIncludes(defaultRender, 'OIDC_POST_LOGOUT_REDIRECT_URI: "https://console.acornops.dev/api/v1/auth/oidc/logout/callback"', 'OIDC post-logout callback should default to the console callback');
 assertIncludes(defaultRender, 'OIDC_HTTP_TIMEOUT_MS: "10000"', 'OIDC outbound timeout should render');
 assertIncludes(defaultRender, 'fieldPath: metadata.name', 'control-plane should use pod name as instance identity');
 assertMatch(
@@ -1271,6 +1368,41 @@ assertMatch(
   /kind: Deployment[\s\S]*?name: acornops-acornops-platform-control-plane[\s\S]*?terminationGracePeriodSeconds: 45/,
   'control-plane should render a shutdown grace period'
 );
+
+const oidcDisabledRender = helmTemplate([
+  '--set', 'auth.oidc.enabled=false',
+  '--set', 'auth.password.enabled=true',
+  '--set-string', 'auth.oidc.issuerUrl=',
+  '--set-string', 'auth.oidc.clientId=',
+  '--set-string', 'auth.oidc.clientSecret.existingSecret=',
+  '--set-string', 'auth.oidc.clientSecret.key='
+]);
+assertIncludes(oidcDisabledRender, 'OIDC_ENABLED: "false"', 'password-only render should disable OIDC');
+assertIncludes(oidcDisabledRender, 'OIDC_ADMISSION_POLICY_JSON: "{}"', 'password-only render should keep admission empty');
+assertExcludes(oidcDisabledRender, 'name: OIDC_CLIENT_SECRET', 'password-only render should not require an OIDC secret');
+assertExcludes(oidcDisabledRender, '\n  OIDC_ISSUER_URL:', 'password-only render should omit OIDC provider configuration');
+
+expectHelmFailure([
+  '--set', 'auth.oidc.enabled=false',
+  '--set', 'auth.password.enabled=false'
+], 'the chart must require at least one browser authentication method');
+
+expectHelmFailure([
+  '--set', 'auth.oidc.enabled=false',
+  '--set', 'auth.oidc.admission.requireVerifiedEmail=true'
+], 'OIDC admission must not be configurable when OIDC is disabled');
+expectHelmFailure([
+  '--set-json', 'auth.oidc.admission.requiredClaims=[{"path":["groups"],"operator":"intersects","values":["ops",1]}]'
+], 'OIDC intersects admission values must use one scalar type');
+expectHelmFailure([
+  '--set-json', 'auth.oidc.admission.requiredClaims=[{"path":["__proto__"],"operator":"exists"}]'
+], 'OIDC admission paths must reject unsafe traversal segments');
+expectHelmFailure([
+  '--set-json', 'auth.oidc.scopes=["profile","email"]'
+], 'OIDC scopes must include openid');
+expectHelmFailure([
+  '--set-json', 'auth.oidc.admission.allowedEmailDomains=["*.example.com"]'
+], 'OIDC admission domains must use exact DNS names without wildcards');
 
 const k3sRender = helmTemplate(['-f', k3sValues]);
 for (const component of ['management-console', 'control-plane', 'execution-engine', 'llm-gateway']) {
@@ -1321,12 +1453,21 @@ assertIncludes(productionRender, 'SESSION_IDLE_TIMEOUT_SECONDS: "86400"', 'produ
 assertIncludes(productionRender, 'PASSWORD_SIGNUP_ENABLED: "false"', 'production should keep password signup disabled');
 assertIncludes(productionRender, 'PASSWORD_EMAIL_VERIFICATION_REQUIRED: "true"', 'production should keep password email verification enabled');
 assertIncludes(productionRender, 'PASSWORD_RESET_ENABLED: "true"', 'production should keep password reset enabled');
-assertIncludes(productionRender, 'OIDC_REQUIRE_VERIFIED_EMAIL: "true"', 'production should keep OIDC verified email enforcement enabled');
+assertIncludes(productionRender, 'OIDC_ADMISSION_POLICY_JSON: "{\\"requireVerifiedEmail\\":true}"', 'production example should require verified OIDC email');
+assertIncludes(productionRender, 'OIDC_END_SESSION_ENDPOINT_OVERRIDE: "https://keycloak.acornops.dev/realms/acornops/protocol/openid-connect/logout"', 'production should render the public provider logout endpoint');
 assertIncludes(productionRender, 'OIDC_HTTP_TIMEOUT_MS: "10000"', 'production should render OIDC outbound timeout');
 assertIncludes(productionRender, 'LLM_DEFAULT_PROVIDER: "openai"', 'production should default to OpenAI provider');
 assertIncludes(productionRender, 'LLM_DEFAULT_MODEL: "gpt-5.5"', 'production should default to GPT-5.5');
 assertExcludes(productionRender, 'gpt-4.1-mini', 'production should not allow GPT-4 OpenAI models by default');
 assertIncludes(productionRender, 'SECRETS_CACHE_TTL_SEC: "0"', 'production should keep llm-gateway plaintext secret caching disabled');
+assertIncludes(productionRender, 'REMOTE_MCP_ENABLED: "true"', 'production should render the remote MCP kill switch');
+assertIncludes(productionRender, 'MCP_CONNECTION_RATE_LIMIT_PER_WINDOW: "10"', 'production should render the MCP credential mutation throttle');
+assertExcludes(productionRender, 'MCP_OAUTH_', 'production should not render an MCP OAuth surface');
+assertExcludes(
+  productionRender,
+  'ACORNOPS_AGENT_CAPABILITY_CUTOVER_ACK',
+  'the production example should not require the retired capability-cutover acknowledgement'
+);
 
 const tlsRender = helmTemplate(internalTlsArgs);
 assertIncludes(

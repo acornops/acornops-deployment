@@ -29,15 +29,11 @@ if [[ -z "${AGENT_ENV_FILE}" ]]; then
   AGENT_ENV_FILE="${DEFAULT_AGENT_ENV_FILE}"
 fi
 
-if [[ ! -f "${AGENT_ENV_FILE}" ]]; then
-  echo "Missing agent env file: ${AGENT_ENV_FILE}"
-  echo "Copy ${ROOT_DIR}/env/local/.env.agent.example to ${ROOT_DIR}/env/local/.env.agent and edit values."
-  exit 1
-fi
-
 set -a
 source "${ENV_FILE}"
-source "${AGENT_ENV_FILE}"
+if [[ -f "${AGENT_ENV_FILE}" ]]; then
+  source "${AGENT_ENV_FILE}"
+fi
 set +a
 
 if [[ -n "${CLI_OIDC_PROFILE}" ]]; then

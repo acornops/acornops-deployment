@@ -44,7 +44,10 @@ The chart values are organized by operator concern:
 - `global.trust.additionalCaBundle`: default existing ConfigMap or Secret with
   additive CA trust for server-side platform components
 - `ai`: default provider/model policy
-- `agent`: control-plane defaults for agent routing, runtime limits, and agent Helm installs
+- `agentGateway`: shared control-plane connectivity for AgentK and AgentV
+- `assistantRuntime`: AI assistant budgets, limits, and write-approval defaults
+- `targetAgents.agentk.helm`: defaults for generated AgentK install commands
+- `builtinTargetMcp`: shared AgentK and AgentV target-tool bridge identity
 - `automation`: durable runtime mode, canary workspace allow-list, and worker poll interval
 - `internalTransport.tls`: optional operator-supplied internal HTTPS/mTLS for service-to-service traffic
 - `internalAuth`: gateway token claims and signing-key metadata
@@ -52,9 +55,35 @@ The chart values are organized by operator concern:
 - `components`: workload and component-local settings for management-console, control-plane, execution-engine, and llm-gateway
 - `components.llmGateway.providerBaseUrls`: optional deployment-wide OpenAI,
   Anthropic, and Gemini native API base URL overrides
+- `components.llmGateway.openaiApiSurface`: deployment-wide OpenAI outbound API
+  surface, either `responses` (default) or `chat_completions`
 - `components.{controlPlane,executionEngine,llmGateway}.trust.additionalCaBundle`:
   optional component override for the global trust bundle
 - `components.llmGateway.mcpEgress`: remote MCP hostname policy
+- `components.llmGateway.remoteMcp.enabled`: emergency external MCP discovery
+  and execution kill switch; built-in tools remain available when false
+- `components.llmGateway.rateLimits.mcpConnectionPerWindow`: per-owner,
+  per-installation connect/verify attempt budget within the shared window
+- `components.llmGateway.catalog`: official-registry policy, workspace-managed
+  source policy, and secret-backed bootstrap sources for private or air-gapped
+  MCP registries
+
+Authenticated MCP installations explicitly select workspace-managed or
+individual credential ownership. Credentials are supplied through the
+control-plane API; the chart has no MCP authentication callback configuration.
+
+## Greenfield database epoch
+
+This version is a first-install or explicit-reset cutover, not a rolling
+upgrade. Back up if needed, then drop and recreate both external application
+databases before installing the pinned control-plane, execution-engine, and
+llm-gateway matrix. Do not deploy any image independently.
+
+For local Compose data, use `task local-reset`. For external Kubernetes
+Postgres, use a provider snapshot or `pg_dump`, then explicitly drop and recreate
+the database with an administrative connection before retrying Helm. A rollback
+requires restoring a matching backup and full image matrix; chart rollback
+alone is unsafe across schema epochs.
 
 Control-plane HA requires external Redis for agent ownership, cross-pod
 JSON-RPC command routing, run event fanout, and renewed scheduler leases. The
@@ -119,11 +148,24 @@ address. DNS answers are validated before a selected address is pinned for the
 connection; webhook redirects are not followed. Kubernetes NetworkPolicy is
 layer 3/4, so its destinations use selectors or CIDRs rather than hostnames.
 
+Durable webhook delivery uses a Postgres-backed worker on every control-plane
+replica. Concurrency and per-origin limits apply to each replica; effective
+cluster concurrency scales with replica count, while leased claims and fenced
+completion coordinate ownership. The effective same-origin limit is the lower
+of `concurrency` and `perOriginConcurrency`; leases are sized for a full batch
+to drain at that effective limit. Tune bounded per-replica concurrency, the
+retry window, payload limit, and workspace subscription limit under
+`components.controlPlane.webhookDelivery`. Set `enabled: false` during
+maintenance to pause new claims while events continue to enqueue, then restore
+it to drain the backlog. Endpoint failures do not make control-plane readiness
+fail.
+
 Private MCP endpoints require all three controls: an exact hostname in
 `components.llmGateway.mcpEgress.allowedHosts`, a matching private destination
 under `networkPolicies.extraEgress.llmGateway`, and TLS trust for the issuing
-organization CA. Configure the trust file from exactly one existing ConfigMap
-or Secret in the release namespace:
+organization CA. Use the LLM gateway's existing additive trust setting to
+configure the trust file from exactly one existing ConfigMap or Secret in the
+release namespace:
 
 ```yaml
 components:
@@ -244,33 +286,34 @@ the Service `port` value in a policy override.
 
 Write confirmation defaults are controlled by:
 
-- `agent.runtime.writeConfirmationRequired` -> `AGENT_WRITE_CONFIRMATION_REQUIRED`
-- `agent.runtime.writeConfirmationTimeoutSeconds` -> `AGENT_WRITE_CONFIRMATION_TIMEOUT_SECONDS`
+- `assistantRuntime.writeConfirmationRequired` -> `ASSISTANT_WRITE_CONFIRMATION_REQUIRED`
+- `assistantRuntime.writeConfirmationTimeoutSeconds` -> `ASSISTANT_WRITE_CONFIRMATION_TIMEOUT_SECONDS`
 
 The default is confirmation required. Individual clusters can inherit this value or override it from the control plane. Required confirmations are enforced by the execution runtime before write tool execution; browser and external adapter UIs only submit approve/reject decisions.
 
 ## Generated AgentK Install Defaults
 
-`agent.helm` controls the Helm command returned when a user connects a workload
-cluster. Air-gapped platforms can point both the chart and AgentK image at
+`targetAgents.agentk.helm` controls the Helm command returned when a user
+connects a Kubernetes cluster. Air-gapped platforms can point both the chart and AgentK image at
 internal mirrors and can include an organization CA from the machine that runs
 the generated command:
 
 ```yaml
-agent:
-  helm:
-    chartRef: oci://docker.artifact.internal.org/acornops/charts/acornops-agentk
-    chartVersion: 0.0.1-experimental.8
-    values:
-      image:
-        repository: docker.artifact.internal.org/ghcr.io/acornops/agentk
-        tag: 0.0.1-experimental.8
-        pullPolicy: IfNotPresent
-      imagePullSecrets:
-        - name: internal-registry
-    files:
-      additionalCaBundle:
-        sourcePath: /path/to/organization-ca.pem
+targetAgents:
+  agentk:
+    helm:
+      chartRef: oci://docker.artifact.internal.org/acornops/charts/acornops-agentk
+      chartVersion: 0.0.1-experimental.10
+      values:
+        image:
+          repository: docker.artifact.internal.org/ghcr.io/acornops/agentk
+          tag: 0.0.1-experimental.10
+          pullPolicy: IfNotPresent
+        imagePullSecrets:
+          - name: internal-registry
+      files:
+        additionalCaBundle:
+          sourcePath: /path/to/organization-ca.pem
 ```
 
 Entries under `values` become safely quoted downstream `--set-json` arguments.
@@ -287,11 +330,25 @@ directly under `values`; use supported Kubernetes Secret references such as
 
 Target chat coordination warnings are controlled by `components.controlPlane.recentActivity.windowSeconds`, which renders to `TARGET_CHAT_RECENT_ACTIVITY_WINDOW_SECONDS`. The default is `300` seconds.
 
+Workflow and target-chat PDF report retention is controlled by `components.controlPlane.reportArtifacts.maxRetentionDays`, which renders to `TARGET_CHAT_REPORT_RETENTION_DAYS`. The default is `30` days, and the chart accepts values from `1` through `365` days. Workflow requests cannot override this deployment policy. Execution duration remains controlled only by `agent.runtime.maxRuntimeMs`, rendered as `AGENT_MAX_RUNTIME_MS`.
+
 External integration account linking uses `EXTERNAL_INTEGRATION_CLIENTS_JSON`
 from the existing platform Secret. The JSON contains installed client
-descriptors with SHA-256 token hashes only, never raw bearer tokens. The key name
-is configured with `secrets.keys.controlPlane.externalIntegrationClientsJson`;
-the default key is `EXTERNAL_INTEGRATION_CLIENTS_JSON`.
+descriptors with SHA-256 token hashes only, never raw bearer tokens. Descriptors
+may include `allowedCapabilities` to set an operator-side maximum for the
+client; users still approve per-workspace grants in the management console. The
+default ceiling remains read-only. A descriptor must explicitly add
+`create_read_write_runs` before that client can launch read-write or
+approval-gated Workflows and decide exact-origin approvals. For example, keep a
+read-only client descriptor shaped like:
+
+```json
+[{"id":"external-chat","provider":"external","displayName":"External chat","sha256":"<64-lowercase-hex-token-sha256>","enabled":true,"allowedCapabilities":["read_workspace_data","create_sessions","create_read_only_runs"]}]
+```
+
+The key name is configured with
+`secrets.keys.controlPlane.externalIntegrationClientsJson`; the default key is
+`EXTERNAL_INTEGRATION_CLIENTS_JSON`.
 
 Management-console runtime languages can be customized without rebuilding the
 console image by setting `components.managementConsole.locales.existingConfigMap`

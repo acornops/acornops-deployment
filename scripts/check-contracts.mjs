@@ -31,6 +31,7 @@ function stable(value) {
 
 const deploymentManifest = readJson(path.join(root, 'docs/contracts/manifest.json'));
 const haSmoke = readFileSync(path.join(root, 'scripts/k8s-ha-smoke.mjs'), 'utf8');
+const localSmoke = readFileSync(path.join(root, 'scripts/local-smoke.mjs'), 'utf8');
 expect(deploymentManifest.repo === 'deployment', 'Deployment manifest repo should be deployment');
 expect(deploymentManifest.version === 1, 'Deployment manifest version should be 1');
 expect(
@@ -43,13 +44,65 @@ expect(
 );
 expect(
   stable(deploymentManifest.contractSurfaces?.agentKInstallHelmValues) ===
-    stable(['agent.helm.chartRef', 'agent.helm.chartVersion']),
+    stable(['targetAgents.agentk.helm.chartRef', 'targetAgents.agentk.helm.chartVersion']),
   'Deployment manifest should expose the exact agentk install Helm values contract'
 );
 expect(
   haSmoke.includes('installWorkloadAgent(agentKey, clusterId)') &&
     haSmoke.includes('config.clusterId=${clusterId}'),
   'HA smoke should install AgentK with the registered cluster ID'
+);
+const retiredInsightsNoun = ['knowledge', 'bank'];
+expect(
+  !localSmoke.toLowerCase().includes(retiredInsightsNoun.join(' ')) &&
+    !localSmoke.includes(retiredInsightsNoun.join('-')),
+  'Local smoke must not restore retired Target Insights aliases or routes'
+);
+expect(
+  !localSmoke.includes('/activity?workspaceId='),
+  'Local smoke must not restore the retired Agent activity route'
+);
+expect(
+  !localSmoke.includes('workspaces/${workspace.id}/mcp/servers'),
+  'Local smoke must use Agent- or target-scoped MCP routes, not the retired workspace workflow MCP route'
+);
+expect(
+  localSmoke.includes('selectedAiProvider?.configured === true') &&
+    localSmoke.includes('AI_PROVIDER_CREDENTIAL_MISSING'),
+  'Local smoke should test fail-closed AI dispatch when the selected provider credential is absent'
+);
+for (const pathSuffix of [
+  '/target-insights?limit=25',
+  '/target-insights/activity',
+  '/target-insights/export'
+]) {
+  expect(
+    localSmoke.includes(pathSuffix),
+    `Local smoke should verify the canonical Target Insights route ${pathSuffix}`
+  );
+}
+
+const providerRouteEnv = [
+  'LLM_PROVIDER_OPENAI_BASE_URL',
+  'LLM_PROVIDER_OPENAI_API_SURFACE',
+  'LLM_PROVIDER_ANTHROPIC_BASE_URL',
+  'LLM_PROVIDER_GEMINI_BASE_URL'
+];
+const providerRouteHelmValues = [
+  'components.llmGateway.providerBaseUrls.openai',
+  'components.llmGateway.openaiApiSurface',
+  'components.llmGateway.providerBaseUrls.anthropic',
+  'components.llmGateway.providerBaseUrls.gemini'
+];
+expect(
+  stable(deploymentManifest.contractSurfaces?.providerRouteEnv) ===
+    stable(providerRouteEnv),
+  'Deployment manifest should expose the exact provider-route runtime environment contract'
+);
+expect(
+  stable(deploymentManifest.contractSurfaces?.providerRouteHelmValues) ===
+    stable(providerRouteHelmValues),
+  'Deployment manifest should expose the exact provider-route Helm values contract'
 );
 
 const additionalCaHelmValues = [
@@ -94,22 +147,59 @@ expect(
     stable(['WEBHOOK_EGRESS_ALLOWED_PRIVATE_HOSTS_JSON']),
   'Deployment manifest should expose the exact private webhook runtime environment contract'
 );
+const durableWebhookDeliveryHelmValues = [
+  'components.controlPlane.webhookDelivery.enabled',
+  'components.controlPlane.webhookDelivery.batchSize',
+  'components.controlPlane.webhookDelivery.concurrency',
+  'components.controlPlane.webhookDelivery.perOriginConcurrency',
+  'components.controlPlane.webhookDelivery.maxAttempts',
+  'components.controlPlane.webhookDelivery.maxRetryAgeSeconds',
+  'components.controlPlane.webhookDelivery.maxPayloadBytes',
+  'components.controlPlane.webhookDelivery.maxSubscriptionsPerWorkspace'
+];
+const durableWebhookDeliveryRuntimeEnv = [
+  'WEBHOOK_WORKER_ENABLED',
+  'WEBHOOK_WORKER_BATCH_SIZE',
+  'WEBHOOK_WORKER_CONCURRENCY',
+  'WEBHOOK_WORKER_PER_ORIGIN_CONCURRENCY',
+  'WEBHOOK_MAX_ATTEMPTS',
+  'WEBHOOK_MAX_RETRY_AGE_SECONDS',
+  'WEBHOOK_MAX_PAYLOAD_BYTES',
+  'WEBHOOK_MAX_SUBSCRIPTIONS_PER_WORKSPACE'
+];
+expect(
+  stable(deploymentManifest.contractSurfaces?.durableWebhookDeliveryHelmValues) ===
+    stable(durableWebhookDeliveryHelmValues),
+  'Deployment manifest should expose the exact durable webhook Helm values contract'
+);
+expect(
+  stable(deploymentManifest.contractSurfaces?.durableWebhookDeliveryRuntimeEnv) ===
+    stable(durableWebhookDeliveryRuntimeEnv),
+  'Deployment manifest should expose the exact durable webhook runtime environment contract'
+);
 
 const chartSchema = readJson(
   path.join(root, 'kubernetes/helm/acornops-platform/values.schema.json')
 );
 expect(
-  chartSchema.properties?.agent?.properties?.helm?.properties?.chartVersion,
+  chartSchema.properties?.targetAgents?.properties?.agentk?.properties?.helm?.properties?.chartVersion,
   'Chart schema should expose the optional AgentK chart version pin'
 );
 expect(
-  chartSchema.properties?.agent?.properties?.helm?.properties?.values,
+  chartSchema.properties?.targetAgents?.properties?.agentk?.properties?.helm?.properties?.values,
   'Chart schema should expose downstream AgentK chart values'
 );
 expect(
-  chartSchema.properties?.agent?.properties?.helm?.properties?.files?.properties
+  chartSchema.properties?.targetAgents?.properties?.agentk?.properties?.helm?.properties?.files?.properties
     ?.additionalCaBundle?.properties?.sourcePath,
   'Chart schema should expose the generated AgentK install CA source path'
+);
+expect(
+  chartSchema.properties?.agentGateway &&
+    chartSchema.properties?.assistantRuntime &&
+    chartSchema.properties?.builtinTargetMcp &&
+    !chartSchema.properties?.agent,
+  'Chart schema should keep target connectivity, assistant policy, target installs, and target MCP identity unambiguous'
 );
 const additionalCaSchema = chartSchema.definitions?.additionalCaBundle;
 expect(
@@ -132,6 +222,22 @@ expect(
     ?.webhookEgress?.properties?.allowedPrivateHosts,
   'Chart schema should expose the private webhook hostname allowlist'
 );
+const openaiApiSurfaceSchema =
+  chartSchema.properties?.components?.properties?.llmGateway?.allOf?.[1]?.properties
+    ?.openaiApiSurface;
+expect(
+  stable(openaiApiSurfaceSchema?.enum) ===
+    stable(['responses', 'chat_completions']),
+  'Chart schema should constrain the OpenAI API surface'
+);
+const webhookDeliverySchema =
+  chartSchema.properties?.components?.properties?.controlPlane?.allOf?.[1]?.properties
+    ?.webhookDelivery;
+expect(
+  stable(webhookDeliverySchema?.required) ===
+    stable(durableWebhookDeliveryHelmValues.map((valuePath) => valuePath.split('.').at(-1))),
+  'Chart schema should require the complete durable webhook delivery contract'
+);
 
 const privateEgressTemplate = readFileSync(
   path.join(root, 'kubernetes/helm/acornops-platform/templates/networkpolicy.yaml'),
@@ -152,6 +258,16 @@ expect(
     controlPlaneConfigMap.includes('.Values.components.controlPlane.webhookEgress.allowedPrivateHosts'),
   'Control-plane ConfigMap should render the private webhook hostname policy'
 );
+for (const [runtimeEnv, helmValue] of durableWebhookDeliveryRuntimeEnv.map((runtimeEnv, index) => [
+  runtimeEnv,
+  durableWebhookDeliveryHelmValues[index]
+])) {
+  expect(
+    controlPlaneConfigMap.includes(runtimeEnv) &&
+      controlPlaneConfigMap.includes(`.Values.${helmValue}`),
+    `Control-plane ConfigMap should render ${runtimeEnv} from ${helmValue}`
+  );
+}
 
 const additionalCaTemplateSource = [
   readFileSync(
@@ -196,17 +312,108 @@ const vmAdditionalCaCompose = readFileSync(
   path.join(root, 'compose/vm-prod/compose.additional-ca.yaml'),
   'utf8'
 );
+const vmCompose = readFileSync(path.join(root, 'compose/vm-prod/compose.yaml'), 'utf8');
+const prodUp = readFileSync(path.join(root, 'scripts/prod-up.sh'), 'utf8');
 const taskfile = readFileSync(path.join(root, 'Taskfile.yml'), 'utf8');
 const demoWorkloads = readFileSync(path.join(root, 'k8s/demo-workloads.yaml.tpl'), 'utf8');
-const localSmoke = readFileSync(path.join(root, 'scripts/local-smoke.mjs'), 'utf8');
 const executionEngineAlerts = readFileSync(
   path.join(root, 'observability/prometheus/alerts/execution-engine.rules.yaml'),
   'utf8'
 );
+const llmGatewayAlerts = readFileSync(
+  path.join(root, 'observability/prometheus/alerts/llm-gateway.rules.yaml'),
+  'utf8'
+);
+const controlPlaneAutomationAlerts = readFileSync(
+  path.join(root, 'observability/prometheus/alerts/control-plane-automation.rules.yaml'),
+  'utf8'
+);
+const platformChartValues = readFileSync(
+  path.join(root, 'kubernetes/helm/acornops-platform/values.yaml'),
+  'utf8'
+);
+const platformChartConfig = readFileSync(
+  path.join(root, 'kubernetes/helm/acornops-platform/templates/configmap.yaml'),
+  'utf8'
+);
 const localAgentEnvExample = readFileSync(path.join(root, 'env/local/.env.agent.example'), 'utf8');
 const localEnvExample = readFileSync(path.join(root, 'env/local/.env.example'), 'utf8');
+const vmEnvExample = readFileSync(path.join(root, 'env/vm/.env.example'), 'utf8');
+for (const marker of providerRouteEnv) {
+  for (const source of [localCompose, vmCompose, platformChartConfig]) {
+    expect(source.includes(marker), `Provider-route deployment surfaces should preserve ${marker}`);
+  }
+}
+for (const marker of ['providerBaseUrls:', 'openaiApiSurface: responses']) {
+  expect(platformChartValues.includes(marker), `Chart values should preserve ${marker}`);
+}
+for (const marker of durableWebhookDeliveryRuntimeEnv) {
+  for (const source of [localCompose, vmCompose, localEnvExample, vmEnvExample]) {
+    expect(source.includes(marker), `Deployment surfaces should preserve ${marker}`);
+  }
+}
+for (const marker of [
+  'REMOTE_MCP_ENABLED',
+  'MCP_CONNECTION_RATE_LIMIT_PER_WINDOW'
+]) {
+  for (const source of [localCompose, vmCompose, localEnvExample, vmEnvExample, platformChartConfig]) {
+    expect(source.includes(marker), `Deployment surfaces should preserve ${marker}`);
+  }
+}
+expect(platformChartValues.includes('remoteMcp:'), 'Chart values should expose the remote MCP kill switch');
+for (const source of [localCompose, vmCompose, localEnvExample, vmEnvExample, platformChartValues, platformChartConfig]) {
+  expect(!source.includes('MCP_OAUTH_'), 'Deployment surfaces must not expose MCP OAuth configuration');
+}
+for (const marker of [
+  'LlmGatewayMcpSecretCleanupFailing',
+  'gateway_mcp_secret_cleanup_total{outcome="error"}',
+  'LlmGatewayMcpRuntimeAuthRejectionsSustained',
+  'gateway_mcp_runtime_auth_rejections_total'
+]) {
+  expect(llmGatewayAlerts.includes(marker), `LLM gateway alert rules should preserve ${marker}`);
+}
+for (const marker of [
+  'McpCredentialCleanupRetriesFailing',
+  'control_plane_mcp_secret_cleanup_total',
+  'WorkflowScheduleMcpReadinessAutoPaused',
+  'mcp_readiness_auto_paused'
+]) {
+  expect(controlPlaneAutomationAlerts.includes(marker), `Control-plane alert rules should preserve ${marker}`);
+}
+const capabilityMigration = deploymentManifest.contractSurfaces?.databaseEpoch;
+expect(
+  capabilityMigration?.mode === 'greenfield_reset' &&
+    capabilityMigration?.preservesPreReleaseData === false,
+  'Deployment manifest should expose the greenfield database epoch contract'
+);
+for (const composeSource of [localCompose, vmCompose]) {
+  expect(
+    !composeSource.includes('ACORNOPS_AGENT_CAPABILITY_CUTOVER_ACK'),
+    'Migration services should not require a destructive capability cutover acknowledgement'
+  );
+}
+for (const envExample of [localEnvExample, vmEnvExample]) {
+  expect(
+    !envExample.includes('ACORNOPS_AGENT_CAPABILITY_CUTOVER_ACK'),
+    'Deployment env examples should not advertise a destructive capability cutover'
+  );
+}
+expect(
+  !prodUp.includes('ACORNOPS_AGENT_CAPABILITY_CUTOVER_ACK'),
+  'VM production startup should not accept a destructive acknowledgement'
+);
+expect(
+  !localUp.includes('capabilities:preflight') && !prodUp.includes('capabilities:preflight'),
+  'Startup must not retain the pre-release capability reset preflight'
+);
 expect(!agentDeploy.includes('ACORNOPS_TARGET_ID'), 'Deployment agentk env should not expose a separate target id');
 expect(agentDeploy.includes('ACORNOPS_CLUSTER_ID'), 'Deployment agentk env should expose ACORNOPS_CLUSTER_ID');
+expect(
+  agentDeploy.includes('if [[ "${ACORNOPS_AGENT_WRITE_ENABLED}" == "true" ]]') &&
+    agentDeploy.includes('resources: ["deployments", "statefulsets", "daemonsets"]') &&
+    agentDeploy.includes('verbs: ["patch"]'),
+  'Manual AgentK deployment should grant least-privilege workload patch RBAC only when writes are enabled'
+);
 expect(
   agentDeploy.includes('ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE') &&
     agentDeploy.includes('NODE_EXTRA_CA_CERTS') &&
@@ -256,7 +463,8 @@ expect(
   localCompose.includes('ACORNOPS_AGENT_PLATFORM_URL: http://control-plane:8081'),
   'Local agentv should use the HTTP control-plane base URL expected by agentv'
 );
-expect(localCompose.includes('ACORNOPS_VM_ALLOWED_LOG_SOURCES'), 'Local agentv env should expose VM log-source configuration');
+expect(localCompose.includes('ACORNOPS_VM_ALLOWED_LOG_UNITS'), 'Local agentv env should expose exact journald unit configuration');
+expect(localCompose.includes('ACORNOPS_AGENT_WRITE_ENABLED: "false"'), 'Local container AgentV must remain read-only');
 expect(localCompose.includes('LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES'), 'Local llm-gateway env should expose opt-in deterministic dev responses for smoke tests');
 expect(
   localUp.includes('ensure_local_gateway_signing_key') && localUp.includes('openssl genpkey'),
@@ -267,25 +475,25 @@ expect(
   'local env example should preserve restart-safe signing and durable trace defaults'
 );
 expect(
-  localCompose.includes('LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES: ${LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES:-false}'),
-  'Local llm-gateway init should receive deterministic smoke env so providerless seed keys are available'
+  localUp.includes('up -d --force-recreate --no-deps edge-proxy')
+    && localUp.includes('if profile_enabled target-fixtures; then')
+    && localUp.includes('up -d --force-recreate --no-deps agentk agentv')
+    && localUp.includes('elif profile_enabled cluster-fixture; then')
+    && localUp.includes('up -d --force-recreate --no-deps agentk'),
+  'local-up.sh should refresh edge-proxy, start both agents for target fixtures, and only AgentK for the cluster fixture'
 );
 expect(
-  deploymentManifest.contractSurfaces?.localDeterministicLlmEnv?.includes('LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES'),
-  'Deployment manifest should expose opt-in deterministic local LLM smoke env'
+  localCompose.includes('SEED_DEVELOPMENT_DATA: ${SEED_DEVELOPMENT_DATA:-true}')
+    && localCompose.includes('SEED_VM_AGENT_KEY: ${SEED_VM_AGENT_KEY:-ak_local_vm_dev_shared_key}')
+    && localCompose.includes('OIDC_PRELINKED_IDENTITIES_JSON:')
+    && localUp.includes('Cgt1LWRldi1sb2NhbBIFbG9jYWw')
+    && localCompose.includes('- cluster-fixture')
+    && taskfile.includes('local-up-cluster-fixture:'),
+  'local deployment should seed Kubernetes and VM targets while retaining the AgentK-only cluster fixture path'
 );
-for (const envName of [
-  'LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES',
-  'ACORNOPS_DEV_SEED_OPENAI_API_KEY',
-  'ACORNOPS_DEV_SEED_ANTHROPIC_API_KEY',
-  'ACORNOPS_DEV_SEED_GEMINI_API_KEY'
-]) {
-  expect(taskfile.includes(`${envName}: '{{env "${envName}"}}'`), `task local-up should pass through ${envName}`);
-  expect(localUp.includes(`CLI_${envName}=`), `local-up.sh should capture ${envName} before sourcing env files`);
-}
 expect(
-  localUp.includes('up -d --force-recreate --no-deps agentk agentv edge-proxy'),
-  'local-up.sh should refresh local agents and edge-proxy after recreating upstream containers'
+  localCompose.includes('../../../agentv/src:/app/src') && !localCompose.includes('agentv-node-modules:/app/node_modules'),
+  'Local AgentV should hot-reload source without masking image-built dependencies and its Linux native addon'
 );
 expect(
   demoWorkloads.includes('image: nginx:1.27.4-alpnie'),
@@ -299,6 +507,7 @@ for (const marker of ['acornops-demo-unhealthy', 'get_resource', 'patch_resource
   expect(localSmoke.includes(marker), `Local smoke should preserve remediation marker ${marker}`);
 }
 expect(localSmoke.includes('ACORNOPS_SMOKE_REMEDIATION_ONLY'), 'Local smoke should support focused remediation regression runs');
+expect(localSmoke.includes('ACORNOPS_SMOKE_AGENTV_ONLY'), 'Local smoke should support focused AgentV cross-service runs');
 expect(localSmoke.includes('ACORNOPS_SMOKE_REMEDIATION_RUNS'), 'Local smoke should support the 20-run remediation release gate');
 for (const marker of [
   'KubernetesRemediationVerificationFailedOrMissing',

@@ -10,6 +10,9 @@ This repository owns deployment and compatibility contracts rather than service 
 - Admin API enablement, token Secret wiring, and API-host-only `/admin` routing
 - Workspace plan and quota config rendered into control-plane runtime env
 - AI provider/model and reasoning summary policy rendered into control-plane runtime env
+- Provider base URLs and the OpenAI outbound API surface rendered into
+  llm-gateway runtime env
+- Deployment-owned workflow execution and report-retention policy rendered into control-plane runtime env
 - Deployment-track environment templates
 - External integration account-link token wiring for VM Compose and Helm
 - Helm Ingress ownership and NetworkPolicy peer authorization for public workloads
@@ -19,6 +22,8 @@ This repository owns deployment and compatibility contracts rather than service 
 - Password email verification/reset and SMTP environment wiring
 - Release image compatibility metadata
 - agentk rollout env expectations for Kubernetes cluster installs
+- Universal starter automation provisioning is owned by control plane and is independent of optional development target fixtures
+- MCP registry bootstrap and workspace-management policy, with no public registry enabled by default
 
 ## Internal Transport TLS
 
@@ -89,6 +94,13 @@ after trust-bundle changes. Rotation uses an old/new CA overlap followed by a
 restart at each bundle transition because Node.js reads `NODE_EXTRA_CA_CERTS`
 only at process startup.
 
+Durable webhook delivery is also a deployment-owned contract. Local Compose,
+VM Compose, Helm values and ConfigMap output expose the same bounded worker,
+retry, payload, and subscription settings listed in
+`durableWebhookDeliveryRuntimeEnv` and
+`durableWebhookDeliveryHelmValues` in the deployment manifest. Disabling the
+worker pauses claims but does not discard events queued by the control plane.
+
 ## Admin API And Workspace Plans
 
 The deployment contract for the control-plane admin API is:
@@ -118,13 +130,32 @@ default. The chart renders `auditLogging.retentionDays` to
 `WORKSPACE_AUDIT_RETENTION_DAYS`; it must be a positive integer and defaults to
 `365`.
 
-AI provider/model policy is configured by Helm `ai.*` values or the matching
-Compose environment variables. The chart renders reasoning summary policy to
+AI provider/model policy is configured by the Helm `ai.providers` map. Each map
+key is an allowed provider and its non-empty array is that provider's model
+allow list. The explicit `ai.defaultProvider` key must exist in the map and
+`ai.defaultModel` must belong to its array. The chart serializes this map to
+`LLM_PROVIDERS_JSON`; Compose accepts the same JSON environment variable. The
+chart defaults all three providers on. Because Helm merges maps, set an
+unwanted default provider key to `null` in an override before deployment; the
+rendered JSON omits that key. The chart renders reasoning summary policy to
 `LLM_REASONING_SUMMARIES_ENABLED`,
 `LLM_ALLOWED_REASONING_SUMMARY_MODES`, and
 `LLM_ALLOWED_REASONING_EFFORTS`. These values are a deployment ceiling only;
 new workspaces default to `auto` when summaries are enabled and allowed, and
 workspace admins can tune or disable summaries through AI Settings.
+
+Provider routing is independent of workspace AI policy. Compose exposes the
+four values listed in `providerRouteEnv`; Helm exposes the matching
+`providerRouteHelmValues`. `components.llmGateway.openaiApiSurface` accepts only
+`responses` or `chat_completions` and defaults to `responses`. The value and
+OpenAI base URL are deployment-wide. Switching back to `responses` is the
+configuration-only rollback path.
+
+## MCP Registry Bootstrap
+
+`components.llmGateway.catalog` and the matching Compose variables configure optional deployment-managed MCP registries. The Official MCP Registry is opt-in. Bootstrap registries use HTTPS roots or path prefixes without `/v0.1`, URL credentials, query parameters, or fragments; only direct routing is supported.
+
+The gateway reconciles bootstrap sources by display name. Changed entries are updated and synchronized, while removed or disabled entries become disabled instead of being deleted. Registry credentials stay in referenced Secrets or environment-backed secret inputs and must never appear in rendered ConfigMaps, API responses, or logs. Registry availability remains outside platform readiness.
 
 ## External integration account linking
 
@@ -135,9 +166,16 @@ The deployment contract for external integration account linking is:
 - Helm loads `EXTERNAL_INTEGRATION_CLIENTS_JSON` from the existing platform Secret
   through `secrets.keys.controlPlane.externalIntegrationClientsJson`.
 - The JSON contains installed integration client descriptors with SHA-256 token
-  hashes only. Raw bearer tokens are generated and distributed out of band, are
-  never committed, and only authorize the external integration link, resolve,
-  revoke, and linked-user bot endpoints.
+  hashes only, plus optional `allowedCapabilities` entries that cap what that
+  registered client can ever receive from user-approved workspace grants. Raw
+  bearer tokens are generated and distributed out of band, are never committed,
+  and only authorize the external integration link, resolve, revoke, and
+  linked-user bot endpoints.
+- Keep descriptor examples read-only by default with
+  `read_workspace_data`, `create_sessions`, and `create_read_only_runs`.
+  Operators may explicitly add `create_read_write_runs` for clients allowed to
+  launch read-write or approval-gated Workflows and decide approvals for their
+  exact-origin executions.
 
 ## Validation
 

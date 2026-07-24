@@ -9,6 +9,7 @@ This `docs/` tree is the repository-local system of record for deployment orches
 - [Workspace System Architecture](../../docs/system-architecture.md)
 - [Development Guide](/docs/DEVELOPMENT.md)
 - [Operations Guide](/docs/OPERATIONS.md)
+- [MCP Registries](/docs/catalog-registries.md)
 - [Contracts](/docs/contracts/README.md)
 - [Design Overview](/docs/DESIGN.md)
 - [Plan Overview](/docs/PLANS.md)

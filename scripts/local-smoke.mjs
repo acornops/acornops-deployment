@@ -39,6 +39,7 @@ const config = {
   intervalMs: Number(env('ACORNOPS_SMOKE_INTERVAL_MS', String(DEFAULTS.intervalMs))),
   allowNonLocal: env('ACORNOPS_SMOKE_ALLOW_NON_LOCAL', 'false') === 'true',
   runRemediation: env('ACORNOPS_SMOKE_RUN_REMEDIATION', 'true') === 'true',
+  agentvOnly: env('ACORNOPS_SMOKE_AGENTV_ONLY', 'false') === 'true',
   remediationOnly: env('ACORNOPS_SMOKE_REMEDIATION_ONLY', 'false') === 'true',
   remediationRuns: positiveIntegerEnv('ACORNOPS_SMOKE_REMEDIATION_RUNS', 1),
   remediationMetricsPushUrl: env('ACORNOPS_SMOKE_REMEDIATION_METRICS_PUSH_URL', ''),
@@ -368,12 +369,16 @@ await waitFor('workspace roles', async () => {
   requireListItems(parseJson('workspace roles', text), 'workspace roles');
 });
 
-await waitFor('workspace AI settings', async () => {
+const workspaceAiSettings = await waitFor('workspace AI settings', async () => {
   const { text } = await request('workspace AI settings', config.consoleHost, `/api/v1/workspaces/${workspace.id}/ai-settings`, {
     headers: { cookie }
   });
-  requireObject(parseJson('workspace AI settings', text), 'workspace AI settings');
+  return requireObject(parseJson('workspace AI settings', text), 'workspace AI settings');
 });
+const selectedAiProvider = Array.isArray(workspaceAiSettings.providers)
+  ? workspaceAiSettings.providers.find((provider) => provider?.provider === workspaceAiSettings.defaultProvider)
+  : null;
+const workspaceAiCredentialConfigured = selectedAiProvider?.configured === true;
 
 await waitFor('workspace members', async () => {
   const { text } = await request('workspace members', config.consoleHost, `/api/v1/workspaces/${workspace.id}/members?limit=50`, {
@@ -428,6 +433,7 @@ if (workspaceIssues.length > 0) {
   });
 }
 
+if (!config.agentvOnly) {
 const cluster = await waitFor('cluster list', async () => {
   const { text } = await request('cluster list', config.consoleHost, `/api/v1/workspaces/${workspace.id}/kubernetes-clusters`, {
     headers: { cookie }
@@ -817,34 +823,34 @@ await waitFor('cluster target skills', async () => {
   requireListItems(parseJson('cluster target skills', text), 'cluster target skills');
 });
 
-await waitFor('cluster knowledge bank entries', async () => {
+await waitFor('cluster Target Insights entries', async () => {
   const { text } = await request(
-    'cluster knowledge bank entries',
+    'cluster Target Insights entries',
     config.consoleHost,
-    `/api/v1/workspaces/${workspace.id}/targets/${cluster.id}/knowledge-bank?limit=25`,
+    `/api/v1/workspaces/${workspace.id}/targets/${cluster.id}/target-insights?limit=25`,
     { headers: { cookie } }
   );
-  requireListItems(parseJson('cluster knowledge bank entries', text), 'cluster knowledge bank entries');
+  requireListItems(parseJson('cluster Target Insights entries', text), 'cluster Target Insights entries');
 });
 
-await waitFor('cluster knowledge bank activity', async () => {
+await waitFor('cluster Target Insights activity', async () => {
   const { text } = await request(
-    'cluster knowledge bank activity',
+    'cluster Target Insights activity',
     config.consoleHost,
-    `/api/v1/workspaces/${workspace.id}/targets/${cluster.id}/knowledge-bank/activity`,
+    `/api/v1/workspaces/${workspace.id}/targets/${cluster.id}/target-insights/activity`,
     { headers: { cookie } }
   );
-  requireListItems(parseJson('cluster knowledge bank activity', text), 'cluster knowledge bank activity');
+  requireListItems(parseJson('cluster Target Insights activity', text), 'cluster Target Insights activity');
 });
 
-await waitFor('cluster knowledge bank export', async () => {
+await waitFor('cluster Target Insights export', async () => {
   const { text } = await request(
-    'cluster knowledge bank export',
+    'cluster Target Insights export',
     config.consoleHost,
-    `/api/v1/workspaces/${workspace.id}/targets/${cluster.id}/knowledge-bank/export`,
+    `/api/v1/workspaces/${workspace.id}/targets/${cluster.id}/target-insights/export`,
     { headers: { cookie } }
   );
-  if (typeof text !== 'string') throw new Error('knowledge bank export did not return text');
+  if (typeof text !== 'string') throw new Error('Target Insights export did not return text');
 });
 
 await waitFor('workspace agents', async () => {
@@ -889,16 +895,6 @@ await waitFor('agent versions', async () => {
     { headers: { cookie } }
   );
   requireListItems(parseJson('agent versions', text), 'agent versions');
-});
-
-await waitFor('agent activity', async () => {
-  const { text } = await request(
-    'agent activity',
-    config.consoleHost,
-    `/api/v1/agents/${encodeURIComponent(agent.id)}/activity?workspaceId=${encodeURIComponent(workspace.id)}`,
-    { headers: { cookie } }
-  );
-  requireListItems(parseJson('agent activity', text), 'agent activity');
 });
 
 const workflow = await waitFor('workspace workflows', async () => {
@@ -967,36 +963,27 @@ await waitFor('workflow sessions', async () => {
   requireListItems(parseJson('workflow sessions', text), 'workflow sessions');
 });
 
-await waitFor('workspace workflow MCP servers', async () => {
+const agentMcpServers = await waitFor('Agent MCP servers', async () => {
   const { text } = await request(
-    'workspace workflow MCP servers',
+    'Agent MCP servers',
     config.consoleHost,
-    `/api/v1/workspaces/${workspace.id}/mcp/servers`,
+    `/api/v1/workspaces/${workspace.id}/agents/${encodeURIComponent(agent.id)}/mcp/servers`,
     { headers: { cookie } }
   );
-  requireListItems(parseJson('workspace workflow MCP servers', text), 'workspace workflow MCP servers');
+  return requireListItems(parseJson('Agent MCP servers', text), 'Agent MCP servers');
 });
 
-const workflowMcpServers = await waitFor('workspace workflow MCP servers with tools', async () => {
-  const { text } = await request(
-    'workspace workflow MCP servers with tools',
-    config.consoleHost,
-    `/api/v1/workspaces/${workspace.id}/mcp/servers`,
-    { headers: { cookie } }
-  );
-  return requireListItems(parseJson('workspace workflow MCP servers with tools', text), 'workspace workflow MCP servers with tools');
-});
-
-if (workflowMcpServers.length > 0) {
-  await waitFor('workspace workflow MCP server tools', async () => {
+if (agentMcpServers.length > 0) {
+  await waitFor('Agent MCP server tools', async () => {
     const { text } = await request(
-      'workspace workflow MCP server tools',
+      'Agent MCP server tools',
       config.consoleHost,
-      `/api/v1/workspaces/${workspace.id}/mcp/servers/${encodeURIComponent(workflowMcpServers[0].id)}/tools`,
+      `/api/v1/workspaces/${workspace.id}/agents/${encodeURIComponent(agent.id)}/mcp/servers/${encodeURIComponent(agentMcpServers[0].id)}/tools`,
       { headers: { cookie } }
     );
-    requireListItems(parseJson('workspace workflow MCP server tools', text), 'workspace workflow MCP server tools');
+    requireListItems(parseJson('Agent MCP server tools', text), 'Agent MCP server tools');
   });
+}
 }
 
 const vm = await waitFor('virtual machine list', async () => {
@@ -1161,26 +1148,84 @@ await waitFor('virtual machine session list', async () => {
   requireListItems(parseJson('virtual machine session list', text), 'virtual machine session list');
 });
 
-const vmRun = await waitFor('virtual machine troubleshooting run dispatch', async () => {
-  const { text } = await request(
-    'virtual machine troubleshooting message',
-    config.consoleHost,
-    `/api/v1/sessions/${vmSession.id}/messages`,
-    {
-      method: 'POST',
-      headers: { cookie: csrf.cookie, 'content-type': 'application/json', 'x-csrf-token': csrf.token },
-      expectedStatuses: [202],
-      body: JSON.stringify({
-        content: 'Use read-only VM tools to summarize host health.',
-        toolAccessMode: 'read_only',
-        clientMessageId: 'local-smoke-vm-health'
-      })
+let vmRun = null;
+if (workspaceAiCredentialConfigured) {
+  vmRun = await waitFor('virtual machine troubleshooting run dispatch', async () => {
+    const { text } = await request(
+      'virtual machine troubleshooting message',
+      config.consoleHost,
+      `/api/v1/sessions/${vmSession.id}/messages`,
+      {
+        method: 'POST',
+        headers: { cookie: csrf.cookie, 'content-type': 'application/json', 'x-csrf-token': csrf.token },
+        expectedStatuses: [202],
+        body: JSON.stringify({
+          content: 'Use read-only VM tools to summarize host health.',
+          toolAccessMode: 'read_only',
+          clientMessageId: 'local-smoke-vm-health'
+        })
+      }
+    );
+    const payload = requireObject(parseJson('virtual machine troubleshooting message', text), 'virtual machine troubleshooting message');
+    if (!payload.run_id) throw new Error('VM troubleshooting message response missing run_id');
+    return payload;
+  });
+
+  await waitFor('virtual machine troubleshooting run completed with tool call', async () => {
+    const { text } = await request('virtual machine troubleshooting run', config.consoleHost, `/api/v1/runs/${vmRun.run_id}`, {
+      headers: { cookie }
+    });
+    const payload = requireObject(parseJson('virtual machine troubleshooting run', text), 'virtual machine troubleshooting run');
+    if (payload.targetType !== 'virtual_machine') throw new Error(`VM run targetType is ${payload.targetType}`);
+    if (payload.toolAccessMode !== 'read_only') throw new Error(`VM run toolAccessMode is ${payload.toolAccessMode}`);
+    if (payload.status !== 'completed') {
+      throw new Error(`VM run is ${payload.status}; expected completed`);
     }
-  );
-  const payload = requireObject(parseJson('virtual machine troubleshooting message', text), 'virtual machine troubleshooting message');
-  if (!payload.run_id) throw new Error('VM troubleshooting message response missing run_id');
-  return payload;
-});
+    const usage = payload.usage && typeof payload.usage === 'object' ? payload.usage : {};
+    if (Number(usage.tool_calls || 0) < 1) {
+      throw new Error('VM run completed without a recorded tool call');
+    }
+  });
+
+  await waitFor('virtual machine troubleshooting run events', async () => {
+    const { text } = await request('virtual machine troubleshooting run events', config.consoleHost, `/api/v1/runs/${vmRun.run_id}/events`, {
+      headers: { cookie }
+    });
+    requireListItems(parseJson('virtual machine troubleshooting run events', text), 'virtual machine troubleshooting run events');
+  });
+
+  await waitFor('virtual machine troubleshooting run approvals', async () => {
+    const { text } = await request('virtual machine troubleshooting run approvals', config.consoleHost, `/api/v1/runs/${vmRun.run_id}/approvals`, {
+      headers: { cookie }
+    });
+    requireListItems(parseJson('virtual machine troubleshooting run approvals', text), 'virtual machine troubleshooting run approvals');
+  });
+} else {
+  await waitFor('virtual machine troubleshooting rejects missing AI credential', async () => {
+    const { text } = await request(
+      'virtual machine troubleshooting message without AI credential',
+      config.consoleHost,
+      `/api/v1/sessions/${vmSession.id}/messages`,
+      {
+        method: 'POST',
+        headers: { cookie: csrf.cookie, 'content-type': 'application/json', 'x-csrf-token': csrf.token },
+        expectedStatuses: [400],
+        body: JSON.stringify({
+          content: 'Use read-only VM tools to summarize host health.',
+          toolAccessMode: 'read_only',
+          clientMessageId: 'local-smoke-vm-health-no-credential'
+        })
+      }
+    );
+    const payload = requireObject(
+      parseJson('virtual machine troubleshooting missing credential', text),
+      'virtual machine troubleshooting missing credential'
+    );
+    if (payload.error?.code !== 'AI_PROVIDER_CREDENTIAL_MISSING') {
+      throw new Error(`VM missing-credential response code is ${payload.error?.code || 'missing'}`);
+    }
+  });
+}
 
 await waitFor('virtual machine session messages', async () => {
   const { text } = await request(
@@ -1190,36 +1235,6 @@ await waitFor('virtual machine session messages', async () => {
     { headers: { cookie } }
   );
   requireListItems(parseJson('virtual machine session messages', text), 'virtual machine session messages');
-});
-
-await waitFor('virtual machine troubleshooting run completed with tool call', async () => {
-  const { text } = await request('virtual machine troubleshooting run', config.consoleHost, `/api/v1/runs/${vmRun.run_id}`, {
-    headers: { cookie }
-  });
-  const payload = requireObject(parseJson('virtual machine troubleshooting run', text), 'virtual machine troubleshooting run');
-  if (payload.targetType !== 'virtual_machine') throw new Error(`VM run targetType is ${payload.targetType}`);
-  if (payload.toolAccessMode !== 'read_only') throw new Error(`VM run toolAccessMode is ${payload.toolAccessMode}`);
-  if (payload.status !== 'completed') {
-    throw new Error(`VM run is ${payload.status}; expected completed`);
-  }
-  const usage = payload.usage && typeof payload.usage === 'object' ? payload.usage : {};
-  if (Number(usage.tool_calls || 0) < 1) {
-    throw new Error('VM run completed without a recorded tool call');
-  }
-});
-
-await waitFor('virtual machine troubleshooting run events', async () => {
-  const { text } = await request('virtual machine troubleshooting run events', config.consoleHost, `/api/v1/runs/${vmRun.run_id}/events`, {
-    headers: { cookie }
-  });
-  requireListItems(parseJson('virtual machine troubleshooting run events', text), 'virtual machine troubleshooting run events');
-});
-
-await waitFor('virtual machine troubleshooting run approvals', async () => {
-  const { text } = await request('virtual machine troubleshooting run approvals', config.consoleHost, `/api/v1/runs/${vmRun.run_id}/approvals`, {
-    headers: { cookie }
-  });
-  requireListItems(parseJson('virtual machine troubleshooting run approvals', text), 'virtual machine troubleshooting run approvals');
 });
 
 console.log('Local AcornOps full-stack smoke passed.');

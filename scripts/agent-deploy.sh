@@ -40,9 +40,21 @@ set +a
 : "${ACORNOPS_AGENT_RETRY_PERIOD_MS:=2000}"
 : "${ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE:=}"
 
+if [[ "${ACORNOPS_AGENT_WRITE_ENABLED}" != "true" && "${ACORNOPS_AGENT_WRITE_ENABLED}" != "false" ]]; then
+  echo "ACORNOPS_AGENT_WRITE_ENABLED must be true or false."
+  exit 1
+fi
+
 ADDITIONAL_CA_ENV_YAML=""
 ADDITIONAL_CA_MOUNT_YAML=""
 ADDITIONAL_CA_VOLUME_YAML=""
+WRITE_RBAC_YAML=""
+if [[ "${ACORNOPS_AGENT_WRITE_ENABLED}" == "true" ]]; then
+  printf -v WRITE_RBAC_YAML '%s\n%s\n%s' \
+    '  - apiGroups: ["apps"]' \
+    '    resources: ["deployments", "statefulsets", "daemonsets"]' \
+    '    verbs: ["patch"]'
+fi
 if [[ -n "${ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE}" ]]; then
   if [[ ! -r "${ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE}" ]]; then
     echo "ACORNOPS_AGENT_ADDITIONAL_CA_BUNDLE_FILE must point to a readable PEM bundle."
@@ -103,7 +115,7 @@ rules:
     resources: ["ingresses"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["apps"]
-    resources: ["deployments", "statefulsets", "replicasets"]
+    resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["autoscaling"]
     resources: ["horizontalpodautoscalers"]
@@ -111,9 +123,7 @@ rules:
   - apiGroups: ["metrics.k8s.io"]
     resources: ["pods", "nodes"]
     verbs: ["get", "list"]
-  - apiGroups: ["apps"]
-    resources: ["deployments", "deployments/scale", "statefulsets", "statefulsets/scale"]
-    verbs: ["patch", "update"]
+${WRITE_RBAC_YAML}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

@@ -3,8 +3,8 @@
 The canonical whole-platform architecture has moved to the workspace root:
 
 - `../../docs/system-architecture.md` from this docs directory when the
-  repository is checked out through `acornops-workspace`
-- `acornops-workspace/docs/system-architecture.md` in the parent workspace
+  repository is checked out through the `acornops` workspace
+- `acornops/docs/system-architecture.md` in the parent workspace
   repository
 
 This deployment repository now keeps deployment-specific architecture in

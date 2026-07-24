@@ -3,7 +3,7 @@
 This document describes how the deployment repository assembles and exposes the
 AcornOps platform. For the whole-platform service model, start from the
 workspace-level architecture at `../docs/system-architecture.md` when this
-repository is checked out through `acornops-workspace` from the repository root,
+repository is checked out through the `acornops` workspace from the repository root,
 or `../../docs/system-architecture.md` from this docs directory.
 
 Component repositories own service internals. This repository owns the
@@ -97,9 +97,10 @@ Workload-cluster agent rollout installs the AgentK into target clusters. The
 agent connects outbound to the control plane and can run active-passive HA with
 Kubernetes Lease leader election.
 
-VM target rollout installs the AgentV as a Linux/systemd service. The agent
-connects outbound to the control plane and reports read-only Linux/systemd
-snapshots and tool results for VM targets.
+VM target rollout installs versioned AgentV releases as an unprivileged
+Linux/systemd service. It connects outbound and reports bounded diagnostics.
+The optional root-owned action socket remains disabled until an operator
+installs an exact service allowlist. The AgentV container remains read-only.
 
 ## Public And Internal Boundaries
 
