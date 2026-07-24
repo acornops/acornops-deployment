@@ -30,13 +30,6 @@ spec:
     - host: {{ .Values.exposure.ingress.adminHost | quote }}
       http:
         paths:
-          - path: /admin-auth
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ include "acornops-platform.componentFullname" (dict "root" . "component" "control-plane") }}
-                port:
-                  name: http
           - path: /
             pathType: Prefix
             backend:

@@ -767,8 +767,19 @@ const platformAdminConsoleEgress = manifestDocument(
   'NetworkPolicy',
   'acornops-acornops-platform-platform-admin-console-egress'
 );
+const platformAdminIngress = manifestDocument(
+  platformAdminConsoleRender,
+  'Ingress',
+  'acornops-acornops-platform'
+);
 assertIncludes(platformAdminConsoleRender, 'path: /health/live', 'platform admin deployment should use a local liveness probe');
 assertIncludes(platformAdminConsoleRender, 'path: /health/ready', 'platform admin deployment should use an upstream-aware readiness probe');
+assertExcludes(platformAdminIngress, 'path: /admin-auth', 'platform admin auth must pass through the console BFF');
+assertMatch(
+  platformAdminIngress,
+  /host: "admin\.acornops\.dev"[\s\S]*?path: \/\n[\s\S]*?name: acornops-acornops-platform-platform-admin-console/,
+  'the dedicated admin host should route every browser path through the console BFF'
+);
 assertIncludes(platformAdminConsoleEgress, 'app.kubernetes.io/component: control-plane', 'platform admin egress should allow only the control-plane application dependency');
 assertIncludes(platformAdminConsoleEgress, 'kubernetes.io/metadata.name: kube-system', 'platform admin egress should permit DNS resolution');
 assertExcludes(platformAdminConsoleEgress, 'cidr: 0.0.0.0/0', 'platform admin egress should not permit arbitrary Internet access');

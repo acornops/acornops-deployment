@@ -403,9 +403,10 @@ login for humans, wildcard redirects, or self-registration for this client.
 When `internalTransport.tls.enabled=true`, also provide
 `internalTransport.tls.certificates.platformAdminConsole.secretName`. The chart
 mounts its CA and client certificate and the BFF uses mTLS for its admin token.
-Keep `adminApi.ingress.enabled=false`; `/admin-auth` is the only control-plane
-path routed on the admin host, while `/admin-console-api` remains same-origin at
-the BFF.
+Keep `adminApi.ingress.enabled=false`. Every path on the dedicated admin host,
+including `/admin-auth` and `/admin-console-api`, routes through the console BFF.
+The BFF forwards only the fixed authentication and governance allowlists to the
+private control-plane service.
 
 Workspace plans are configured with `workspacePlans` and rendered to
 `WORKSPACE_PLANS_CONFIG_JSON` for the control plane:

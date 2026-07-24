@@ -5,8 +5,8 @@
 - Public browser traffic terminates at the edge proxy.
 - Control-plane is the public API boundary for authenticated management console traffic.
 - Platform-admin browser traffic uses the dedicated admin host. That host routes
-  `/admin-auth` to the control plane and the console/BFF routes to the
-  platform-admin-console. Raw `/admin/v1` routes remain private when
+  every browser path to the platform-admin-console BFF, which forwards only its
+  fixed `/admin-auth` and `/admin/v1` allowlists. Raw `/admin/v1` routes remain private when
   `adminApi.ingress.enabled=false`; the management console host never routes
   `/admin`.
 - Execution-engine and llm-gateway should remain internal to the deployment network.
