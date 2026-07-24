@@ -31,6 +31,7 @@ function stable(value) {
 
 const deploymentManifest = readJson(path.join(root, 'docs/contracts/manifest.json'));
 const haSmoke = readFileSync(path.join(root, 'scripts/k8s-ha-smoke.mjs'), 'utf8');
+const localSmoke = readFileSync(path.join(root, 'scripts/local-smoke.mjs'), 'utf8');
 expect(deploymentManifest.repo === 'deployment', 'Deployment manifest repo should be deployment');
 expect(deploymentManifest.version === 1, 'Deployment manifest version should be 1');
 expect(
@@ -51,6 +52,35 @@ expect(
     haSmoke.includes('config.clusterId=${clusterId}'),
   'HA smoke should install AgentK with the registered cluster ID'
 );
+const retiredInsightsNoun = ['knowledge', 'bank'];
+expect(
+  !localSmoke.toLowerCase().includes(retiredInsightsNoun.join(' ')) &&
+    !localSmoke.includes(retiredInsightsNoun.join('-')),
+  'Local smoke must not restore retired Target Insights aliases or routes'
+);
+expect(
+  !localSmoke.includes('/activity?workspaceId='),
+  'Local smoke must not restore the retired Agent activity route'
+);
+expect(
+  !localSmoke.includes('workspaces/${workspace.id}/mcp/servers'),
+  'Local smoke must use Agent- or target-scoped MCP routes, not the retired workspace workflow MCP route'
+);
+expect(
+  localSmoke.includes('selectedAiProvider?.configured === true') &&
+    localSmoke.includes('AI_PROVIDER_CREDENTIAL_MISSING'),
+  'Local smoke should test fail-closed AI dispatch when the selected provider credential is absent'
+);
+for (const pathSuffix of [
+  '/target-insights?limit=25',
+  '/target-insights/activity',
+  '/target-insights/export'
+]) {
+  expect(
+    localSmoke.includes(pathSuffix),
+    `Local smoke should verify the canonical Target Insights route ${pathSuffix}`
+  );
+}
 
 const providerRouteEnv = [
   'LLM_PROVIDER_OPENAI_BASE_URL',
@@ -286,7 +316,6 @@ const vmCompose = readFileSync(path.join(root, 'compose/vm-prod/compose.yaml'), 
 const prodUp = readFileSync(path.join(root, 'scripts/prod-up.sh'), 'utf8');
 const taskfile = readFileSync(path.join(root, 'Taskfile.yml'), 'utf8');
 const demoWorkloads = readFileSync(path.join(root, 'k8s/demo-workloads.yaml.tpl'), 'utf8');
-const localSmoke = readFileSync(path.join(root, 'scripts/local-smoke.mjs'), 'utf8');
 const executionEngineAlerts = readFileSync(
   path.join(root, 'observability/prometheus/alerts/execution-engine.rules.yaml'),
   'utf8'
