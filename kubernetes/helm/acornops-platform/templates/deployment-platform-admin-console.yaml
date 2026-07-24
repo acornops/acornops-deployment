@@ -5,26 +5,26 @@
 {{- if not .Values.adminApi.enabled }}
 {{- fail "adminApi.enabled must be true when components.platformAdminConsole.enabled=true" }}
 {{- end }}
-{{- if not .Values.adminApi.humanAuth.required }}
-{{- fail "adminApi.humanAuth.required must be true when components.platformAdminConsole.enabled=true" }}
+{{- if not .Values.platformAdminAccess.enabled }}
+{{- fail "platformAdminAccess.enabled must be true when components.platformAdminConsole.enabled=true" }}
 {{- end }}
-{{- if empty (trim .Values.adminApi.humanAuth.oidc.issuerUrl) }}
-{{- fail "adminApi.humanAuth.oidc.issuerUrl is required when components.platformAdminConsole.enabled=true" }}
+{{- if empty (trim .Values.platformAdminAccess.oidc.issuerUrl) }}
+{{- fail "platformAdminAccess.oidc.issuerUrl is required when components.platformAdminConsole.enabled=true" }}
 {{- end }}
-{{- if empty (trim .Values.adminApi.humanAuth.oidc.clientId) }}
-{{- fail "adminApi.humanAuth.oidc.clientId is required when components.platformAdminConsole.enabled=true" }}
+{{- if empty (trim .Values.platformAdminAccess.oidc.clientId) }}
+{{- fail "platformAdminAccess.oidc.clientId is required when components.platformAdminConsole.enabled=true" }}
 {{- end }}
-{{- if and (empty (trim .Values.adminApi.humanAuth.oidc.requiredAcrValues)) (empty (trim .Values.adminApi.humanAuth.oidc.requiredAmrValues)) }}
-{{- fail "adminApi.humanAuth.oidc must require an acr or amr MFA assurance value when components.platformAdminConsole.enabled=true" }}
+{{- if and (empty (trim .Values.platformAdminAccess.oidc.requiredAcrValues)) (empty (trim .Values.platformAdminAccess.oidc.requiredAmrValues)) }}
+{{- fail "platformAdminAccess.oidc must require an acr or amr MFA assurance value when components.platformAdminConsole.enabled=true" }}
 {{- end }}
-{{- if gt (int .Values.adminApi.humanAuth.session.maxAgeSeconds) 3600 }}
-{{- fail "adminApi.humanAuth.session.maxAgeSeconds must not exceed 3600 when components.platformAdminConsole.enabled=true" }}
+{{- if gt (int .Values.platformAdminAccess.session.maxAgeSeconds) 3600 }}
+{{- fail "platformAdminAccess.session.maxAgeSeconds must not exceed 3600 when components.platformAdminConsole.enabled=true" }}
 {{- end }}
-{{- if gt (int .Values.adminApi.humanAuth.session.idleTimeoutSeconds) 900 }}
-{{- fail "adminApi.humanAuth.session.idleTimeoutSeconds must not exceed 900 when components.platformAdminConsole.enabled=true" }}
+{{- if gt (int .Values.platformAdminAccess.session.idleTimeoutSeconds) 900 }}
+{{- fail "platformAdminAccess.session.idleTimeoutSeconds must not exceed 900 when components.platformAdminConsole.enabled=true" }}
 {{- end }}
-{{- if gt (int .Values.adminApi.humanAuth.session.reauthSeconds) 900 }}
-{{- fail "adminApi.humanAuth.session.reauthSeconds must not exceed 900 when components.platformAdminConsole.enabled=true" }}
+{{- if gt (int .Values.platformAdminAccess.session.reauthSeconds) 900 }}
+{{- fail "platformAdminAccess.session.reauthSeconds must not exceed 900 when components.platformAdminConsole.enabled=true" }}
 {{- end }}
 {{- if not .Values.internalTransport.tls.enabled }}
 {{- fail "internalTransport.tls.enabled must be true when components.platformAdminConsole.enabled=true" }}

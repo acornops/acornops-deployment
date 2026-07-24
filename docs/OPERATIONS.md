@@ -341,7 +341,7 @@ Password reset is enabled by default for password-backed accounts. Password
 self-service signup remains off by default. Configure SMTP delivery first
 (`email.deliveryMode=smtp`, `email.from`, `email.smtp.host`, and
 `SMTP_USERNAME`/`SMTP_PASSWORD` in the platform Secret) before relying on reset
-or enabling signup. Keep `auth.password.emailVerificationRequired=true`;
+or enabling signup. Keep `userAccess.password.emailVerificationRequired=true`;
 production startup rejects password reset or signup with required verification
 when email delivery is disabled.
 
@@ -351,7 +351,9 @@ The platform-admin console and admin API are off by default. Production exposes
 the console at `https://admin.acornops.dev`; it does not expose `/admin/v1` on
 the public API host. The console BFF reaches those routes over the internal
 control-plane service and every request requires both its workload token and an
-OIDC-authenticated human session.
+OIDC-authenticated human session. `userAccess` configures workspace-user and
+management-console authentication; `platformAdminAccess` configures only this
+privileged platform-admin browser session and may use a different OIDC provider.
 
 ```yaml
 platform:
@@ -366,17 +368,17 @@ adminApi:
   tokens:
     existingSecretName: acornops-platform-secrets
     tokensJsonKey: CONTROL_PLANE_ADMIN_TOKENS_JSON
-  humanAuth:
-    required: true
-    session:
-      maxAgeSeconds: 3600
-      idleTimeoutSeconds: 900
-      reauthSeconds: 900
-    oidc:
-      issuerUrl: https://keycloak.acornops.dev/realms/acornops
-      clientId: acornops-platform-admin
-      allowedRoles: platform-admin,platform-admin-viewer,platform-admin-auditor
-      requiredAmrValues: mfa,otp,webauthn,hwk
+platformAdminAccess:
+  enabled: true
+  session:
+    maxAgeSeconds: 3600
+    idleTimeoutSeconds: 900
+    reauthSeconds: 900
+  oidc:
+    issuerUrl: https://keycloak.acornops.dev/realms/acornops
+    clientId: acornops-platform-admin
+    allowedRoles: platform-admin,platform-admin-viewer,platform-admin-auditor
+    requiredAmrValues: mfa,otp,webauthn,hwk
 components:
   platformAdminConsole:
     enabled: true

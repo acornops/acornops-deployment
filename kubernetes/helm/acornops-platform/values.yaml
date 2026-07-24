@@ -84,7 +84,7 @@ secrets:
     platformAdminConsole:
       adminToken: CONTROL_PLANE_ADMIN_TOKEN
 
-auth:
+userAccess:
   session:
     # Browser session cookie name. Change only when avoiding a cookie collision.
     cookieName: acornops_cp_session
@@ -231,27 +231,30 @@ adminApi:
   tokens:
     existingSecretName: ""
     tokensJsonKey: CONTROL_PLANE_ADMIN_TOKENS_JSON
-  humanAuth:
-    required: true
-    session:
-      maxAgeSeconds: 3600
-      idleTimeoutSeconds: 900
-      reauthSeconds: 900
-    oidc:
-      providerName: keycloak
-      issuerUrl: https://keycloak.acornops.dev/realms/acornops
-      publicIssuerUrl: ""
-      clientId: acornops-platform-admin
-      tokenEndpointAuthMethod: client_secret_basic
-      authorizationEndpointOverride: ""
-      tokenEndpointOverride: ""
-      jwksUriOverride: ""
-      redirectUri: ""
-      scopes: openid profile email
-      allowedRoles: platform-admin,platform-admin-viewer,platform-admin-auditor
-      requiredAcrValues: ""
-      requiredAmrValues: mfa,otp,webauthn,hwk
-      httpTimeoutMs: 10000
+
+# Privileged browser authentication for the platform administration console.
+# This is independent from userAccess and has a dedicated OIDC client and session.
+platformAdminAccess:
+  enabled: true
+  session:
+    maxAgeSeconds: 3600
+    idleTimeoutSeconds: 900
+    reauthSeconds: 900
+  oidc:
+    providerName: keycloak
+    issuerUrl: https://keycloak.acornops.dev/realms/acornops
+    publicIssuerUrl: ""
+    clientId: acornops-platform-admin
+    tokenEndpointAuthMethod: client_secret_basic
+    authorizationEndpointOverride: ""
+    tokenEndpointOverride: ""
+    jwksUriOverride: ""
+    redirectUri: ""
+    scopes: openid profile email
+    allowedRoles: platform-admin,platform-admin-viewer,platform-admin-auditor
+    requiredAcrValues: ""
+    requiredAmrValues: mfa,otp,webauthn,hwk
+    httpTimeoutMs: 10000
 
 # Shared control-plane gateway settings for both AgentK and AgentV connections.
 # This does not configure either target-side agent daemon.

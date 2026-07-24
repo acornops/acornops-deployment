@@ -50,7 +50,7 @@ secrets:
     platformAdminConsole:
       adminToken: CONTROL_PLANE_ADMIN_TOKEN
 
-auth:
+userAccess:
   oidc:
     enabled: true
     providerName: oidc
@@ -94,13 +94,14 @@ adminApi:
     # Store CONTROL_PLANE_ADMIN_TOKENS_JSON in this Secret as hash descriptors.
     existingSecretName: acornops-platform-secrets
     tokensJsonKey: CONTROL_PLANE_ADMIN_TOKENS_JSON
-  humanAuth:
-    required: true
-    oidc:
-      issuerUrl: https://keycloak.acornops.dev/realms/acornops
-      clientId: acornops-platform-admin
-      allowedRoles: platform-admin,platform-admin-viewer,platform-admin-auditor
-      requiredAmrValues: mfa,otp,webauthn,hwk
+
+platformAdminAccess:
+  enabled: true
+  oidc:
+    issuerUrl: https://keycloak.acornops.dev/realms/acornops
+    clientId: acornops-platform-admin
+    allowedRoles: platform-admin,platform-admin-viewer,platform-admin-auditor
+    requiredAmrValues: mfa,otp,webauthn,hwk
 
 workspacePlans:
   defaultPlanKey: default

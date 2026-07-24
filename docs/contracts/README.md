@@ -106,6 +106,9 @@ worker pauses claims but does not discard events queued by the control plane.
 The deployment contract for the control-plane admin API is:
 
 - Helm value `adminApi.enabled` renders `CONTROL_PLANE_ADMIN_API_ENABLED`.
+- Helm value `platformAdminAccess.enabled` renders
+  `CONTROL_PLANE_ADMIN_HUMAN_AUTH_REQUIRED`; its OIDC and session settings are
+  independent from workspace-user authentication under `userAccess`.
 - Helm loads `CONTROL_PLANE_ADMIN_TOKENS_JSON` from an existing Kubernetes
   Secret key; the chart does not render raw admin tokens into ConfigMaps.
 - Helm ingress adds `/admin` only for `exposure.ingress.apiHost`.

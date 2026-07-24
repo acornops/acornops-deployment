@@ -15,7 +15,7 @@ agentGateway:
   distributedRouting:
     enabled: false
 
-auth:
+userAccess:
   oidc:
     issuerUrl: https://identity.acornops.local/realms/acornops
 

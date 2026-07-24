@@ -306,6 +306,11 @@ for (const args of [
 
 for (const [args, message] of [
   [['--set', 'ingress.enabled=false'], 'old top-level ingress values should be rejected by schema'],
+  [['--set', 'auth.oidc.enabled=false'], 'legacy auth values should be rejected by schema'],
+  [
+    ['--set', 'adminApi.humanAuth.required=false'],
+    'legacy adminApi.humanAuth values should be rejected by schema'
+  ],
   [
     ['--set-json', 'networkPolicies.ingressController.from=[{}]'],
     'empty ingress-controller peers should be rejected because they allow every source'
@@ -356,37 +361,37 @@ for (const [args, message] of [
     'platform admin console should require the admin API and internal mTLS'
   ],
   [
-    [...platformAdminConsoleArgs, '--set', 'adminApi.humanAuth.required=false'],
+    [...platformAdminConsoleArgs, '--set', 'platformAdminAccess.enabled=false'],
     'platform admin console should require human administrator sessions'
   ],
   [
-    [...platformAdminConsoleArgs, '--set-string', 'adminApi.humanAuth.oidc.issuerUrl='],
+    [...platformAdminConsoleArgs, '--set-string', 'platformAdminAccess.oidc.issuerUrl='],
     'platform admin console should require a dedicated OIDC issuer'
   ],
   [
-    [...platformAdminConsoleArgs, '--set-string', 'adminApi.humanAuth.oidc.clientId='],
+    [...platformAdminConsoleArgs, '--set-string', 'platformAdminAccess.oidc.clientId='],
     'platform admin console should require a dedicated OIDC client id'
   ],
   [
     [
       ...platformAdminConsoleArgs,
       '--set-string',
-      'adminApi.humanAuth.oidc.requiredAcrValues=',
+      'platformAdminAccess.oidc.requiredAcrValues=',
       '--set-string',
-      'adminApi.humanAuth.oidc.requiredAmrValues='
+      'platformAdminAccess.oidc.requiredAmrValues='
     ],
     'platform admin console should require an OIDC MFA assurance claim'
   ],
   [
-    [...platformAdminConsoleArgs, '--set', 'adminApi.humanAuth.session.maxAgeSeconds=315360000'],
+    [...platformAdminConsoleArgs, '--set', 'platformAdminAccess.session.maxAgeSeconds=315360000'],
     'platform admin production sessions should not exceed one hour'
   ],
   [
-    [...platformAdminConsoleArgs, '--set', 'adminApi.humanAuth.session.idleTimeoutSeconds=901'],
+    [...platformAdminConsoleArgs, '--set', 'platformAdminAccess.session.idleTimeoutSeconds=901'],
     'platform admin production idle timeout should not exceed 15 minutes'
   ],
   [
-    [...platformAdminConsoleArgs, '--set', 'adminApi.humanAuth.session.reauthSeconds=901'],
+    [...platformAdminConsoleArgs, '--set', 'platformAdminAccess.session.reauthSeconds=901'],
     'platform admin production recent-auth window should not exceed 15 minutes'
   ],
   [
@@ -501,7 +506,7 @@ for (const [args, message] of [
     'additional CA configuration should reject TLS verification bypasses'
   ],
   [
-    ['--set', 'auth.session.maxAgeSeconds=3600', '--set', 'auth.session.idleTimeoutSeconds=7200'],
+    ['--set', 'userAccess.session.maxAgeSeconds=3600', '--set', 'userAccess.session.idleTimeoutSeconds=7200'],
     'browser session idle timeout must not exceed max age'
   ],
   [
@@ -1380,13 +1385,66 @@ assertMatch(
   'control-plane should render a shutdown grace period'
 );
 
+const distinctOidcProvidersRender = helmTemplate([
+  '--set-string',
+  'userAccess.oidc.issuerUrl=https://users-idp.example.com/realms/acornops',
+  '--set-string',
+  'userAccess.oidc.clientId=acornops-workspace-users',
+  '--set-string',
+  'platformAdminAccess.oidc.issuerUrl=https://admins-idp.example.com/realms/acornops-admin',
+  '--set-string',
+  'platformAdminAccess.oidc.clientId=acornops-privileged-admins'
+]);
+assertIncludes(
+  distinctOidcProvidersRender,
+  'OIDC_ISSUER_URL: "https://users-idp.example.com/realms/acornops"',
+  'workspace-user OIDC should render its independent issuer'
+);
+assertIncludes(
+  distinctOidcProvidersRender,
+  'OIDC_CLIENT_ID: "acornops-workspace-users"',
+  'workspace-user OIDC should render its independent client'
+);
+assertIncludes(
+  distinctOidcProvidersRender,
+  'ADMIN_OIDC_ISSUER_URL: "https://admins-idp.example.com/realms/acornops-admin"',
+  'platform-admin OIDC should render its independent issuer'
+);
+assertIncludes(
+  distinctOidcProvidersRender,
+  'ADMIN_OIDC_CLIENT_ID: "acornops-privileged-admins"',
+  'platform-admin OIDC should render its independent client'
+);
+assertIncludes(
+  distinctOidcProvidersRender,
+  'ADMIN_OIDC_PROVIDER_NAME: "keycloak"',
+  'platform-admin OIDC should preserve its runtime provider environment name'
+);
+
+const tokenOnlyAdminApiRender = helmTemplate([
+  '--set',
+  'adminApi.enabled=true',
+  '--set',
+  'platformAdminAccess.enabled=false'
+]);
+assertIncludes(
+  tokenOnlyAdminApiRender,
+  'CONTROL_PLANE_ADMIN_API_ENABLED: "true"',
+  'token-only admin API should remain independently enabled'
+);
+assertIncludes(
+  tokenOnlyAdminApiRender,
+  'CONTROL_PLANE_ADMIN_HUMAN_AUTH_REQUIRED: "false"',
+  'token-only admin API should not require privileged browser access'
+);
+
 const oidcDisabledRender = helmTemplate([
-  '--set', 'auth.oidc.enabled=false',
-  '--set', 'auth.password.enabled=true',
-  '--set-string', 'auth.oidc.issuerUrl=',
-  '--set-string', 'auth.oidc.clientId=',
-  '--set-string', 'auth.oidc.clientSecret.existingSecret=',
-  '--set-string', 'auth.oidc.clientSecret.key='
+  '--set', 'userAccess.oidc.enabled=false',
+  '--set', 'userAccess.password.enabled=true',
+  '--set-string', 'userAccess.oidc.issuerUrl=',
+  '--set-string', 'userAccess.oidc.clientId=',
+  '--set-string', 'userAccess.oidc.clientSecret.existingSecret=',
+  '--set-string', 'userAccess.oidc.clientSecret.key='
 ]);
 assertIncludes(oidcDisabledRender, 'OIDC_ENABLED: "false"', 'password-only render should disable OIDC');
 assertIncludes(oidcDisabledRender, 'OIDC_ADMISSION_POLICY_JSON: "{}"', 'password-only render should keep admission empty');
@@ -1394,25 +1452,25 @@ assertExcludes(oidcDisabledRender, 'name: OIDC_CLIENT_SECRET', 'password-only re
 assertExcludes(oidcDisabledRender, '\n  OIDC_ISSUER_URL:', 'password-only render should omit OIDC provider configuration');
 
 expectHelmFailure([
-  '--set', 'auth.oidc.enabled=false',
-  '--set', 'auth.password.enabled=false'
+  '--set', 'userAccess.oidc.enabled=false',
+  '--set', 'userAccess.password.enabled=false'
 ], 'the chart must require at least one browser authentication method');
 
 expectHelmFailure([
-  '--set', 'auth.oidc.enabled=false',
-  '--set', 'auth.oidc.admission.requireVerifiedEmail=true'
+  '--set', 'userAccess.oidc.enabled=false',
+  '--set', 'userAccess.oidc.admission.requireVerifiedEmail=true'
 ], 'OIDC admission must not be configurable when OIDC is disabled');
 expectHelmFailure([
-  '--set-json', 'auth.oidc.admission.requiredClaims=[{"path":["groups"],"operator":"intersects","values":["ops",1]}]'
+  '--set-json', 'userAccess.oidc.admission.requiredClaims=[{"path":["groups"],"operator":"intersects","values":["ops",1]}]'
 ], 'OIDC intersects admission values must use one scalar type');
 expectHelmFailure([
-  '--set-json', 'auth.oidc.admission.requiredClaims=[{"path":["__proto__"],"operator":"exists"}]'
+  '--set-json', 'userAccess.oidc.admission.requiredClaims=[{"path":["__proto__"],"operator":"exists"}]'
 ], 'OIDC admission paths must reject unsafe traversal segments');
 expectHelmFailure([
-  '--set-json', 'auth.oidc.scopes=["profile","email"]'
+  '--set-json', 'userAccess.oidc.scopes=["profile","email"]'
 ], 'OIDC scopes must include openid');
 expectHelmFailure([
-  '--set-json', 'auth.oidc.admission.allowedEmailDomains=["*.example.com"]'
+  '--set-json', 'userAccess.oidc.admission.allowedEmailDomains=["*.example.com"]'
 ], 'OIDC admission domains must use exact DNS names without wildcards');
 
 const k3sRender = helmTemplate(['-f', k3sValues]);

@@ -19,7 +19,7 @@ exposure:
       enabled: true
       secretName: acornops-demo-tls
 
-auth:
+userAccess:
   oidc:
     enabled: true
     issuerUrl: http://acornops-keycloak.acornops-identity.svc.cluster.local/realms/acornops

@@ -31,7 +31,7 @@ stacks:
     executionContractVersion: 2
     workflowSchemaEpoch: workflow-v2-greenfield-1
     chart:
-      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.14
+      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.15
       acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.10
     components:
       managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.21
