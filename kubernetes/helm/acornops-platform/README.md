@@ -38,6 +38,9 @@ The chart values are organized by operator concern:
 - `exposure`: Ingress hosts, class, annotations, and TLS
 - `secrets`: existing Secret name and grouped Secret key mappings
 - `auth`: session, OIDC, and password-auth settings
+- `adminApi.humanAuth`: dedicated platform-admin OIDC, MFA assurance, and
+  privileged session settings; enabling the platform admin console caps the
+  absolute session at one hour and idle/recent-auth windows at 15 minutes
 - `global.trust.additionalCaBundle`: default existing ConfigMap or Secret with
   additive CA trust for server-side platform components
 - `ai`: default provider/model policy

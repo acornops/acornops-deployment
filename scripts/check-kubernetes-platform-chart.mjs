@@ -352,6 +352,36 @@ for (const [args, message] of [
     'platform admin console should require human administrator sessions'
   ],
   [
+    [...platformAdminConsoleArgs, '--set-string', 'adminApi.humanAuth.oidc.issuerUrl='],
+    'platform admin console should require a dedicated OIDC issuer'
+  ],
+  [
+    [...platformAdminConsoleArgs, '--set-string', 'adminApi.humanAuth.oidc.clientId='],
+    'platform admin console should require a dedicated OIDC client id'
+  ],
+  [
+    [
+      ...platformAdminConsoleArgs,
+      '--set-string',
+      'adminApi.humanAuth.oidc.requiredAcrValues=',
+      '--set-string',
+      'adminApi.humanAuth.oidc.requiredAmrValues='
+    ],
+    'platform admin console should require an OIDC MFA assurance claim'
+  ],
+  [
+    [...platformAdminConsoleArgs, '--set', 'adminApi.humanAuth.session.maxAgeSeconds=315360000'],
+    'platform admin production sessions should not exceed one hour'
+  ],
+  [
+    [...platformAdminConsoleArgs, '--set', 'adminApi.humanAuth.session.idleTimeoutSeconds=901'],
+    'platform admin production idle timeout should not exceed 15 minutes'
+  ],
+  [
+    [...platformAdminConsoleArgs, '--set', 'adminApi.humanAuth.session.reauthSeconds=901'],
+    'platform admin production recent-auth window should not exceed 15 minutes'
+  ],
+  [
     [...platformAdminConsoleArgs, '--set', 'internalTransport.tls.requireClientCert=false'],
     'platform admin console should require mutual TLS to the control plane'
   ],
