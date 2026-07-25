@@ -2,7 +2,7 @@ apiVersion: acornops.dev/v1alpha1
 kind: StackVersionMatrix
 metadata:
   name: acornops-stack
-  updatedAt: "2026-07-25"
+  updatedAt: "2026-07-26"
 
 stacks:
   - name: local-dev
@@ -22,24 +22,24 @@ stacks:
     executionContractVersion: 2
     workflowSchemaEpoch: workflow-v2-greenfield-1
     components:
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.21
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.21
-      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.10
-      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.12
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.24
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.25
+      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.12
+      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.14
 
   - name: k8s-platform-v1
     description: Pinned greenfield Workflow V2 Kubernetes stack deployed with the acornops-platform Helm chart.
     executionContractVersion: 2
     workflowSchemaEpoch: workflow-v2-greenfield-1
     chart:
-      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.16
-      acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.10
+      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.17
+      acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.11
     components:
-      platformAdminConsole: ghcr.io/acornops/platform-admin-console:0.0.1-experimental.1
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.21
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.21
-      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.10
-      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.12
+      platformAdminConsole: ghcr.io/acornops/platform-admin-console:0.0.1-experimental.2
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.24
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.25
+      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.12
+      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.14
 
 compatibility:
   notes:
