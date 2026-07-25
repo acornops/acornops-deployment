@@ -412,7 +412,7 @@ components:
 
 Create one random BFF token. Store the raw token at the Secret key configured by
 `secrets.keys.platformAdminConsole.adminToken`; store only its SHA-256 descriptor
-in `CONTROL_PLANE_ADMIN_TOKENS_JSON`. Give that descriptor exactly the seven
+in `CONTROL_PLANE_ADMIN_TOKENS_JSON`. Give that descriptor exactly the eight
 console scopes from the contract, never `admin:*`. Store independently generated
 `ADMIN_OIDC_CLIENT_SECRET` and `ADMIN_CSRF_SECRET` values at their configured
 Secret keys. Rotate the raw token and descriptor together, then roll both the
@@ -455,6 +455,36 @@ VM Compose uses the matching `CONTROL_PLANE_ADMIN_API_ENABLED`,
 `CONTROL_PLANE_ADMIN_TOKENS_JSON`, and `WORKSPACE_PLANS_CONFIG_JSON`
 environment variables. Its nginx template also exposes `/admin/` only on
 `API_HOST`.
+
+### Durable platform settings
+
+Helm defines the deployment policy and defaults under `platformSettings`; the
+platform-admin console may only choose values inside that policy. Runtime
+overrides are versioned in PostgreSQL and written atomically with their admin
+audit event. A redeploy preserves them. Tightening Helm policy takes effect
+without deleting the stored override, which remains visible as constrained
+until an administrator resets or replaces it.
+
+```yaml
+platformSettings:
+  memberDiscovery:
+    allowedModes: [disabled, exact_email]
+    defaultMode: exact_email
+  aiPolicy:
+    runtimeEditable: true
+  passwordSignup:
+    allowedValues: [false, true]
+    defaultValue: false
+```
+
+Enable `directory` discovery only when the AcornOps user directory is trusted
+organization-wide. AI runtime policy can narrow the provider, model, reasoning
+summary, and reasoning-effort values under `ai`; it cannot add values. Password
+signup can be enabled only when both Helm policy permits it and the deployment's
+password authentication and verification-email prerequisites are ready.
+
+Keep secrets, identity-provider endpoints, SMTP credentials, database and Redis
+endpoints, signing keys, and bootstrap administrator credentials deployment-only.
 
 ## Migration Operations
 

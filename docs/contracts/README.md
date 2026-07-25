@@ -120,6 +120,14 @@ Admin token JSON values are SHA-256 hash descriptors. Raw admin tokens are
 operator-held secrets and must not appear in values files, ConfigMaps, logs, or
 docs examples.
 
+Helm `platformSettings` renders a non-secret `PLATFORM_SETTINGS_POLICY_JSON`
+ceiling for `member_discovery`, `ai_policy`, and `password_signup`. The control
+plane stores only versioned runtime overrides in PostgreSQL. Redeployments do
+not reset those overrides; a tighter deployment policy constrains their
+effective value without deleting the stored record. Every console mutation
+requires `admin:system:write`, an expected version, and a reason, and is
+committed in the same transaction as its admin audit event.
+
 Workspace plans are configured by Helm `workspacePlans` or VM
 `WORKSPACE_PLANS_CONFIG_JSON` and rendered into the control plane as
 `WORKSPACE_PLANS_CONFIG_JSON`. The default plan includes member, Kubernetes

@@ -130,8 +130,6 @@ userAccess:
   password:
     # Username/password auth can run alongside OIDC.
     enabled: true
-    # Self-service signup should stay disabled for public production deployments.
-    signupEnabled: false
     # Require AcornOps-managed email verification for password signup.
     emailVerificationRequired: true
     # Explicit unsafe/private override for deployments that accept unverified password signups.
@@ -194,6 +192,24 @@ ai:
   allowedReasoningSummaryModes: off,auto,concise,detailed
   allowedReasoningEfforts: off,low,medium,high
   gatewayTimeoutMs: 120000
+
+platformSettings:
+  memberDiscovery:
+    # Directory search can expose the trusted user directory and requires explicit opt-in.
+    allowedModes:
+      - disabled
+      - exact_email
+    defaultMode: exact_email
+  aiPolicy:
+    # Runtime policy may narrow, but never expand, the ai policy above.
+    runtimeEditable: true
+  passwordSignup:
+    # Keep signup off after installation while allowing a platform admin to enable it
+    # when the configured email-verification path is ready.
+    allowedValues:
+      - false
+      - true
+    defaultValue: false
 
 workspaceRoles:
   # Omit this list to let the control plane default to all built-in roles.

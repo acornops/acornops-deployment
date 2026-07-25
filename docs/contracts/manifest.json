@@ -81,6 +81,7 @@
       "EXTERNAL_INTEGRATION_LINK_TOKEN_RETENTION_DAYS"
     ],
     "workspacePlanEnv": ["WORKSPACE_PLANS_CONFIG_JSON"],
+    "platformSettingsEnv": ["PLATFORM_SETTINGS_POLICY_JSON"],
     "auditLoggingEnv": [
       "WORKSPACE_AUDIT_LOGGING_MODE",
       "WORKSPACE_AUDIT_RETENTION_DAYS"
@@ -128,6 +129,13 @@
     "workspacePlanHelmValues": [
       "workspacePlans.defaultPlanKey",
       "workspacePlans.plans[].{key,name,quotas.members,quotas.kubernetesClusters,quotas.virtualMachines}"
+    ],
+    "platformSettingsHelmValues": [
+      "platformSettings.memberDiscovery.allowedModes",
+      "platformSettings.memberDiscovery.defaultMode",
+      "platformSettings.aiPolicy.runtimeEditable",
+      "platformSettings.passwordSignup.allowedValues",
+      "platformSettings.passwordSignup.defaultValue"
     ],
     "auditLoggingHelmValues": [
       "auditLogging.mode",

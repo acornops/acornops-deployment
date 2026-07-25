@@ -69,8 +69,6 @@ userAccess:
   password:
     # Disable this if production should be OIDC-only.
     enabled: true
-    # Keep false unless this is a reviewed private deployment.
-    signupEnabled: false
     emailVerificationRequired: true
     resetEnabled: true
 
@@ -102,6 +100,16 @@ platformAdminAccess:
     clientId: acornops-platform-admin
     allowedRoles: platform-admin,platform-admin-viewer,platform-admin-auditor
     requiredAmrValues: mfa,otp,webauthn,hwk
+
+platformSettings:
+  memberDiscovery:
+    allowedModes: [disabled, exact_email]
+    defaultMode: exact_email
+  aiPolicy:
+    runtimeEditable: true
+  passwordSignup:
+    allowedValues: [false, true]
+    defaultValue: false
 
 workspacePlans:
   defaultPlanKey: default

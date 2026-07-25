@@ -75,7 +75,6 @@ data:
   {{- end }}
   WEBHOOK_EGRESS_ALLOWED_PRIVATE_HOSTS_JSON: {{ .Values.components.controlPlane.webhookEgress.allowedPrivateHosts | toJson | quote }}
   PASSWORD_AUTH_ENABLED: {{ .Values.userAccess.password.enabled | quote }}
-  PASSWORD_SIGNUP_ENABLED: {{ .Values.userAccess.password.signupEnabled | quote }}
   PASSWORD_EMAIL_VERIFICATION_REQUIRED: {{ .Values.userAccess.password.emailVerificationRequired | quote }}
   PASSWORD_EMAIL_VERIFICATION_TOKEN_TTL_SECONDS: {{ .Values.userAccess.password.verificationTokenTtlSeconds | quote }}
   PASSWORD_EMAIL_VERIFICATION_RESEND_WINDOW_SECONDS: {{ .Values.userAccess.password.verificationResendWindowSeconds | quote }}
@@ -102,6 +101,7 @@ data:
   LLM_REASONING_SUMMARIES_ENABLED: {{ .Values.ai.reasoningSummariesEnabled | quote }}
   LLM_ALLOWED_REASONING_SUMMARY_MODES: {{ .Values.ai.allowedReasoningSummaryModes | quote }}
   LLM_ALLOWED_REASONING_EFFORTS: {{ .Values.ai.allowedReasoningEfforts | quote }}
+  PLATFORM_SETTINGS_POLICY_JSON: {{ toJson .Values.platformSettings | quote }}
   WORKSPACE_ROLES_CONFIG_JSON: {{ toJson (default dict .Values.workspaceRoles) | quote }}
   WORKSPACE_PLANS_CONFIG_JSON: {{ toJson .Values.workspacePlans | quote }}
   CONTROL_PLANE_ADMIN_API_ENABLED: {{ .Values.adminApi.enabled | quote }}

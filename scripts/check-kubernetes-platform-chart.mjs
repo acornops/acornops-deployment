@@ -1216,6 +1216,25 @@ if (deploymentReplicas(defaultRender, `${defaultPrefix}-control-plane`) !== 3) {
 assertIncludes(defaultRender, 'CONTROL_PLANE_DISTRIBUTED_ROUTING_ENABLED:', 'control-plane distributed routing should render');
 assertIncludes(defaultRender, 'WORKSPACE_ROLES_CONFIG_JSON:', 'control-plane workspace role templates config should render');
 assertMatch(defaultRender, /WORKSPACE_ROLES_CONFIG_JSON: .*owner/, 'default workspace built-in roles should render');
+assertIncludes(defaultRender, 'PLATFORM_SETTINGS_POLICY_JSON:', 'control-plane platform settings policy should render');
+assertIncludes(defaultRender, '\\"runtimeEditable\\":true', 'default platform settings policy should allow bounded AI policy editing');
+assertIncludes(defaultRender, '\\"defaultMode\\":\\"exact_email\\"', 'default platform settings policy should use exact-email discovery');
+assertIncludes(defaultRender, '\\"defaultValue\\":false', 'default platform settings policy should keep password signup off');
+const trustedDirectoryPolicyRender = helmTemplate([
+  '--set-json',
+  'platformSettings.memberDiscovery.allowedModes=["disabled","exact_email","directory"]',
+  '--set-string',
+  'platformSettings.memberDiscovery.defaultMode=directory',
+  '--set-json',
+  'platformSettings.passwordSignup.allowedValues=[false]'
+]);
+assertIncludes(
+  trustedDirectoryPolicyRender,
+  '\\"allowedModes\\":[\\"disabled\\",\\"exact_email\\",\\"directory\\"]',
+  'trusted installations should be able to opt into directory discovery'
+);
+assertIncludes(trustedDirectoryPolicyRender, '\\"defaultMode\\":\\"directory\\"', 'trusted installations should be able to default directory discovery on');
+assertIncludes(trustedDirectoryPolicyRender, '\\"allowedValues\\":[false]', 'deployments should be able to fix password signup off');
 assertIncludes(defaultRender, 'TRUST_PROXY: "1"', 'control-plane trusted proxy setting should render');
 assertIncludes(
   defaultRender,
@@ -1298,7 +1317,7 @@ assertIncludes(
   'default JWKS URL should remain HTTP'
 );
 assertIncludes(defaultRender, 'PASSWORD_AUTH_ENABLED: "true"', 'password auth should default to enabled');
-assertIncludes(defaultRender, 'PASSWORD_SIGNUP_ENABLED: "false"', 'password signup should default to disabled in production chart deployments');
+assertExcludes(defaultRender, 'PASSWORD_SIGNUP_ENABLED:', 'legacy password signup configuration should not render');
 assertIncludes(defaultRender, 'PASSWORD_EMAIL_VERIFICATION_REQUIRED: "true"', 'password email verification should default to enabled');
 assertIncludes(defaultRender, 'PASSWORD_SIGNUP_ALLOW_UNVERIFIED_EMAIL: "false"', 'unverified password signup should default to disabled');
 assertIncludes(defaultRender, 'PASSWORD_RESET_ENABLED: "true"', 'password reset should default to enabled');
@@ -1519,7 +1538,6 @@ assertMatch(productionRender, /kind: PodDisruptionBudget[\s\S]*?app.kubernetes.i
 assertIncludes(productionRender, 'PASSWORD_AUTH_ENABLED: "true"', 'production should keep password auth enabled');
 assertIncludes(productionRender, 'SESSION_MAX_AGE_SECONDS: "604800"', 'production should keep browser session max age at 7 days');
 assertIncludes(productionRender, 'SESSION_IDLE_TIMEOUT_SECONDS: "86400"', 'production should keep browser session idle timeout at 24 hours');
-assertIncludes(productionRender, 'PASSWORD_SIGNUP_ENABLED: "false"', 'production should keep password signup disabled');
 assertIncludes(productionRender, 'PASSWORD_EMAIL_VERIFICATION_REQUIRED: "true"', 'production should keep password email verification enabled');
 assertIncludes(productionRender, 'PASSWORD_RESET_ENABLED: "true"', 'production should keep password reset enabled');
 assertIncludes(productionRender, 'OIDC_ADMISSION_POLICY_JSON: "{\\"requireVerifiedEmail\\":true}"', 'production example should require verified OIDC email');

@@ -106,6 +106,7 @@ const platformAdminConfig = render(['platform-admin'], {
       scopes: [
         'admin:self',
         'admin:system:read',
+        'admin:system:write',
         'admin:workspace:read',
         'admin:workspace:write',
         'admin:user:read',
@@ -129,8 +130,8 @@ expect(platformAdminConfig.services['control-plane'].environment.CONTROL_PLANE_A
 expect(platformAdminConfig.services['control-plane'].environment.CONTROL_PLANE_ADMIN_HUMAN_AUTH_REQUIRED === 'true', 'platform-admin profile must require a human admin session');
 expect(platformAdminDescriptors.length === 1 && platformAdminDescriptors[0].sha256 === localAdminTokenHash, 'platform-admin BFF token must match its SHA-256 descriptor');
 expect(
-  platformAdminDescriptors[0].scopes.join(',') === 'admin:self,admin:system:read,admin:workspace:read,admin:workspace:write,admin:user:read,admin:member:write,admin:audit:read',
-  'platform-admin BFF descriptor must contain only the seven console scopes'
+  platformAdminDescriptors[0].scopes.join(',') === 'admin:self,admin:system:read,admin:system:write,admin:workspace:read,admin:workspace:write,admin:user:read,admin:member:write,admin:audit:read',
+  'platform-admin BFF descriptor must contain only the eight console scopes'
 );
 
 console.log('local fixture compose profile checks passed');

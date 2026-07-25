@@ -36,7 +36,6 @@ userAccess:
       endSessionEndpointOverride: https://identity.demo.acornops.dev/realms/acornops/protocol/openid-connect/logout
   password:
     enabled: false
-    signupEnabled: false
 
 email:
   deliveryMode: disabled

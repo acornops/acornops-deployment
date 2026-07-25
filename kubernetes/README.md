@@ -123,7 +123,9 @@ Override at least:
 - `userAccess.oidc.logout.endSessionEndpointOverride` when discovery advertises an internal hostname that browsers cannot reach
 - `userAccess.oidc.logout.postLogoutRedirectUri` with the exact URI registered at the provider
 - `userAccess.password.enabled` if you do not want username/password login alongside OIDC
-- `userAccess.password.signupEnabled=true` only after SMTP delivery is configured and tested
+- `platformSettings.passwordSignup.allowedValues` and `defaultValue` to define
+  whether platform administrators may enable self-service signup; permit it only
+  after SMTP delivery is configured and tested
 - `email.deliveryMode=smtp`, `email.from`, `email.smtp.host`, and `SMTP_USERNAME`/`SMTP_PASSWORD` when enabling password self-service signup
 - `networkPolicies.ingressController.from` to match the actual
   ingress-controller namespace and, for a shared namespace, its pod labels

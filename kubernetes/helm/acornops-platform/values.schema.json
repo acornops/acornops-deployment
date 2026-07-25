@@ -274,7 +274,6 @@
           "additionalProperties": false,
           "properties": {
             "enabled": { "type": "boolean" },
-            "signupEnabled": { "type": "boolean" },
             "emailVerificationRequired": { "type": "boolean" },
             "signupAllowUnverifiedEmail": { "type": "boolean" },
             "verificationTokenTtlSeconds": { "type": "integer", "minimum": 300, "maximum": 604800 },
@@ -405,6 +404,49 @@
               },
               "sortOrder": { "type": "integer", "minimum": 1, "maximum": 10000 }
             }
+          }
+        }
+      }
+    },
+    "platformSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["memberDiscovery", "aiPolicy", "passwordSignup"],
+      "properties": {
+        "memberDiscovery": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["allowedModes", "defaultMode"],
+          "properties": {
+            "allowedModes": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "type": "string", "enum": ["disabled", "exact_email", "directory"] }
+            },
+            "defaultMode": { "type": "string", "enum": ["disabled", "exact_email", "directory"] }
+          }
+        },
+        "aiPolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["runtimeEditable"],
+          "properties": {
+            "runtimeEditable": { "type": "boolean" }
+          }
+        },
+        "passwordSignup": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["allowedValues", "defaultValue"],
+          "properties": {
+            "allowedValues": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "type": "boolean" }
+            },
+            "defaultValue": { "type": "boolean" }
           }
         }
       }

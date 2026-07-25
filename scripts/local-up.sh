@@ -132,7 +132,7 @@ configure_local_platform_admin() {
   export CONTROL_PLANE_ADMIN_API_ENABLED=true
   export CONTROL_PLANE_ADMIN_HUMAN_AUTH_REQUIRED=true
   export PLATFORM_ADMIN_BFF_TOKEN_ID=platform-admin-console
-  export CONTROL_PLANE_ADMIN_TOKENS_JSON="[{\"id\":\"platform-admin-console\",\"name\":\"Local platform admin console\",\"sha256\":\"${token_sha256}\",\"scopes\":[\"admin:self\",\"admin:system:read\",\"admin:workspace:read\",\"admin:workspace:write\",\"admin:user:read\",\"admin:member:write\",\"admin:audit:read\"],\"enabled\":true}]"
+  export CONTROL_PLANE_ADMIN_TOKENS_JSON="[{\"id\":\"platform-admin-console\",\"name\":\"Local platform admin console\",\"sha256\":\"${token_sha256}\",\"scopes\":[\"admin:self\",\"admin:system:read\",\"admin:system:write\",\"admin:workspace:read\",\"admin:workspace:write\",\"admin:user:read\",\"admin:member:write\",\"admin:audit:read\"],\"enabled\":true}]"
   export PLATFORM_ADMIN_CONSOLE_BASE_URL="${PLATFORM_ADMIN_CONSOLE_BASE_URL:-http://127.0.0.1:4173}"
   export ADMIN_SESSION_COOKIE_NAME="${ADMIN_SESSION_COOKIE_NAME:-acornops_admin_session}"
   export ADMIN_CSRF_COOKIE_NAME="${ADMIN_CSRF_COOKIE_NAME:-acornops_admin_csrf}"

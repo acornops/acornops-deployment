@@ -67,6 +67,8 @@ The chart values are organized by operator concern:
 - `components.llmGateway.catalog`: official-registry policy, workspace-managed
   source policy, and secret-backed bootstrap sources for private or air-gapped
   MCP registries
+- `platformSettings`: deployment ceilings and defaults for audited runtime
+  member discovery, AI policy, and password-signup settings
 
 ## Authentication Values Upgrade
 
