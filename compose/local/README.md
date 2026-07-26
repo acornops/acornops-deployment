@@ -10,7 +10,7 @@ Used by:
 - `task local-down`
 - `task local-reset`
 
-The `platform-admin` profile is opt-in through
-`PLATFORM_ADMIN_CONSOLE=true`. It adds the real control-plane-backed admin
-console and its dedicated local Keycloak realm without changing the default
-local service set.
+The Task lifecycle includes the `platform-admin` profile by default through
+`PLATFORM_ADMIN_CONSOLE=true`. Set `PLATFORM_ADMIN_CONSOLE=false` to omit the
+real control-plane-backed admin console and its dedicated local Keycloak realm.
+The underlying Compose service remains profile-gated.

@@ -30,13 +30,14 @@ Start the full local stack:
 task local-up
 ```
 
-Include the connected platform-admin console only when needed:
+The connected platform-admin console is included by default. Omit it when it is
+not needed:
 
 ```bash
-task local-up PLATFORM_ADMIN_CONSOLE=true
+task local-up PLATFORM_ADMIN_CONSOLE=false
 ```
 
-The default remains disabled. The opt-in console is available at
+The console is available at
 `http://127.0.0.1:4173` and uses the dedicated local administrator
 `admin@acornops.local / devpass`.
 
@@ -44,7 +45,6 @@ Stop while preserving data:
 
 ```bash
 task local-down
-task local-down PLATFORM_ADMIN_CONSOLE=true
 ```
 
 Reset local data:

@@ -53,8 +53,8 @@ expect(
 );
 expect(!defaultConfig.services.agentk, 'default local profile must not include AgentK');
 expect(!defaultConfig.services.agentv, 'default local profile must not include AgentV');
-expect(!defaultConfig.services['platform-admin-console'], 'default local profile must not include the platform-admin console');
-expect(defaultConfig.services['control-plane'].environment.CONTROL_PLANE_ADMIN_API_ENABLED === 'false', 'default local profile must keep the admin API disabled');
+expect(!defaultConfig.services['platform-admin-console'], 'base Compose profile must not include the platform-admin console without its profile');
+expect(defaultConfig.services['control-plane'].environment.CONTROL_PLANE_ADMIN_API_ENABLED === 'false', 'base Compose profile must keep the admin API disabled without the platform-admin profile');
 
 const chatCompletionsConfig = render([], {
   LLM_PROVIDER_OPENAI_API_SURFACE: 'chat_completions'

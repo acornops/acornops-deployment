@@ -307,6 +307,7 @@ for (const identifier of [
 
 const agentDeploy = readFileSync(path.join(root, 'scripts/agent-deploy.sh'), 'utf8');
 const localUp = readFileSync(path.join(root, 'scripts/local-up.sh'), 'utf8');
+const localDown = readFileSync(path.join(root, 'scripts/local-down.sh'), 'utf8');
 const localCompose = readFileSync(path.join(root, 'compose/local/compose.source.yaml'), 'utf8');
 const localPlatformAdminRealm = readFileSync(
   path.join(root, 'compose/vm-prod/oidc/keycloak/realm-acornops-platform-admin.json'),
@@ -511,9 +512,17 @@ expect(
   'local env example should preserve restart-safe signing and durable trace defaults'
 );
 expect(
-  localEnvExample.includes('PLATFORM_ADMIN_CONSOLE=false')
+  localEnvExample.includes('PLATFORM_ADMIN_CONSOLE=true')
     && localEnvExample.includes('PLATFORM_ADMIN_BFF_TOKEN=acornops-local-platform-admin-bff-token'),
-  'local env example should document the disabled-by-default platform-admin profile and local-only BFF token'
+  'local env example should document the enabled-by-default platform-admin profile and local-only BFF token'
+);
+expect(
+  taskfile.includes('PLATFORM_ADMIN_CONSOLE: \'{{default "true" .PLATFORM_ADMIN_CONSOLE}}\'')
+    && localUp.includes(': "${PLATFORM_ADMIN_CONSOLE:=true}"')
+    && localUp.includes('false)')
+    && localDown.includes('case "${PLATFORM_ADMIN_CONSOLE:-true}"')
+    && localDown.includes('false)'),
+  'local lifecycle tasks should include platform admin by default while preserving an explicit false override'
 );
 expect(
   localUp.includes('up -d --force-recreate --no-deps edge-proxy')

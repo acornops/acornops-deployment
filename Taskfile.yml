@@ -7,7 +7,7 @@ vars:
   ENV_AGENT: '{{default "env/vm/.env.agent" .ENV_AGENT}}'
   LOCAL_OIDC_PROFILE: '{{default "oidc-dex" .LOCAL_OIDC_PROFILE}}'
   LOCAL_EXTRA_PROFILES: '{{default "" .LOCAL_EXTRA_PROFILES}}'
-  PLATFORM_ADMIN_CONSOLE: '{{default "false" .PLATFORM_ADMIN_CONSOLE}}'
+  PLATFORM_ADMIN_CONSOLE: '{{default "true" .PLATFORM_ADMIN_CONSOLE}}'
 
 silent: true
 
@@ -28,7 +28,7 @@ tasks:
       - ./scripts/doctor.sh
 
   local-up:
-    desc: Start the local stack with seeded targets; set PLATFORM_ADMIN_CONSOLE=true to include the connected admin console
+    desc: Start the local stack with seeded targets and the connected admin console; set PLATFORM_ADMIN_CONSOLE=false to omit it
     env:
       LOCAL_OIDC_PROFILE: '{{.LOCAL_OIDC_PROFILE}}'
       LOCAL_EXTRA_PROFILES: 'target-fixtures {{.LOCAL_EXTRA_PROFILES}}'

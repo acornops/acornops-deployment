@@ -106,7 +106,7 @@ enable_profile() {
 }
 
 configure_local_platform_admin() {
-  : "${PLATFORM_ADMIN_CONSOLE:=false}"
+  : "${PLATFORM_ADMIN_CONSOLE:=true}"
   case "${PLATFORM_ADMIN_CONSOLE}" in
     true)
       ;;

@@ -14,25 +14,27 @@ Component repositories own service internals. This repository owns how those com
 
 ## Local Platform Admin Profile
 
-The platform-admin console is excluded from ordinary local startup. Enable the
-connected profile explicitly:
+The platform-admin console is included in ordinary local startup:
 
 ```bash
-task local-up PLATFORM_ADMIN_CONSOLE=true
-task local-ps PLATFORM_ADMIN_CONSOLE=true
+task local-up
+task local-ps
 ```
 
 The profile publishes `http://127.0.0.1:4173`, enables the private
-control-plane admin API, configures the BFF's exact seven-scope local token, and
+control-plane admin API, configures the BFF's exact eight-scope local token, and
 requires sign-in through a deployment-owned Keycloak realm. The local
 administrator is `admin@acornops.local / devpass`.
 
 Operate or stop the same profile with:
 
 ```bash
-task local-logs PLATFORM_ADMIN_CONSOLE=true
-task local-down PLATFORM_ADMIN_CONSOLE=true
+task local-logs
+task local-down
 ```
+
+Set `PLATFORM_ADMIN_CONSOLE=false` on a local lifecycle command to omit the
+profile intentionally.
 
 The loopback binding, raw token, client secret, CSRF secret, and test user are
 local-development material only. Production remains governed by the generated
