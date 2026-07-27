@@ -89,10 +89,12 @@ implements Chat Completions, set
 `LLM_PROVIDER_OPENAI_API_SURFACE=chat_completions` for VM Compose or
 `components.llmGateway.openaiApiSurface=chat_completions` for Helm. API-surface
 selection is explicit and deployment-wide; the gateway never probes or falls
-back between the two endpoints. Roll back by restoring `responses`. Chat
-Completions supports normalized text and custom function calls but rejects
-AcornOps native tools, and reasoning-summary requests return an unavailable
-event.
+back between the two endpoints. The deployment passes the same surface value to
+control-plane so configured Web Search remains visible but is omitted from
+ordinary target assistant runs when unavailable. Roll back by restoring
+`responses`. Chat Completions supports normalized text and custom function
+calls, while llm-gateway still rejects unsupported AcornOps native tools as
+defense in depth and reports reasoning summaries as unavailable.
 
 ## LLM Provider Policy
 

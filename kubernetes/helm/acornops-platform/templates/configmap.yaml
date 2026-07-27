@@ -95,6 +95,7 @@ data:
   EXECUTION_ENGINE_TIMEOUT_MS: "10000"
   LLM_GATEWAY_URL: {{ include "acornops-platform.internalUrl" (dict "root" . "component" "llm-gateway" "port" .Values.components.llmGateway.service.port) | quote }}
   LLM_GATEWAY_TIMEOUT_MS: {{ .Values.ai.gatewayTimeoutMs | quote }}
+  LLM_PROVIDER_OPENAI_API_SURFACE: {{ .Values.components.llmGateway.openaiApiSurface | quote }}
   LLM_DEFAULT_PROVIDER: {{ .Values.ai.defaultProvider | quote }}
   LLM_DEFAULT_MODEL: {{ .Values.ai.defaultModel | quote }}
   LLM_PROVIDERS_JSON: {{ include "acornops-platform.llmProvidersJson" . | quote }}
