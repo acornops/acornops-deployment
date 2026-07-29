@@ -159,6 +159,12 @@ mount, `VAULT_PATH_PREFIX`, and workspace path. Limit the cleanup token to that
 boundary. Platform OIDC is independent: it signs users into AcornOps and is not
 a remote MCP credential or callback.
 
+Automatic individual-user MCP OAuth is enabled by default. Follow
+[`docs/mcp-oauth.md`](mcp-oauth.md): verify canonical HTTPS URLs, Redis and
+encrypted gateway secret storage, the OAuth-specific egress path, and the
+non-production provider canary. Set `MCP_OAUTH_ENABLED=false` to roll back
+without affecting `none`, bearer-token, or custom-header MCP installations.
+
 Deploy:
 
 ```bash

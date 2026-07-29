@@ -49,6 +49,8 @@ The chart values are organized by operator concern:
 - `targetAgents.agentk.helm`: defaults for generated AgentK install commands
 - `builtinTargetMcp`: shared AgentK and AgentV target-tool bridge identity
 - `automation`: durable runtime mode, canary workspace allow-list, and worker poll interval
+- `mcpOAuth`: enabled-by-default automatic individual-user OAuth, flow and
+  refresh timing, outbound metadata response limits, and an operator kill switch
 - `internalTransport.tls`: optional operator-supplied internal HTTPS/mTLS for service-to-service traffic
 - `internalAuth`: gateway token claims and signing-key metadata
 - `networkPolicies`: ingress, DNS, public egress, Postgres, Redis, Vault, and per-component extra egress
@@ -92,8 +94,12 @@ The rendered runtime environment variables, authentication defaults, secret
 locations, session limits, and OIDC field types are unchanged.
 
 Authenticated MCP installations explicitly select workspace-managed or
-individual credential ownership. Credentials are supplied through the
-control-plane API; the chart has no MCP authentication callback configuration.
+individual credential ownership. Static credentials are supplied through the
+control-plane API. Individual OAuth uses the canonical callback and CIMD
+document below `platform.consoleUrl` so the callback retains the host-only
+browser session through the console's `/api` route; the chart never accepts
+provider client IDs, client secrets, or endpoint overrides. See
+[`docs/mcp-oauth.md`](../../../docs/mcp-oauth.md) before enabling it.
 
 ## Greenfield database epoch
 

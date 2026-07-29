@@ -1549,11 +1549,42 @@ assertExcludes(productionRender, 'gpt-4.1-mini', 'production should not allow GP
 assertIncludes(productionRender, 'SECRETS_CACHE_TTL_SEC: "0"', 'production should keep llm-gateway plaintext secret caching disabled');
 assertIncludes(productionRender, 'REMOTE_MCP_ENABLED: "true"', 'production should render the remote MCP kill switch');
 assertIncludes(productionRender, 'MCP_CONNECTION_RATE_LIMIT_PER_WINDOW: "10"', 'production should render the MCP credential mutation throttle');
-assertExcludes(productionRender, 'MCP_OAUTH_', 'production should not render an MCP OAuth surface');
+assertIncludes(productionRender, 'MCP_OAUTH_ENABLED: "true"', 'production should enable automatic MCP OAuth by default');
+assertIncludes(
+  productionRender,
+  'MCP_OAUTH_PUBLIC_CONSOLE_URL: "https://console.acornops.dev"',
+  'production should derive the OAuth callback, CIMD, and return origin from platform.consoleUrl'
+);
+assertIncludes(productionRender, 'MCP_OAUTH_FLOW_TTL_SECONDS: "600"', 'production should render the bounded OAuth flow TTL');
+assertIncludes(productionRender, 'MCP_OAUTH_REFRESH_SAFETY_SECONDS: "60"', 'production should render the OAuth refresh safety window');
+assertIncludes(productionRender, 'MCP_OAUTH_HTTP_TIMEOUT_MS: "10000"', 'production should render the OAuth HTTP timeout');
+assertIncludes(productionRender, 'MCP_OAUTH_MAX_RESPONSE_BYTES: "65536"', 'production should render the OAuth response bound');
+assertIncludes(
+  productionRender,
+  'nginx.ingress.kubernetes.io/enable-access-log: "false"',
+  'the production ingress example should not log OAuth callback query credentials'
+);
 assertExcludes(
   productionRender,
   'ACORNOPS_AGENT_CAPABILITY_CUTOVER_ACK',
   'the production example should not require the retired capability-cutover acknowledgement'
+);
+
+const disabledMcpOAuthRender = helmTemplate([
+  '-f',
+  productionValues,
+  '--set',
+  'mcpOAuth.enabled=false'
+]);
+assertIncludes(
+  disabledMcpOAuthRender,
+  'MCP_OAUTH_ENABLED: "false"',
+  'the MCP OAuth feature flag should disable both backend components'
+);
+assertIncludes(
+  disabledMcpOAuthRender,
+  'MCP_OAUTH_PUBLIC_CONSOLE_URL: "https://console.acornops.dev"',
+  'disabled MCP OAuth should keep the trusted canonical browser URL'
 );
 
 const tlsRender = helmTemplate(internalTlsArgs);

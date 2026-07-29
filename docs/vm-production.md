@@ -49,6 +49,12 @@ such as `latest` for `MANAGEMENT_CONSOLE_IMAGE`, `CONTROL_PLANE_IMAGE`,
 
 LLM gateway MCP egress is deny-by-default for private networks in production. Keep `MCP_EGRESS_ALLOWED_HOSTS` empty for public remote MCP servers and require HTTPS. For private deployments, add only reviewed internal hostnames to `MCP_EGRESS_ALLOWED_HOSTS`; avoid setting `MCP_EGRESS_ALLOW_PRIVATE_NETWORKS=true` unless the whole gateway network is dedicated to trusted internal MCP traffic. `REMOTE_MCP_ENABLED=false` is the emergency kill switch and leaves built-in tools operational. `MCP_CONNECTION_RATE_LIMIT_PER_WINDOW` bounds connect and verify attempts for each credential owner and installation.
 
+Automatic MCP OAuth is enabled by default and requires the canonical
+`CONTROL_PLANE_BASE_URL` and `MANAGEMENT_CONSOLE_BASE_URL` to be public HTTPS
+URLs, plus gateway Redis and encrypted secret storage. Complete the checklist in
+[`mcp-oauth.md`](mcp-oauth.md) before deployment. Set
+`MCP_OAUTH_ENABLED=false` to disable the capability.
+
 ## Deploy
 
 This version establishes a greenfield schema epoch. Back up if needed, then

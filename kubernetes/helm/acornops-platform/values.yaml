@@ -30,6 +30,15 @@ automation:
   canaryWorkspaceIds: ""
   workerIntervalMs: 1000
 
+mcpOAuth:
+  # Automatic individual-user OAuth for compliant HTTP MCP servers. Set false
+  # to disable it. Readiness fails closed without Redis and encrypted secrets.
+  enabled: true
+  flowTtlSeconds: 600
+  refreshSafetySeconds: 60
+  httpTimeoutMs: 10000
+  maxResponseBytes: 65536
+
 exposure:
   ingress:
     # Whether this chart renders a Kubernetes Ingress for public HTTP routes.

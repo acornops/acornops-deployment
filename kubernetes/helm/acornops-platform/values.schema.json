@@ -33,6 +33,24 @@
         "workerIntervalMs": { "type": "integer", "minimum": 250 }
       }
     },
+    "mcpOAuth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "flowTtlSeconds",
+        "refreshSafetySeconds",
+        "httpTimeoutMs",
+        "maxResponseBytes"
+      ],
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "flowTtlSeconds": { "type": "integer", "minimum": 60, "maximum": 600 },
+        "refreshSafetySeconds": { "type": "integer", "minimum": 0, "maximum": 600 },
+        "httpTimeoutMs": { "type": "integer", "minimum": 1000, "maximum": 120000 },
+        "maxResponseBytes": { "type": "integer", "minimum": 1024, "maximum": 1048576 }
+      }
+    },
     "exposure": {
       "type": "object",
       "additionalProperties": false,

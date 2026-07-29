@@ -52,6 +52,7 @@ Primary docs:
 - [`docs/index.md`](docs/index.md)
 - [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)
 - [`docs/OPERATIONS.md`](docs/OPERATIONS.md)
+- [`docs/mcp-oauth.md`](docs/mcp-oauth.md)
 - Deployment architecture: [`docs/deployment-architecture.md`](docs/deployment-architecture.md)
 - Whole-system architecture: [`../docs/system-architecture.md`](../docs/system-architecture.md)
 

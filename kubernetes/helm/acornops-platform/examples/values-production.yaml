@@ -9,6 +9,10 @@ platform:
   # Dedicated privileged browser origin.
   adminConsoleUrl: https://admin.acornops.dev
 
+mcpOAuth:
+  # Enabled by default; set false to use the deployment kill switch.
+  enabled: true
+
 exposure:
   ingress:
     enabled: true
@@ -19,8 +23,11 @@ exposure:
     tls:
       enabled: true
       secretName: acornops-platform-tls
-    # Add cert-manager, external-dns, or ingress-controller annotations here.
-    annotations: {}
+    # OAuth callback query parameters contain one-time credentials. For
+    # ingress-nginx, disable request access logs unless a query-free log format
+    # is configured globally. Apply the equivalent policy for other controllers.
+    annotations:
+      nginx.ingress.kubernetes.io/enable-access-log: "false"
 
 secrets:
   # Create this Secret before installing the chart.

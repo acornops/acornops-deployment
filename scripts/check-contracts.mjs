@@ -366,9 +366,27 @@ for (const marker of [
   }
 }
 expect(platformChartValues.includes('remoteMcp:'), 'Chart values should expose the remote MCP kill switch');
-for (const source of [localCompose, vmCompose, localEnvExample, vmEnvExample, platformChartValues, platformChartConfig]) {
-  expect(!source.includes('MCP_OAUTH_'), 'Deployment surfaces must not expose MCP OAuth configuration');
+for (const marker of [
+  'MCP_OAUTH_ENABLED',
+  'MCP_OAUTH_FLOW_TTL_SECONDS',
+  'MCP_OAUTH_REFRESH_SAFETY_SECONDS',
+  'MCP_OAUTH_HTTP_TIMEOUT_MS',
+  'MCP_OAUTH_MAX_RESPONSE_BYTES'
+]) {
+  for (const source of [localCompose, vmCompose, localEnvExample, vmEnvExample, platformChartConfig]) {
+    expect(source.includes(marker), `Deployment surfaces should preserve ${marker}`);
+  }
 }
+for (const marker of ['MCP_OAUTH_PUBLIC_CONSOLE_URL']) {
+  for (const source of [localCompose, vmCompose, platformChartConfig]) {
+    expect(source.includes(marker), `Backend deployment surfaces should preserve ${marker}`);
+  }
+}
+expect(platformChartValues.includes('mcpOAuth:'), 'Chart values should expose automatic MCP OAuth policy');
+expect(
+  platformChartValues.includes('enabled: true'),
+  'Automatic MCP OAuth should be enabled by default'
+);
 for (const marker of [
   'LlmGatewayMcpSecretCleanupFailing',
   'gateway_mcp_secret_cleanup_total{outcome="error"}',

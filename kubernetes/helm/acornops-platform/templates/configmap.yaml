@@ -16,6 +16,7 @@ data:
   TRUST_PROXY: {{ .Values.components.controlPlane.trustProxy | quote }}
   CONTROL_PLANE_BASE_URL: {{ include "acornops-platform.publicUrl" . | quote }}
   MANAGEMENT_CONSOLE_BASE_URL: {{ include "acornops-platform.managementConsoleUrl" . | quote }}
+  MCP_OAUTH_ENABLED: {{ .Values.mcpOAuth.enabled | quote }}
   CONTROL_PLANE_DISTRIBUTED_ROUTING_ENABLED: {{ .Values.agentGateway.distributedRouting.enabled | quote }}
   CONTROL_PLANE_AGENT_OWNER_TTL_SECONDS: {{ .Values.agentGateway.distributedRouting.ownerTtlSeconds | quote }}
   CONTROL_PLANE_AGENT_SNAPSHOT_INTERVAL_SECONDS: {{ .Values.agentGateway.snapshotIntervalSeconds | quote }}
@@ -261,6 +262,12 @@ data:
   MCP_EGRESS_ALLOW_PRIVATE_NETWORKS: {{ .Values.components.llmGateway.mcpEgress.allowPrivateNetworks | quote }}
   MCP_EGRESS_ALLOW_LOCAL_ADDRESSES: {{ .Values.components.llmGateway.mcpEgress.allowLocalAddresses | quote }}
   REMOTE_MCP_ENABLED: {{ .Values.components.llmGateway.remoteMcp.enabled | quote }}
+  MCP_OAUTH_ENABLED: {{ .Values.mcpOAuth.enabled | quote }}
+  MCP_OAUTH_PUBLIC_CONSOLE_URL: {{ include "acornops-platform.managementConsoleUrl" . | quote }}
+  MCP_OAUTH_FLOW_TTL_SECONDS: {{ .Values.mcpOAuth.flowTtlSeconds | quote }}
+  MCP_OAUTH_REFRESH_SAFETY_SECONDS: {{ .Values.mcpOAuth.refreshSafetySeconds | quote }}
+  MCP_OAUTH_HTTP_TIMEOUT_MS: {{ .Values.mcpOAuth.httpTimeoutMs | quote }}
+  MCP_OAUTH_MAX_RESPONSE_BYTES: {{ .Values.mcpOAuth.maxResponseBytes | quote }}
   CATALOG_OFFICIAL_REGISTRY_ENABLED: {{ .Values.components.llmGateway.catalog.officialRegistryEnabled | quote }}
   CATALOG_OFFICIAL_REGISTRY_URL: {{ .Values.components.llmGateway.catalog.officialRegistryUrl | quote }}
   CATALOG_WORKSPACE_MANAGED_SOURCES_ENABLED: {{ .Values.components.llmGateway.catalog.allowWorkspaceManagedSources | quote }}

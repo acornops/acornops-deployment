@@ -10,6 +10,7 @@ This `docs/` tree is the repository-local system of record for deployment orches
 - [Development Guide](/docs/DEVELOPMENT.md)
 - [Operations Guide](/docs/OPERATIONS.md)
 - [MCP Registries](/docs/catalog-registries.md)
+- [Automatic MCP OAuth](/docs/mcp-oauth.md)
 - [Contracts](/docs/contracts/README.md)
 - [Design Overview](/docs/DESIGN.md)
 - [Plan Overview](/docs/PLANS.md)
