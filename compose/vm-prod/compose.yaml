@@ -66,7 +66,7 @@ services:
       RUN_EVENT_BUFFER_SIZE: ${RUN_EVENT_BUFFER_SIZE:-200}
       PERSIST_RUN_EVENTS: ${PERSIST_RUN_EVENTS:-true}
       WORKSPACE_ROLES_CONFIG_JSON: ${WORKSPACE_ROLES_CONFIG_JSON:-}
-      PLATFORM_SETTINGS_POLICY_JSON: '${PLATFORM_SETTINGS_POLICY_JSON:-{"memberDiscovery":{"allowedModes":["disabled","exact_email"],"defaultMode":"exact_email"},"aiPolicy":{"runtimeEditable":true},"passwordSignup":{"allowedValues":[false,true],"defaultValue":false}}}'
+      PLATFORM_SETTINGS_POLICY_JSON: '${PLATFORM_SETTINGS_POLICY_JSON:-{"memberDiscovery":{"allowedModes":["disabled","exact_email"],"defaultMode":"exact_email"},"aiPolicy":{"runtimeEditable":true},"userSignInMethods":{"allowedMethods":["password","oidc"],"defaultMethods":["password","oidc"]}}}'
       WORKSPACE_PLANS_CONFIG_JSON: ${WORKSPACE_PLANS_CONFIG_JSON:-}
       CONTROL_PLANE_ADMIN_API_ENABLED: ${CONTROL_PLANE_ADMIN_API_ENABLED:-false}
       CONTROL_PLANE_ADMIN_TOKENS_JSON: ${CONTROL_PLANE_ADMIN_TOKENS_JSON:-[]}

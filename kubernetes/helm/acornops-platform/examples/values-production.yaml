@@ -107,9 +107,9 @@ platformSettings:
     defaultMode: exact_email
   aiPolicy:
     runtimeEditable: true
-  passwordSignup:
-    allowedValues: [false, true]
-    defaultValue: false
+  userSignInMethods:
+    allowedMethods: [password, oidc]
+    defaultMethods: [password, oidc]
 
 workspacePlans:
   defaultPlanKey: default

@@ -68,7 +68,7 @@ The chart values are organized by operator concern:
   source policy, and secret-backed bootstrap sources for private or air-gapped
   MCP registries
 - `platformSettings`: deployment ceilings and defaults for audited runtime
-  member discovery, AI policy, and password-signup settings
+  member discovery, AI policy, and workspace-user sign-in methods
 
 ## Authentication Values Upgrade
 

@@ -203,13 +203,16 @@ platformSettings:
   aiPolicy:
     # Runtime policy may narrow, but never expand, the ai policy above.
     runtimeEditable: true
-  passwordSignup:
-    # Keep signup off after installation while allowing a platform admin to enable it
-    # when the configured email-verification path is ready.
-    allowedValues:
-      - false
-      - true
-    defaultValue: false
+  userSignInMethods:
+    # Platform admins can select only these workspace-user sign-in methods.
+    # Password also permits first-time self-service signup when its email
+    # prerequisites are configured; Platform Admin sign-in remains OIDC-only.
+    allowedMethods:
+      - password
+      - oidc
+    defaultMethods:
+      - password
+      - oidc
 
 workspaceRoles:
   # Omit this list to let the control plane default to all built-in roles.

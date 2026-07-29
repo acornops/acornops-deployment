@@ -1219,14 +1219,16 @@ assertMatch(defaultRender, /WORKSPACE_ROLES_CONFIG_JSON: .*owner/, 'default work
 assertIncludes(defaultRender, 'PLATFORM_SETTINGS_POLICY_JSON:', 'control-plane platform settings policy should render');
 assertIncludes(defaultRender, '\\"runtimeEditable\\":true', 'default platform settings policy should allow bounded AI policy editing');
 assertIncludes(defaultRender, '\\"defaultMode\\":\\"exact_email\\"', 'default platform settings policy should use exact-email discovery');
-assertIncludes(defaultRender, '\\"defaultValue\\":false', 'default platform settings policy should keep password signup off');
+assertIncludes(defaultRender, '\\"defaultMethods\\":[\\"password\\",\\"oidc\\"]', 'default platform settings policy should enable password and OIDC sign-in');
 const trustedDirectoryPolicyRender = helmTemplate([
   '--set-json',
   'platformSettings.memberDiscovery.allowedModes=["disabled","exact_email","directory"]',
   '--set-string',
   'platformSettings.memberDiscovery.defaultMode=directory',
   '--set-json',
-  'platformSettings.passwordSignup.allowedValues=[false]'
+  'platformSettings.userSignInMethods.allowedMethods=["oidc"]',
+  '--set-json',
+  'platformSettings.userSignInMethods.defaultMethods=["oidc"]'
 ]);
 assertIncludes(
   trustedDirectoryPolicyRender,
@@ -1234,7 +1236,8 @@ assertIncludes(
   'trusted installations should be able to opt into directory discovery'
 );
 assertIncludes(trustedDirectoryPolicyRender, '\\"defaultMode\\":\\"directory\\"', 'trusted installations should be able to default directory discovery on');
-assertIncludes(trustedDirectoryPolicyRender, '\\"allowedValues\\":[false]', 'deployments should be able to fix password signup off');
+assertIncludes(trustedDirectoryPolicyRender, '\\"allowedMethods\\":[\\"oidc\\"]', 'deployments should be able to restrict sign-in to OIDC');
+assertIncludes(trustedDirectoryPolicyRender, '\\"defaultMethods\\":[\\"oidc\\"]', 'deployments should be able to default sign-in to OIDC');
 assertIncludes(defaultRender, 'TRUST_PROXY: "1"', 'control-plane trusted proxy setting should render');
 assertIncludes(
   defaultRender,
