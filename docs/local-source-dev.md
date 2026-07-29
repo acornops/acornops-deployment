@@ -67,8 +67,12 @@ control-plane admin API with exactly the console's eight scopes, and starts a
 dedicated Keycloak realm for the required human administrator session. Open
 `http://127.0.0.1:4173` and sign in with
 `admin@acornops.local / devpass`. The admin port binds only to the loopback
-interface. The local BFF token and OIDC credentials are development-only and
-must never be reused outside this profile.
+interface. Keep using this exact origin rather than `localhost:4173`, because
+browser cookies are host-specific. Local admin sessions have a seven-day
+maximum lifetime and a twenty-four-hour idle and recent-auth window. Their
+Redis record, the Keycloak realm, and Dex state use named volumes, so ordinary
+`task local-up` rebuilds preserve sign-in state. The local BFF token and OIDC
+credentials are development-only and must never be reused outside this profile.
 
 ## Stop / Reset
 
@@ -77,7 +81,8 @@ task local-down
 task local-reset
 ```
 
-`local-reset` removes named volumes and cleans demo namespace resources when either fixture profile was used.
+`local-reset` removes named volumes, including authentication and session
+state, and cleans demo namespace resources when either fixture profile was used.
 `task local-down` includes the connected admin profile by default;
 `local-reset` always includes the profile.
 

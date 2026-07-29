@@ -429,7 +429,7 @@
     "platformSettings": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["memberDiscovery", "aiPolicy", "passwordSignup"],
+      "required": ["memberDiscovery", "aiPolicy", "userSignInMethods"],
       "properties": {
         "memberDiscovery": {
           "type": "object",
@@ -453,18 +453,23 @@
             "runtimeEditable": { "type": "boolean" }
           }
         },
-        "passwordSignup": {
+        "userSignInMethods": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["allowedValues", "defaultValue"],
+          "required": ["allowedMethods", "defaultMethods"],
           "properties": {
-            "allowedValues": {
+            "allowedMethods": {
               "type": "array",
               "minItems": 1,
               "uniqueItems": true,
-              "items": { "type": "boolean" }
+              "items": { "type": "string", "enum": ["password", "oidc"] }
             },
-            "defaultValue": { "type": "boolean" }
+            "defaultMethods": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "type": "string", "enum": ["password", "oidc"] }
+            }
           }
         }
       }

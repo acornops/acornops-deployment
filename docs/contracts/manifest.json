@@ -134,8 +134,8 @@
       "platformSettings.memberDiscovery.allowedModes",
       "platformSettings.memberDiscovery.defaultMode",
       "platformSettings.aiPolicy.runtimeEditable",
-      "platformSettings.passwordSignup.allowedValues",
-      "platformSettings.passwordSignup.defaultValue"
+      "platformSettings.userSignInMethods.allowedMethods",
+      "platformSettings.userSignInMethods.defaultMethods"
     ],
     "auditLoggingHelmValues": [
       "auditLogging.mode",

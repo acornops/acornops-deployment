@@ -506,7 +506,10 @@ for (const marker of [
   'ADMIN_CONSOLE_DATA_MODE: control-plane',
   'CONTROL_PLANE_ADMIN_BASE_URL: http://control-plane:8081',
   'exec 3<>/dev/tcp/127.0.0.1/9000',
-  '127.0.0.1:${PLATFORM_ADMIN_CONSOLE_PORT:-4173}:4173'
+  '127.0.0.1:${PLATFORM_ADMIN_CONSOLE_PORT:-4173}:4173',
+  'ADMIN_SESSION_MAX_AGE_SECONDS: ${ADMIN_SESSION_MAX_AGE_SECONDS:-604800}',
+  'ADMIN_SESSION_IDLE_TIMEOUT_SECONDS: ${ADMIN_SESSION_IDLE_TIMEOUT_SECONDS:-86400}',
+  'ADMIN_SESSION_REAUTH_SECONDS: ${ADMIN_SESSION_REAUTH_SECONDS:-86400}'
 ]) {
   expect(localCompose.includes(marker), `Local Compose should preserve the connected platform-admin marker ${marker}`);
 }

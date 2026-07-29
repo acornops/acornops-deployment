@@ -24,7 +24,11 @@ task local-ps
 The profile publishes `http://127.0.0.1:4173`, enables the private
 control-plane admin API, configures the BFF's exact eight-scope local token, and
 requires sign-in through a deployment-owned Keycloak realm. The local
-administrator is `admin@acornops.local / devpass`.
+administrator is `admin@acornops.local / devpass`. Use the exact
+`http://127.0.0.1:4173` origin consistently so the host-scoped browser cookie
+is reused. Local admin sessions remain valid for up to seven days, with a
+twenty-four-hour idle and recent-auth window, and survive ordinary rebuilds
+through the existing named Redis and identity-provider volumes.
 
 Operate or stop the same profile with:
 
@@ -482,16 +486,18 @@ platformSettings:
     defaultMode: exact_email
   aiPolicy:
     runtimeEditable: true
-  passwordSignup:
-    allowedValues: [false, true]
-    defaultValue: false
+  userSignInMethods:
+    allowedMethods: [password, oidc]
+    defaultMethods: [password, oidc]
 ```
 
 Enable `directory` discovery only when the AcornOps user directory is trusted
 organization-wide. AI runtime policy can narrow the provider, model, reasoning
-summary, and reasoning-effort values under `ai`; it cannot add values. Password
-signup can be enabled only when both Helm policy permits it and the deployment's
-password authentication and verification-email prerequisites are ready.
+summary, and reasoning-effort values under `ai`; it cannot add values. User
+Sign-In Methods controls workspace-user Password and OIDC login. Selecting
+Password also permits first-time self-service signup when the deployment's
+password and verification-email prerequisites are ready. Platform Admin login
+remains OIDC-only.
 
 Keep secrets, identity-provider endpoints, SMTP credentials, database and Redis
 endpoints, signing keys, and bootstrap administrator credentials deployment-only.
