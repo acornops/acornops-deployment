@@ -28,11 +28,14 @@ services:
     build:
       context: ../../../platform-admin-console
       dockerfile: Dockerfile
+      target: dev
     image: acornops/platform-admin-console:local
+    command: ["npm", "run", "dev"]
     environment:
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: 4173
+      CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
       ADMIN_CONSOLE_DATA_MODE: control-plane
       CONTROL_PLANE_ADMIN_BASE_URL: http://control-plane:8081
       CONTROL_PLANE_ADMIN_TOKEN: ${PLATFORM_ADMIN_BFF_TOKEN:-acornops-local-platform-admin-bff-token}
@@ -52,6 +55,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 20
+    volumes:
+      - ../../../platform-admin-console:/app
+      - platform-admin-console-node-modules:/app/node_modules
     ports:
       - "127.0.0.1:${PLATFORM_ADMIN_CONSOLE_PORT:-4173}:4173"
     restart: unless-stopped
@@ -479,6 +485,7 @@ services:
 
 volumes:
   management-console-node-modules:
+  platform-admin-console-node-modules:
   control-plane-node-modules:
   agentk-node-modules:
   keycloak-postgres-data:

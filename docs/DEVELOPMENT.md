@@ -40,6 +40,9 @@ task local-up PLATFORM_ADMIN_CONSOLE=false
 The console is available at
 `http://127.0.0.1:4173` and uses the dedicated local administrator
 `admin@acornops.local / devpass`.
+Its source checkout and container dependencies are mounted separately, so
+browser changes hot-reload through Vite while the same Node process continues
+to enforce the local control-plane BFF and administrator-session boundary.
 
 Stop while preserving data:
 

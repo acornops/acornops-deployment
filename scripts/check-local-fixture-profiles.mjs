@@ -125,6 +125,11 @@ expect(Boolean(platformAdminConfig.services['keycloak-postgres']), 'platform-adm
 expect(platformAdminService.environment.ADMIN_CONSOLE_DATA_MODE === 'control-plane', 'platform-admin console must use control-plane data mode');
 expect(platformAdminService.environment.CONTROL_PLANE_ADMIN_BASE_URL === 'http://control-plane:8081', 'platform-admin console must use the internal control-plane URL');
 expect(platformAdminService.environment.CONTROL_PLANE_ADMIN_TOKEN === localAdminToken, 'platform-admin console must receive the local BFF token');
+expect(platformAdminService.environment.NODE_ENV === 'production', 'platform-admin console must preserve production human-session enforcement');
+expect(platformAdminService.build.target === 'dev', 'platform-admin console must use its development image target locally');
+expect(platformAdminService.command.join(' ') === 'npm run dev', 'platform-admin console must start its hot-reload development command');
+expect(platformAdminService.volumes.some((volume) => volume.target === '/app'), 'platform-admin console must mount local source');
+expect(platformAdminService.volumes.some((volume) => volume.target === '/app/node_modules'), 'platform-admin console must isolate container dependencies');
 expect(platformAdminService.ports[0].host_ip === '127.0.0.1', 'platform-admin console must bind only to the loopback interface');
 expect(platformAdminConfig.services['control-plane'].environment.CONTROL_PLANE_ADMIN_API_ENABLED === 'true', 'platform-admin profile must enable the admin API');
 expect(platformAdminConfig.services['control-plane'].environment.CONTROL_PLANE_ADMIN_HUMAN_AUTH_REQUIRED === 'true', 'platform-admin profile must require a human admin session');

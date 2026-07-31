@@ -503,6 +503,10 @@ for (const marker of [
 }
 for (const marker of [
   'platform-admin-console:',
+  'target: dev',
+  'command: ["npm", "run", "dev"]',
+  '- ../../../platform-admin-console:/app',
+  '- platform-admin-console-node-modules:/app/node_modules',
   'ADMIN_CONSOLE_DATA_MODE: control-plane',
   'CONTROL_PLANE_ADMIN_BASE_URL: http://control-plane:8081',
   'exec 3<>/dev/tcp/127.0.0.1/9000',
