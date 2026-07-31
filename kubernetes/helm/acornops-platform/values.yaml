@@ -39,6 +39,17 @@ mcpOAuth:
   httpTimeoutMs: 10000
   maxResponseBytes: 65536
 
+gitImports:
+  # Git hosts accepted by the skill-import URL field. API access is anonymous.
+  # Setting this array replaces the defaults; include every host users should access.
+  hosts:
+    - provider: github
+      webBaseUrl: https://github.com
+      apiBaseUrl: https://api.github.com
+    - provider: gitlab
+      webBaseUrl: https://gitlab.com
+      apiBaseUrl: https://gitlab.com/api/v4
+
 exposure:
   ingress:
     # Whether this chart renders a Kubernetes Ingress for public HTTP routes.

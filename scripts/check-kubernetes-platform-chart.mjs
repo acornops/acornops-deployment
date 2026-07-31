@@ -1301,6 +1301,30 @@ assertMatch(
 );
 assertIncludes(defaultRender, 'WORKSPACE_AUDIT_LOGGING_MODE: "read_write"', 'audit logging mode should default to read_write');
 assertIncludes(defaultRender, 'WORKSPACE_AUDIT_RETENTION_DAYS: "365"', 'audit retention days should default to 365');
+assertIncludes(
+  defaultRender,
+  'GIT_IMPORT_HOSTS_JSON: "[{\\"apiBaseUrl\\":\\"https://api.github.com\\",\\"provider\\":\\"github\\",\\"webBaseUrl\\":\\"https://github.com\\"},{\\"apiBaseUrl\\":\\"https://gitlab.com/api/v4\\",\\"provider\\":\\"gitlab\\",\\"webBaseUrl\\":\\"https://gitlab.com\\"}]"',
+  'Git skill imports should default to GitHub.com and GitLab.com'
+);
+const customGitImportHostsRender = helmTemplate([
+  '--set-json',
+  'gitImports.hosts=[{"provider":"gitlab","webBaseUrl":"https://git.example.com/platform","apiBaseUrl":"https://git.example.com/platform/api/v4"}]'
+]);
+assertIncludes(
+  customGitImportHostsRender,
+  'GIT_IMPORT_HOSTS_JSON: "[{\\"apiBaseUrl\\":\\"https://git.example.com/platform/api/v4\\",\\"provider\\":\\"gitlab\\",\\"webBaseUrl\\":\\"https://git.example.com/platform\\"}]"',
+  'custom Git import hosts should render into the control-plane ConfigMap'
+);
+const invalidGitHubApiBase = expectHelmFailure([
+  '--set-json',
+  'gitImports.hosts=[{"provider":"github","webBaseUrl":"https://github.example.com","apiBaseUrl":"https://github.example.com/api/v4"}]'
+], 'GitHub import hosts should reject a non-GitHub API path');
+assertIncludes(invalidGitHubApiBase, '/gitImports/hosts/0/apiBaseUrl', 'GitHub API path validation should identify the invalid value');
+const duplicateGitImportHosts = expectHelmFailure([
+  '--set-json',
+  'gitImports.hosts=[{"provider":"gitlab","webBaseUrl":"https://git.example.com","apiBaseUrl":"https://git.example.com/api/v4"},{"provider":"gitlab","webBaseUrl":"https://git.example.com","apiBaseUrl":"https://git.example.com/api/v4"}]'
+], 'Git import hosts should reject exact duplicate definitions');
+assertIncludes(duplicateGitImportHosts, '/gitImports/hosts', 'duplicate Git import host validation should identify the host array');
 const customAuditRender = helmTemplate(['--set', 'auditLogging.mode=write_only', '--set', 'auditLogging.retentionDays=90']);
 assertIncludes(customAuditRender, 'WORKSPACE_AUDIT_LOGGING_MODE: "write_only"', 'audit logging mode should render configured value');
 assertIncludes(customAuditRender, 'WORKSPACE_AUDIT_RETENTION_DAYS: "90"', 'audit retention days should render configured value');

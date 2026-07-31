@@ -17,6 +17,7 @@ data:
   CONTROL_PLANE_BASE_URL: {{ include "acornops-platform.publicUrl" . | quote }}
   MANAGEMENT_CONSOLE_BASE_URL: {{ include "acornops-platform.managementConsoleUrl" . | quote }}
   MCP_OAUTH_ENABLED: {{ .Values.mcpOAuth.enabled | quote }}
+  GIT_IMPORT_HOSTS_JSON: {{ .Values.gitImports.hosts | toJson | quote }}
   CONTROL_PLANE_DISTRIBUTED_ROUTING_ENABLED: {{ .Values.agentGateway.distributedRouting.enabled | quote }}
   CONTROL_PLANE_AGENT_OWNER_TTL_SECONDS: {{ .Values.agentGateway.distributedRouting.ownerTtlSeconds | quote }}
   CONTROL_PLANE_AGENT_SNAPSHOT_INTERVAL_SECONDS: {{ .Values.agentGateway.snapshotIntervalSeconds | quote }}

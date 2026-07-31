@@ -51,6 +51,39 @@
         "maxResponseBytes": { "type": "integer", "minimum": 1024, "maximum": 1048576 }
       }
     },
+    "gitImports": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hosts"],
+      "properties": {
+        "hosts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["provider", "webBaseUrl", "apiBaseUrl"],
+            "properties": {
+              "provider": { "type": "string", "enum": ["github", "gitlab"] },
+              "webBaseUrl": { "type": "string", "format": "uri", "pattern": "^https://", "minLength": 1, "maxLength": 2048 },
+              "apiBaseUrl": { "type": "string", "format": "uri", "pattern": "^https://", "minLength": 1, "maxLength": 2048 }
+            },
+            "allOf": [
+              {
+                "if": { "properties": { "provider": { "const": "github" } }, "required": ["provider"] },
+                "then": { "properties": { "apiBaseUrl": { "pattern": "^(https://api\\.github\\.com/?|https://[^?#]+/api/v3/?)$" } } }
+              },
+              {
+                "if": { "properties": { "provider": { "const": "gitlab" } }, "required": ["provider"] },
+                "then": { "properties": { "apiBaseUrl": { "pattern": "^https://[^?#]+/api/v4/?$" } } }
+              }
+            ]
+          }
+        }
+      }
+    },
     "exposure": {
       "type": "object",
       "additionalProperties": false,

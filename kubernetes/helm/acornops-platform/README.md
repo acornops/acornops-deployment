@@ -51,6 +51,8 @@ The chart values are organized by operator concern:
 - `automation`: durable runtime mode, canary workspace allow-list, and worker poll interval
 - `mcpOAuth`: enabled-by-default automatic individual-user OAuth, flow and
   refresh timing, outbound metadata response limits, and an operator kill switch
+- `gitImports.hosts`: GitHub and GitLab web/API base URL pairs accepted by
+  URL-only skill import
 - `internalTransport.tls`: optional operator-supplied internal HTTPS/mTLS for service-to-service traffic
 - `internalAuth`: gateway token claims and signing-key metadata
 - `networkPolicies`: ingress, DNS, public egress, Postgres, Redis, Vault, and per-component extra egress
@@ -71,6 +73,43 @@ The chart values are organized by operator concern:
   MCP registries
 - `platformSettings`: deployment ceilings and defaults for audited runtime
   member discovery, AI policy, and workspace-user sign-in methods
+
+## Git Skill Import Hosts
+
+Skill import accepts one full HTTPS URL and resolves it against the
+deployment-owned `gitImports.hosts` allowlist. GitHub.com and GitLab.com are
+enabled by default. Setting `gitImports.hosts` replaces that default array, so
+include every public and self-managed host that users should access. Provide
+both the user-facing web base URL and its API base URL:
+
+```yaml
+gitImports:
+  hosts:
+    - provider: github
+      webBaseUrl: https://github.example.com
+      apiBaseUrl: https://github.example.com/api/v3
+    - provider: gitlab
+      webBaseUrl: https://gitlab.example.com
+      apiBaseUrl: https://gitlab.example.com/api/v4
+```
+
+Imports are anonymous; this setting does not carry Git credentials. For an
+internal host, also allow the destination under
+`networkPolicies.extraEgress.controlPlane`, using the host's stable IP or CIDR
+and HTTPS port. If the host uses a private CA, add that CA through
+`global.trust.additionalCaBundle` or the control-plane trust override.
+
+```yaml
+networkPolicies:
+  extraEgress:
+    controlPlane:
+      - to:
+          - ipBlock:
+              cidr: 10.20.30.40/32
+        ports:
+          - protocol: TCP
+            port: 443
+```
 
 ## Authentication Values Upgrade
 
