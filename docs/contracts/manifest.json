@@ -135,7 +135,9 @@
       "platformSettings.memberDiscovery.defaultMode",
       "platformSettings.aiPolicy.runtimeEditable",
       "platformSettings.userSignInMethods.allowedMethods",
-      "platformSettings.userSignInMethods.defaultMethods"
+      "platformSettings.userSignInMethods.defaultMethods",
+      "platformSettings.kubernetesRbacAdditions.runtimeEditable",
+      "platformSettings.kubernetesRbacAdditions.profiles[].{key,name,description?,resources[].{apiGroup,apiVersion,resource,kind,scope,verbs[]}}"
     ],
     "auditLoggingHelmValues": [
       "auditLogging.mode",

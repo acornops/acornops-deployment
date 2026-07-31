@@ -70,7 +70,13 @@ The chart values are organized by operator concern:
   source policy, and secret-backed bootstrap sources for private or air-gapped
   MCP registries
 - `platformSettings`: deployment ceilings and defaults for audited runtime
-  member discovery, AI policy, and workspace-user sign-in methods
+  member discovery, AI policy, workspace-user sign-in methods, and the baseline
+  catalog of named Kubernetes custom-resource RBAC profiles used by future
+  cluster onboarding
+
+See `examples/values-kubernetes-rbac-profiles.yaml` for a CloudNativePG
+baseline profile. The chart intentionally ships with an empty profile catalog;
+operators opt into third-party CRD identities they maintain.
 
 ## Authentication Values Upgrade
 

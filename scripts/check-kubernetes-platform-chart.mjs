@@ -1220,6 +1220,7 @@ assertIncludes(defaultRender, 'PLATFORM_SETTINGS_POLICY_JSON:', 'control-plane p
 assertIncludes(defaultRender, '\\"runtimeEditable\\":true', 'default platform settings policy should allow bounded AI policy editing');
 assertIncludes(defaultRender, '\\"defaultMode\\":\\"exact_email\\"', 'default platform settings policy should use exact-email discovery');
 assertIncludes(defaultRender, '\\"defaultMethods\\":[\\"password\\",\\"oidc\\"]', 'default platform settings policy should enable password and OIDC sign-in');
+assertIncludes(defaultRender, '\\"kubernetesRbacAdditions\\":{\\"profiles\\":[],\\"runtimeEditable\\":true}', 'default platform settings policy should render an empty editable Kubernetes RBAC baseline');
 const trustedDirectoryPolicyRender = helmTemplate([
   '--set-json',
   'platformSettings.memberDiscovery.allowedModes=["disabled","exact_email","directory"]',
@@ -1238,6 +1239,17 @@ assertIncludes(
 assertIncludes(trustedDirectoryPolicyRender, '\\"defaultMode\\":\\"directory\\"', 'trusted installations should be able to default directory discovery on');
 assertIncludes(trustedDirectoryPolicyRender, '\\"allowedMethods\\":[\\"oidc\\"]', 'deployments should be able to restrict sign-in to OIDC');
 assertIncludes(trustedDirectoryPolicyRender, '\\"defaultMethods\\":[\\"oidc\\"]', 'deployments should be able to default sign-in to OIDC');
+const kubernetesRbacPolicyRender = helmTemplate([
+  '--set-json',
+  'platformSettings.kubernetesRbacAdditions.profiles=[{"key":"cnpg","name":"CNPG","description":"CloudNativePG clusters","resources":[{"apiGroup":"postgresql.cnpg.io","apiVersion":"v1","resource":"clusters","kind":"Cluster","scope":"namespaced","verbs":["get","list","watch","create","patch","delete"]}]}]'
+]);
+assertIncludes(kubernetesRbacPolicyRender, '\\"key\\":\\"cnpg\\"', 'deployments should be able to provide Kubernetes RBAC baseline profiles');
+assertIncludes(kubernetesRbacPolicyRender, '\\"verbs\\":[\\"get\\",\\"list\\",\\"watch\\",\\"create\\",\\"patch\\",\\"delete\\"]', 'deployment RBAC profiles should preserve bounded verbs');
+const invalidKubernetesRbacPolicy = expectHelmFailure([
+  '--set-json',
+  'platformSettings.kubernetesRbacAdditions.profiles=[{"key":"unsafe","name":"Unsafe","resources":[{"apiGroup":"example.io","apiVersion":"v1","resource":"widgets","kind":"Widget","scope":"namespaced","verbs":["patch"]}]}]'
+], 'Kubernetes RBAC deployment profiles should require list whenever patch is configured');
+assertMatch(invalidKubernetesRbacPolicy, /platformSettings\/kubernetesRbacAdditions\/profiles/, 'invalid Kubernetes RBAC deployment profiles should identify the values path');
 assertIncludes(defaultRender, 'TRUST_PROXY: "1"', 'control-plane trusted proxy setting should render');
 assertIncludes(
   defaultRender,
