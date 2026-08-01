@@ -359,7 +359,7 @@ directly under `values`; use supported Kubernetes Secret references such as
 
 Target chat coordination warnings are controlled by `components.controlPlane.recentActivity.windowSeconds`, which renders to `TARGET_CHAT_RECENT_ACTIVITY_WINDOW_SECONDS`. The default is `300` seconds.
 
-Workflow and target-chat PDF report retention is controlled by `components.controlPlane.reportArtifacts.maxRetentionDays`, which renders to `TARGET_CHAT_REPORT_RETENTION_DAYS`. The default is `30` days, and the chart accepts values from `1` through `365` days. Workflow requests cannot override this deployment policy. Execution duration remains controlled only by `agent.runtime.maxRuntimeMs`, rendered as `AGENT_MAX_RUNTIME_MS`.
+Generated-document retention is controlled by `components.controlPlane.reportArtifacts.maxRetentionDays`, which renders to `GENERATED_DOCUMENT_RETENTION_DAYS`. The default is `30` days, and the chart accepts values from `1` through `365` days. Individual requests cannot override this deployment policy. Execution duration remains controlled only by `agent.runtime.maxRuntimeMs`, rendered as `AGENT_MAX_RUNTIME_MS`.
 
 External integration account linking uses `EXTERNAL_INTEGRATION_CLIENTS_JSON`
 from the existing platform Secret. The JSON contains installed client

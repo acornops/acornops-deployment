@@ -1276,7 +1276,7 @@ assertIncludes(
 );
 assertIncludes(
   defaultRender,
-  'TARGET_CHAT_REPORT_RETENTION_DAYS: "30"',
+  'GENERATED_DOCUMENT_RETENTION_DAYS: "30"',
   'workflow and target-chat report retention should default to 30 days'
 );
 const customReportRetentionRender = helmTemplate([
@@ -1285,7 +1285,7 @@ const customReportRetentionRender = helmTemplate([
 ]);
 assertIncludes(
   customReportRetentionRender,
-  'TARGET_CHAT_REPORT_RETENTION_DAYS: "45"',
+  'GENERATED_DOCUMENT_RETENTION_DAYS: "45"',
   'workflow and target-chat report retention should render the configured deployment value'
 );
 const localeRender = helmTemplate(['--set', 'components.managementConsole.locales.existingConfigMap=console-locales']);

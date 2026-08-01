@@ -887,16 +887,6 @@ await waitFor('agent detail', async () => {
   if (!payload.agent || payload.agent.id !== agent.id) throw new Error('agent detail id does not match listed agent');
 });
 
-await waitFor('agent versions', async () => {
-  const { text } = await request(
-    'agent versions',
-    config.consoleHost,
-    `/api/v1/agents/${encodeURIComponent(agent.id)}/versions?workspaceId=${encodeURIComponent(workspace.id)}`,
-    { headers: { cookie } }
-  );
-  requireListItems(parseJson('agent versions', text), 'agent versions');
-});
-
 const workflow = await waitFor('workspace workflows', async () => {
   const { text } = await request(
     'workspace workflows',

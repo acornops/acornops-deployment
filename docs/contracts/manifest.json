@@ -2,7 +2,7 @@
   "repo": "deployment",
   "version": 1,
   "executionContractVersion": 2,
-  "workflowSchemaEpoch": "workflow-v2-greenfield-1",
+  "databaseSchemaEpoch": "greenfield-1",
   "runtimeDependencies": [
     "management-console",
     "platform-admin-console",
@@ -102,7 +102,7 @@
     ],
     "workflowRuntimePolicyEnv": [
       "AGENT_MAX_RUNTIME_MS",
-      "TARGET_CHAT_REPORT_RETENTION_DAYS"
+      "GENERATED_DOCUMENT_RETENTION_DAYS"
     ],
     "adminApiHelmValues": [
       "adminApi.enabled",

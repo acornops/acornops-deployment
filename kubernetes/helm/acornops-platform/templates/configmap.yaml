@@ -32,7 +32,7 @@ data:
   CONVERSATION_RETENTION_JOB_INTERVAL_SECONDS: {{ .Values.components.controlPlane.conversationRetention.jobIntervalSeconds | quote }}
   TOOL_RESULT_ARTIFACT_RETENTION_DAYS: {{ .Values.components.controlPlane.toolResultArtifacts.retentionDays | quote }}
   TOOL_RESULT_ARTIFACT_MAX_BYTES: {{ .Values.components.controlPlane.toolResultArtifacts.maxBytes | quote }}
-  TARGET_CHAT_REPORT_RETENTION_DAYS: {{ .Values.components.controlPlane.reportArtifacts.maxRetentionDays | quote }}
+  GENERATED_DOCUMENT_RETENTION_DAYS: {{ .Values.components.controlPlane.reportArtifacts.maxRetentionDays | quote }}
   WORKSPACE_AUDIT_LOGGING_MODE: {{ .Values.auditLogging.mode | quote }}
   WORKSPACE_AUDIT_RETENTION_DAYS: {{ .Values.auditLogging.retentionDays | quote }}
   TARGET_CHAT_RECENT_ACTIVITY_WINDOW_SECONDS: {{ .Values.components.controlPlane.recentActivity.windowSeconds | quote }}

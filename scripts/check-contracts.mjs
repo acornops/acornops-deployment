@@ -308,6 +308,7 @@ for (const identifier of [
 const agentDeploy = readFileSync(path.join(root, 'scripts/agent-deploy.sh'), 'utf8');
 const localUp = readFileSync(path.join(root, 'scripts/local-up.sh'), 'utf8');
 const localDown = readFileSync(path.join(root, 'scripts/local-down.sh'), 'utf8');
+const localReset = readFileSync(path.join(root, 'scripts/local-reset.sh'), 'utf8');
 const localCompose = readFileSync(path.join(root, 'compose/local/compose.source.yaml'), 'utf8');
 const localPlatformAdminRealm = readFileSync(
   path.join(root, 'compose/vm-prod/oidc/keycloak/realm-acornops-platform-admin.json'),
@@ -548,6 +549,10 @@ expect(
     && localDown.includes('case "${PLATFORM_ADMIN_CONSOLE:-true}"')
     && localDown.includes('false)'),
   'local lifecycle tasks should include platform admin by default while preserving an explicit false override'
+);
+expect(
+  localReset.includes('--profile target-fixtures') && localReset.includes('--profile cluster-fixture'),
+  'local-reset should include both fixture profiles so AgentK and AgentV are removed during a full reset'
 );
 expect(
   localUp.includes('up -d --force-recreate --no-deps edge-proxy')

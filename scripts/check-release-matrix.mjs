@@ -93,8 +93,8 @@ for (const [name, block] of [
 ]) {
   expect(stackMetadata(block, 'executionContractVersion') === '2', `${name} must declare exact execution contract version 2`);
   expect(
-    stackMetadata(block, 'workflowSchemaEpoch') === 'workflow-v2-greenfield-1',
-    `${name} must declare workflow schema epoch workflow-v2-greenfield-1`
+    stackMetadata(block, 'databaseSchemaEpoch') === 'greenfield-1',
+    `${name} must declare database schema epoch greenfield-1`
   );
 }
 const declaredExecutionContractVersions = [

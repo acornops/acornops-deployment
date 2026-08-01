@@ -509,7 +509,7 @@ docker compose -f compose/vm-prod/compose.yaml -f compose/local/compose.source.y
 
 docker compose -f compose/vm-prod/compose.yaml -f compose/local/compose.source.yaml --profile local --profile oidc-dex --env-file env/local/.env.local exec -T cp-postgres \
   psql -U acornops -d acornops_control_plane \
-  -c "select target_id,key_version,last_seen_at,last_heartbeat_at,last_connection_id,last_agent_version from target_agent_registrations order by target_id;"
+  -c "select target_id,key_version,last_seen_at,last_heartbeat_at,last_connection_id,last_connector_version from target_agent_registrations order by target_id;"
 ```
 
 ### 12.2 Control-Plane Redis

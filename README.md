@@ -254,7 +254,7 @@ Notes:
 - set `LOCAL_K3D_AUTO_CREATE=false` to skip k3d bootstrap and use an existing kubeconfig instead
 - conversation history retention defaults to 30 days (`CONVERSATION_RETENTION_DAYS`)
 - recent target chat activity warnings default to 5 minutes (`TARGET_CHAT_RECENT_ACTIVITY_WINDOW_SECONDS=300`)
-- AI assistant behavior can be tuned from the deployment env with `ASSISTANT_CONTEXT_MAX_TOKENS`, `ASSISTANT_BUDGET_CENTS`, `ASSISTANT_LLM_TEMPERATURE`, `ASSISTANT_MAX_RUNTIME_MS`, `ASSISTANT_MAX_STEPS`, `ASSISTANT_MAX_TOOL_CALLS`, `ASSISTANT_MAX_DUPLICATE_TOOL_CALLS`, and `ASSISTANT_TOOL_DEFAULT_TIMEOUT_MS`; target instructions come from the registered target adapter, workspace Agent instructions come from the selected versioned Agent, and Workflow and target-chat PDF retention uses `TARGET_CHAT_REPORT_RETENTION_DAYS`
+- AI assistant behavior can be tuned from the deployment env with `ASSISTANT_CONTEXT_MAX_TOKENS`, `ASSISTANT_BUDGET_CENTS`, `ASSISTANT_LLM_TEMPERATURE`, `ASSISTANT_MAX_RUNTIME_MS`, `ASSISTANT_MAX_STEPS`, `ASSISTANT_MAX_TOOL_CALLS`, `ASSISTANT_MAX_DUPLICATE_TOOL_CALLS`, and `ASSISTANT_TOOL_DEFAULT_TIMEOUT_MS`; target instructions come from the registered target adapter, workspace Agent instructions come from the run snapshot of the selected Agent, and generated-document retention uses `GENERATED_DOCUMENT_RETENTION_DAYS`
 
 ### Production (Docker-on-VM)
 

@@ -8,7 +8,7 @@ stacks:
   - name: local-dev
     description: Local full-stack source-mounted development profile.
     executionContractVersion: 2
-    workflowSchemaEpoch: workflow-v2-greenfield-1
+    databaseSchemaEpoch: greenfield-1
     components:
       platformAdminConsole: acornops/platform-admin-console:local
       managementConsole: acornops/management-console:local
@@ -18,9 +18,9 @@ stacks:
       agentK: acornops/agentk:local
 
   - name: vm-prod-v1
-    description: Pinned greenfield Workflow V2 Docker-on-VM production stack.
+    description: Pinned greenfield Docker-on-VM production stack.
     executionContractVersion: 2
-    workflowSchemaEpoch: workflow-v2-greenfield-1
+    databaseSchemaEpoch: greenfield-1
     components:
       managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.24
       controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.25
@@ -28,9 +28,9 @@ stacks:
       llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.14
 
   - name: k8s-platform-v1
-    description: Pinned greenfield Workflow V2 Kubernetes stack deployed with the acornops-platform Helm chart.
+    description: Pinned greenfield Kubernetes stack deployed with the acornops-platform Helm chart.
     executionContractVersion: 2
-    workflowSchemaEpoch: workflow-v2-greenfield-1
+    databaseSchemaEpoch: greenfield-1
     chart:
       acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.17
       acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.11

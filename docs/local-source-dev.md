@@ -23,7 +23,7 @@ On macOS, automated command installs use Homebrew. On Linux, `task install` supp
 1. `task install` creates `env/local/.env.local` and `env/local/.env.agent` from the example files when missing. Both files contain local-only deterministic target identities and Agent keys that may be overridden for alternate registrations.
 2. The normal local stack seeds a development workspace with Kubernetes and Linux VM targets, then starts AgentK and AgentV for them. Production configuration keeps development seeding disabled.
 3. Keep full-stack runtime configuration here. Component repository `.env.example` files are for standalone service runs; they should not be copied into each component when using `task local-up`.
-4. Assistant runtime limits remain configurable through `ASSISTANT_*`; target instructions come from the registered target-adapter contract, while workspace Agent instructions come from the selected versioned Agent record.
+4. Assistant runtime limits remain configurable through `ASSISTANT_*`; target instructions come from the registered target-adapter contract, while workspace Agent instructions come from the selected Agent snapshot stored for the run.
 
 ## Run
 

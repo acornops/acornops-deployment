@@ -346,10 +346,11 @@ kubectl -n acornops delete networkpolicy \
 
 ### Roll back
 
-Workflow schema epoch 2 is not rollback-safe to a V1 stack. Helm rollback is
-supported only between releases that declare the same `workflowSchemaEpoch` and
-execution contract version 2. Restoring V1 requires restoring the pre-cutover
-database backup and the complete pinned V1 image matrix during an outage.
+The greenfield database schema epoch is not rollback-safe to a stack with an
+incompatible schema. Helm rollback is supported only between releases that
+declare the same `databaseSchemaEpoch` and execution contract version. Moving
+to an incompatible epoch requires restoring the matching database backup and
+complete pinned image matrix during an outage.
 
 Use Helm history to select the preceding published chart revision, then roll
 back and repeat the policy, Service, EndpointSlice, and route checks:

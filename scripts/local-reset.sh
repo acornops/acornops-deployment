@@ -41,7 +41,20 @@ if [[ -n "${CLI_EXTRA_PROFILES}" ]]; then
 fi
 LOCAL_EXTRA_PROFILES="${LOCAL_EXTRA_PROFILES:-}"
 
-COMPOSE_PROFILE_ARGS=(--profile local --profile oidc-dex --profile oidc-keycloak --profile platform-admin --profile local-vault)
+# Reset must include every optional local profile. `local-up` enables
+# target-fixtures by default, so omitting that profile here leaves AgentK/AgentV
+# containers (and their network endpoints) running across a supposedly clean
+# reset. Including both fixture profiles is safe for `down` and also handles a
+# stack that was started with the cluster-only fixture.
+COMPOSE_PROFILE_ARGS=(
+  --profile local
+  --profile oidc-dex
+  --profile oidc-keycloak
+  --profile platform-admin
+  --profile local-vault
+  --profile target-fixtures
+  --profile cluster-fixture
+)
 if [[ -n "${LOCAL_EXTRA_PROFILES}" ]]; then
   EXTRA_PROFILE_LIST="${LOCAL_EXTRA_PROFILES//,/ }"
   for profile in ${EXTRA_PROFILE_LIST}; do
