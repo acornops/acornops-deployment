@@ -222,6 +222,12 @@ platformSettings:
     defaultMethods:
       - password
       - oidc
+  kubernetesRbacAdditions:
+    # Deployment profiles form the baseline future-onboarding catalog. Platform
+    # admins may add, replace, or disable profiles when runtime editing is on.
+    # Existing cluster RBAC snapshots are never reconciled from this catalog.
+    runtimeEditable: true
+    profiles: []
 
 workspaceRoles:
   # Omit this list to let the control plane default to all built-in roles.

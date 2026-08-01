@@ -121,12 +121,14 @@ operator-held secrets and must not appear in values files, ConfigMaps, logs, or
 docs examples.
 
 Helm `platformSettings` renders a non-secret `PLATFORM_SETTINGS_POLICY_JSON`
-ceiling for `member_discovery`, `ai_policy`, and `user_sign_in_methods`. The control
-plane stores only versioned runtime overrides in PostgreSQL. Redeployments do
-not reset those overrides; a tighter deployment policy constrains their
-effective value without deleting the stored record. Every console mutation
-requires `admin:system:write`, an expected version, and a reason, and is
-committed in the same transaction as its admin audit event.
+ceiling for `member_discovery`, `ai_policy`, and `user_sign_in_methods`, plus a
+baseline `kubernetesRbacAdditions` catalog. The control plane stores only
+versioned runtime overrides in PostgreSQL. Kubernetes RBAC overrides are an
+additive set of profile upserts and disabled deployment keys; the effective
+catalog is resolved only for future cluster onboarding. Redeployments do not
+reset overrides, and existing cluster snapshots are never reconciled. Every
+console mutation requires `admin:system:write`, an expected version, and a
+reason, and is committed in the same transaction as its admin audit event.
 
 Workspace plans are configured by Helm `workspacePlans` or VM
 `WORKSPACE_PLANS_CONFIG_JSON` and rendered into the control plane as

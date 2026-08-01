@@ -1,0 +1,19 @@
+platformSettings:
+  kubernetesRbacAdditions:
+    runtimeEditable: true
+    profiles:
+      - key: cnpg
+        name: CloudNativePG
+        description: CloudNativePG database clusters
+        resources:
+          - apiGroup: postgresql.cnpg.io
+            apiVersion: v1
+            resource: clusters
+            kind: Cluster
+            scope: namespaced
+            verbs:
+              - get
+              - list
+              - watch
+              - create
+              - patch

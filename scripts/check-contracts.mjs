@@ -605,8 +605,8 @@ const repoManifests = {
   'management-console': 'management-console/docs/contracts/manifest.json',
   'execution-engine': 'execution-engine/docs/contracts/manifest.json',
   'llm-gateway': 'llm-gateway/docs/contracts/manifest.json',
-  'agentk': 'k8s-agent/docs/contracts/manifest.json',
-  'agentv': 'vm-agent/docs/contracts/manifest.json'
+  'agentk': 'agentk/docs/contracts/manifest.json',
+  'agentv': 'agentv/docs/contracts/manifest.json'
 };
 
 const missing = Object.values(repoManifests).filter((relativePath) => {

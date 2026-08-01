@@ -429,7 +429,7 @@
     "platformSettings": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["memberDiscovery", "aiPolicy", "userSignInMethods"],
+      "required": ["memberDiscovery", "aiPolicy", "userSignInMethods", "kubernetesRbacAdditions"],
       "properties": {
         "memberDiscovery": {
           "type": "object",
@@ -469,6 +469,19 @@
               "minItems": 1,
               "uniqueItems": true,
               "items": { "type": "string", "enum": ["password", "oidc"] }
+            }
+          }
+        },
+        "kubernetesRbacAdditions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["runtimeEditable", "profiles"],
+          "properties": {
+            "runtimeEditable": { "type": "boolean" },
+            "profiles": {
+              "type": "array",
+              "maxItems": 25,
+              "items": { "$ref": "#/definitions/kubernetesRbacAddition" }
             }
           }
         }
@@ -1413,6 +1426,42 @@
         "secretName": { "type": "string" },
         "certKey": { "type": "string", "minLength": 1 },
         "keyKey": { "type": "string", "minLength": 1 }
+      }
+    },
+    "kubernetesRbacAddition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "resources"],
+      "properties": {
+        "key": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "description": { "type": "string", "maxLength": 240 },
+        "resources": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": { "$ref": "#/definitions/kubernetesRbacAdditionResource" }
+        }
+      }
+    },
+    "kubernetesRbacAdditionResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["apiGroup", "apiVersion", "resource", "kind", "scope", "verbs"],
+      "properties": {
+        "apiGroup": { "type": "string", "minLength": 1, "maxLength": 253, "pattern": "^[a-z0-9](?:[-a-z0-9.]*[a-z0-9])?$" },
+        "apiVersion": { "type": "string", "minLength": 1, "maxLength": 63, "pattern": "^[a-z0-9][a-z0-9.-]*$" },
+        "resource": { "type": "string", "minLength": 1, "maxLength": 253, "pattern": "^[a-z0-9](?:[-a-z0-9.]*[a-z0-9])?$" },
+        "kind": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Z][A-Za-z0-9]*$" },
+        "scope": { "type": "string", "enum": ["namespaced", "cluster"] },
+        "verbs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["get", "list", "watch", "create", "patch", "delete"] },
+          "allOf": [{ "if": { "contains": { "const": "patch" } }, "then": { "contains": { "const": "list" } } }]
+        }
       }
     },
     "workspaceCapability": {
