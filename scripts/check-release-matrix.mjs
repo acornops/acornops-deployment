@@ -67,6 +67,7 @@ function commandSucceeds(command, args) {
 const stackVersions = read('release/stack-versions.yaml');
 const chart = read(`${chartPath}/Chart.yaml`);
 const compose = read('compose/vm-prod/compose.yaml');
+const chartReleaseWorkflow = read('.github/workflows/release-chart.yml');
 const localStack = stackBlock(stackVersions, 'local-dev');
 const vmProdStack = stackBlock(stackVersions, 'vm-prod-v1');
 const k8sPlatformStack = stackBlock(stackVersions, 'k8s-platform-v1');
@@ -110,6 +111,10 @@ expect(extractYamlString(chart, 'version') === expectedPlatformChart.version, `p
 expect(
   extractYamlString(chart, 'appVersion') === imageVersion(expectedK8sImages.controlPlane),
   `platform chart appVersion should track the control-plane image version ${imageVersion(expectedK8sImages.controlPlane)}`
+);
+expect(
+  !chartReleaseWorkflow.includes('--app-version'),
+  'chart release workflow must preserve Chart.yaml appVersion when packaging'
 );
 
 for (const [component, image] of Object.entries(expectedVmProdImages)) {

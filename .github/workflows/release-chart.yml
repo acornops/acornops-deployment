@@ -52,8 +52,7 @@ jobs:
       - name: Package chart
         run: |
           helm package "${CHART_DIR}" \
-            --version "${{ steps.version.outputs.version }}" \
-            --app-version "${{ steps.version.outputs.version }}"
+            --version "${{ steps.version.outputs.version }}"
 
       - name: Push chart
         run: helm push "${CHART_NAME}-${{ steps.version.outputs.version }}.tgz" "oci://${REGISTRY}/acornops/charts"
