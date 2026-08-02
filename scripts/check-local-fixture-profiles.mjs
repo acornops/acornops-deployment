@@ -122,6 +122,10 @@ const platformAdminDescriptors = JSON.parse(platformAdminConfig.services['contro
 expect(Boolean(platformAdminService), 'platform-admin profile must include the platform-admin console');
 expect(Boolean(platformAdminConfig.services.keycloak), 'platform-admin profile must include its dedicated Keycloak identity provider');
 expect(Boolean(platformAdminConfig.services['keycloak-postgres']), 'platform-admin profile must include the Keycloak database');
+expect(
+  platformAdminConfig.services.keycloak.healthcheck.start_period === '4m0s',
+  'platform-admin Keycloak must allow four minutes for first-run initialization'
+);
 expect(platformAdminService.environment.ADMIN_CONSOLE_DATA_MODE === 'control-plane', 'platform-admin console must use control-plane data mode');
 expect(platformAdminService.environment.CONTROL_PLANE_ADMIN_BASE_URL === 'http://control-plane:8081', 'platform-admin console must use the internal control-plane URL');
 expect(platformAdminService.environment.CONTROL_PLANE_ADMIN_TOKEN === localAdminToken, 'platform-admin console must receive the local BFF token');

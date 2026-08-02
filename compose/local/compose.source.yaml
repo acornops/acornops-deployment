@@ -356,7 +356,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 30
-      start_period: 15s
+      # A fresh database requires Keycloak to build its Quarkus runtime, apply
+      # the schema, and import both local realms. On Docker Desktop this can
+      # take several minutes, so keep probing without exhausting the retry
+      # budget during first-run initialization.
+      start_period: 240s
     volumes:
       - ../../../control-plane/deploy/keycloak/realm-acornops.json:/opt/keycloak/data/import/realm-acornops.json:ro
       - ./oidc/keycloak/realm-acornops-platform-admin.json:/opt/keycloak/data/import/realm-acornops-platform-admin.json:ro

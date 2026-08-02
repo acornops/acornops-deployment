@@ -907,9 +907,12 @@ await waitFor('workspace workflow options', async () => {
     { headers: { cookie } }
   );
   const payload = requireObject(parseJson('workspace workflow options', text), 'workspace workflow options');
-  for (const field of ['agents', 'mcpServers', 'mcpTools', 'skills', 'approvalPolicies', 'runtimeLimits', 'retentionPolicies']) {
-    if (!Array.isArray(payload[field])) throw new Error(`workflow options response missing ${field} array`);
-  }
+  if (!Array.isArray(payload.agents)) throw new Error('workflow options response missing agents array');
+  const sourceAvailability = requireObject(
+    payload.sourceAvailability,
+    'workflow options source availability'
+  );
+  requireObject(sourceAvailability.agents, 'workflow options Agent source availability');
 });
 
 await waitFor('workspace workflow schedules', async () => {

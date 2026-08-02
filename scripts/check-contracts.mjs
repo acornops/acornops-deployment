@@ -71,6 +71,11 @@ expect(
     localSmoke.includes('AI_PROVIDER_CREDENTIAL_MISSING'),
   'Local smoke should test fail-closed AI dispatch when the selected provider credential is absent'
 );
+expect(
+  localSmoke.includes('payload.sourceAvailability') &&
+    localSmoke.includes('sourceAvailability.agents'),
+  'Local smoke should verify workflow option source availability from the current control-plane contract'
+);
 for (const pathSuffix of [
   '/target-insights?limit=25',
   '/target-insights/activity',
