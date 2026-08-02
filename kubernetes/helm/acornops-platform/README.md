@@ -80,9 +80,10 @@ operators opt into third-party CRD identities they maintain.
 
 ## Authentication Values Upgrade
 
-Chart `0.0.1-experimental.17` pins the independently released
-`ghcr.io/acornops/platform-admin-console:0.0.1-experimental.2` image while keeping the
-platform-admin workload disabled by default.
+The chart pins the platform-admin-console image declared in `values.yaml` while
+keeping the platform-admin workload disabled by default. Use the chart version
+and complete component set recorded in `release/stack-versions.yaml`; do not
+combine independently released component tags.
 `userAccess` configures workspace-user and management-console authentication;
 `platformAdminAccess` configures only privileged platform-admin browser access.
 This is a clean-cut values migration and the chart rejects the old paths.
