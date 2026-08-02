@@ -22,24 +22,24 @@ stacks:
     executionContractVersion: 2
     databaseSchemaEpoch: greenfield-1
     components:
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.24
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.25
-      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.12
-      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.14
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.30
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.30
+      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.13
+      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.17
 
   - name: k8s-platform-v1
     description: Pinned greenfield Kubernetes stack deployed with the acornops-platform Helm chart.
     executionContractVersion: 2
     databaseSchemaEpoch: greenfield-1
     chart:
-      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.18
-      acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.11
+      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.19
+      acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.12
     components:
-      platformAdminConsole: ghcr.io/acornops/platform-admin-console:0.0.1-experimental.2
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.24
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.25
-      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.12
-      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.14
+      platformAdminConsole: ghcr.io/acornops/platform-admin-console:0.0.1-experimental.4
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.30
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.30
+      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.13
+      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.17
 
 compatibility:
   notes:
