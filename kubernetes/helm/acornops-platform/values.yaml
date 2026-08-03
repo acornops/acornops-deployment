@@ -496,7 +496,7 @@ components:
     replicas: 2
     image:
       repository: ghcr.io/acornops/platform-admin-console
-      tag: 0.0.1-experimental.4
+      tag: 0.0.1-experimental.5
       pullPolicy: IfNotPresent
     service:
       port: 80
@@ -532,7 +532,7 @@ components:
     basePath: /
     image:
       repository: ghcr.io/acornops/management-console
-      tag: 0.0.1-experimental.32
+      tag: 0.0.1-experimental.33
       pullPolicy: IfNotPresent
     service:
       port: 80
@@ -608,7 +608,7 @@ components:
       maxSubscriptionsPerWorkspace: 100
     image:
       repository: ghcr.io/acornops/control-plane
-      tag: 0.0.1-experimental.31
+      tag: 0.0.1-experimental.32
       pullPolicy: IfNotPresent
     service:
       port: 8081
@@ -678,7 +678,7 @@ components:
     maxRequestBodyBytes: 1000000
     image:
       repository: ghcr.io/acornops/execution-engine
-      tag: 0.0.1-experimental.13
+      tag: 0.0.1-experimental.14
       pullPolicy: IfNotPresent
     service:
       port: 8080
@@ -788,7 +788,7 @@ components:
       requireRedisInProduction: true
     image:
       repository: ghcr.io/acornops/llm-gateway
-      tag: 0.0.1-experimental.17
+      tag: 0.0.1-experimental.18
       pullPolicy: IfNotPresent
     service:
       port: 8001
