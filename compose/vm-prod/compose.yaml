@@ -2,7 +2,7 @@ name: acornops-platform
 
 services:
   management-console:
-    image: ${MANAGEMENT_CONSOLE_IMAGE:-ghcr.io/acornops/management-console:0.0.1-experimental.30}
+    image: ${MANAGEMENT_CONSOLE_IMAGE:-ghcr.io/acornops/management-console:0.0.1-experimental.32}
     depends_on:
       control-plane:
         condition: service_healthy
@@ -36,7 +36,7 @@ services:
       - acornops
 
   control-plane:
-    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.30}
+    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.31}
     environment:
       NODE_ENV: production
       PORT: 8081
@@ -187,7 +187,7 @@ services:
       - acornops
 
   control-plane-init:
-    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.30}
+    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.31}
     environment:
       DATABASE_URL: postgresql://${CP_DB_USER:-acornops}:${CP_DB_PASSWORD:-acornops}@cp-postgres:5432/${CP_DB_NAME:-acornops_control_plane}
     command: ["node", "dist/scripts/control-plane-db.js", "migrate"]

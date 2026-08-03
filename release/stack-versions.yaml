@@ -22,8 +22,8 @@ stacks:
     executionContractVersion: 2
     databaseSchemaEpoch: greenfield-1
     components:
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.30
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.30
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.32
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.31
       executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.13
       llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.17
 
@@ -32,12 +32,12 @@ stacks:
     executionContractVersion: 2
     databaseSchemaEpoch: greenfield-1
     chart:
-      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.20
-      acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.12
+      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.21
+      acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.13
     components:
       platformAdminConsole: ghcr.io/acornops/platform-admin-console:0.0.1-experimental.4
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.30
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.30
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.32
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.31
       executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.13
       llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.17
 
