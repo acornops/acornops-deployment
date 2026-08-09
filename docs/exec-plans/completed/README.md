@@ -7,4 +7,3 @@ Move completed deployment plans here when the implementation and validation are 
 - [OpenAI Chat Completions API surface](openai-chat-completions-surface.md)
 - [Connected local platform admin profile](local-platform-admin-profile.md)
 - [Platform admin demo release](platform-admin-demo-release.md)
-- [AgentV 0.0.1-experimental.6 platform matrix](agentv-0.0.1-experimental.6.md)
