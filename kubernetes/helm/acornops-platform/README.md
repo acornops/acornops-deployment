@@ -364,6 +364,23 @@ namespace scope, agent-key source, and write-mode values. Do not place secrets
 directly under `values`; use supported Kubernetes Secret references such as
 `imagePullSecrets`.
 
+## Generated AgentV Install Defaults
+
+`targetAgents.agentv.systemd` pins the bootstrap command returned when a user
+connects a Linux/systemd VM:
+
+```yaml
+targetAgents:
+  agentv:
+    systemd:
+      version: 0.0.1-experimental.5
+      releaseBaseUrl: https://github.com/acornops/agentv/releases/download
+```
+
+The release base must use HTTPS. Internal mirrors are supported when they
+preserve the `v<version>/<asset>` layout containing the bootstrap script,
+archive, and archive checksum.
+
 Target chat coordination warnings are controlled by `components.controlPlane.recentActivity.windowSeconds`, which renders to `TARGET_CHAT_RECENT_ACTIVITY_WINDOW_SECONDS`. The default is `300` seconds.
 
 Generated-document retention is controlled by `components.controlPlane.reportArtifacts.maxRetentionDays`, which renders to `GENERATED_DOCUMENT_RETENTION_DAYS`. The default is `30` days, and the chart accepts values from `1` through `365` days. Individual requests cannot override this deployment policy. Execution duration remains controlled only by `agent.runtime.maxRuntimeMs`, rendered as `AGENT_MAX_RUNTIME_MS`.

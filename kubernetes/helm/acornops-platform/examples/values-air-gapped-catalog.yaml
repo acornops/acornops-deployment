@@ -28,3 +28,10 @@ components:
           name: internal-platform-ca
           key: ca-bundle.pem
         secretKeyRef: null
+
+# The mirror must preserve the v<version>/<asset> layout used by GitHub Releases.
+targetAgents:
+  agentv:
+    systemd:
+      version: 0.0.1-experimental.5
+      releaseBaseUrl: https://artifacts.internal.example/acornops/agentv

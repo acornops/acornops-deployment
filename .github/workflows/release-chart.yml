@@ -28,6 +28,11 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: Lint chart
         run: |
           helm lint "${CHART_DIR}" --strict
@@ -45,6 +50,12 @@ jobs:
         run: |
           helm template acornops "${CHART_DIR}" --namespace acornops >/tmp/acornops-platform.yaml
           helm template acornops "${CHART_DIR}" --namespace acornops -f "${CHART_DIR}/examples/values-production.yaml" >/tmp/acornops-platform-production.yaml
+
+      - name: Verify pinned stack dependencies are published
+        env:
+          ACORNOPS_CHECK_PUBLISHED_ARTIFACTS: "true"
+          ACORNOPS_SKIP_CURRENT_PLATFORM_CHART_ARTIFACT: "true"
+        run: node scripts/check-release-matrix.mjs
 
       - name: Log in to GHCR for Helm
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login "${REGISTRY}" --username "${{ github.actor }}" --password-stdin

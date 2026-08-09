@@ -191,7 +191,7 @@ task doctor
 task local-up
 ```
 
-`local-up` runs the llm-gateway and control-plane migrations before starting the full stack with deterministic local Kubernetes and Linux VM targets. It creates k3d, starts AgentK and AgentV with local-only development keys, and applies demo workloads by default. The seeded workspace receives the same universal starter automation as every workspace created through normal product flows. Set `SEED_DEMO_K3S_WORKLOADS=false` to skip the workloads.
+`local-up` runs the llm-gateway and control-plane migrations before starting the full stack with deterministic local Kubernetes and Linux VM targets. It creates k3d, starts AgentK and AgentV with local-only development keys, and applies demo workloads by default. The seeded workspace receives the same universal starter automation as every workspace created through normal product flows. Set `SEED_DEMO_K3S_WORKLOADS=false` to skip the workloads. The VM fixture also advertises an approval-gated, simulated `restart_service` action for `ssh.service`; it does not restart a Docker or host process. Set `ACORNOPS_VM_MOCK_RESTART_ENABLED=false` before `task local-up` to hide it.
 
 The platform-admin console starts by default against the real local control
 plane. Omit it when it is not needed with:

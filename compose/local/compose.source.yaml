@@ -144,6 +144,8 @@ services:
       AGENTK_HELM_NAMESPACE: ${AGENTK_HELM_NAMESPACE:-acornops-agentk}
       AGENTK_HELM_VALUES_JSON: ${AGENTK_HELM_VALUES_JSON:-}
       AGENTK_HELM_ADDITIONAL_CA_FILE_PATH: ${AGENTK_HELM_ADDITIONAL_CA_FILE_PATH:-}
+      AGENTV_SYSTEMD_RELEASE_VERSION: ${AGENTV_SYSTEMD_RELEASE_VERSION:-0.0.1-experimental.5}
+      AGENTV_SYSTEMD_RELEASE_BASE_URL: ${AGENTV_SYSTEMD_RELEASE_BASE_URL:-https://github.com/acornops/agentv/releases/download}
       OIDC_ENABLED: ${OIDC_ENABLED:-true}
       OIDC_PROVIDER_NAME: ${OIDC_PROVIDER_NAME:-dex}
       OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:-http://dex:5556/dex}
@@ -476,7 +478,10 @@ services:
       ACORNOPS_VM_OS_FAMILY: linux
       ACORNOPS_VM_SERVICE_MANAGER: systemd
       ACORNOPS_VM_ALLOWED_LOG_UNITS: ${ACORNOPS_VM_ALLOWED_LOG_UNITS:-acornops-agentv.service}
-      ACORNOPS_AGENT_WRITE_ENABLED: "false"
+      # Docker does not run a real systemd host. This explicitly enables only
+      # the AgentV mock restart of ssh.service for local UI and approval flows.
+      ACORNOPS_AGENT_WRITE_ENABLED: ${ACORNOPS_VM_MOCK_RESTART_ENABLED:-true}
+      ACORNOPS_AGENT_MOCK_ACTIONS_ENABLED: ${ACORNOPS_VM_MOCK_RESTART_ENABLED:-true}
       CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
     depends_on:
       control-plane:

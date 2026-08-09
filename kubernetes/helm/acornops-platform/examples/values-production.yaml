@@ -179,6 +179,10 @@ targetAgents:
       releaseName: acornops-agentk
       chartRef: oci://ghcr.io/acornops/charts/acornops-agentk
       namespace: acornops-agentk
+  agentv:
+    systemd:
+      version: 0.0.1-experimental.5
+      releaseBaseUrl: https://github.com/acornops/agentv/releases/download
 
 internalTransport:
   tls:

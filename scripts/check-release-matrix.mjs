@@ -86,6 +86,10 @@ const expectedK8sImages = {
 };
 const expectedPlatformChart = splitVersionedOciRef(chartLine(k8sPlatformStack, 'acornopsPlatform'));
 const expectedAgentChart = splitVersionedOciRef(chartLine(k8sPlatformStack, 'acornopsAgentK'));
+const expectedVmAgentVRelease = componentLine(vmProdStack, 'agentV');
+const expectedK8sAgentVRelease = componentLine(k8sPlatformStack, 'agentV');
+const agentVReleaseMatch = expectedVmAgentVRelease?.match(/^https:\/\/github\.com\/acornops\/agentv\/releases\/tag\/v(.+)$/);
+const expectedAgentVVersion = agentVReleaseMatch?.[1];
 
 for (const [name, block] of [
   ['local-dev', localStack],
@@ -115,6 +119,12 @@ expect(
 expect(
   !chartReleaseWorkflow.includes('--app-version'),
   'chart release workflow must preserve Chart.yaml appVersion when packaging'
+);
+expect(Boolean(expectedAgentVVersion), 'vm-prod-v1 should pin AgentV to an immutable GitHub release tag');
+expect(expectedK8sAgentVRelease === expectedVmAgentVRelease, 'VM and Kubernetes platform tracks should pin the same AgentV release');
+expect(
+  compose.includes(`AGENTV_SYSTEMD_RELEASE_VERSION:-${expectedAgentVVersion}`),
+  'VM compose should default generated AgentV installs to the release-matrix version'
 );
 
 for (const [component, image] of Object.entries(expectedVmProdImages)) {
@@ -187,7 +197,11 @@ const renderedWithAgentAirgapDefaults = run('helm', [
   '--set-string',
   `targetAgents.agentk.helm.values.image.tag=${expectedAgentChart.version}`,
   '--set-string',
-  'targetAgents.agentk.helm.files.additionalCaBundle.sourcePath=/opt/acornops/organization-ca.pem'
+  'targetAgents.agentk.helm.files.additionalCaBundle.sourcePath=/opt/acornops/organization-ca.pem',
+  '--set-string',
+  'targetAgents.agentv.systemd.version=1.2.3',
+  '--set-string',
+  'targetAgents.agentv.systemd.releaseBaseUrl=https://artifacts.internal.example/acornops/agentv'
 ]);
 for (const [component, image] of Object.entries(expectedK8sImages)) {
   const output = component === 'platformAdminConsole' ? renderedWithPlatformAdmin : rendered;
@@ -202,6 +216,14 @@ expect(
   'platform chart should leave the optional agentk chart version pin unset by default'
 );
 expect(
+  rendered.includes(`AGENTV_SYSTEMD_RELEASE_VERSION: "${expectedAgentVVersion}"`),
+  'platform chart should render the release-matrix AgentV version'
+);
+expect(
+  rendered.includes('AGENTV_SYSTEMD_RELEASE_BASE_URL: "https://github.com/acornops/agentv/releases/download"'),
+  'platform chart should render the default AgentV release source'
+);
+expect(
   renderedWithAgentPin.includes('AGENTK_HELM_CHART_VERSION: "0.0.1-experimental.4"'),
   'platform chart should render an explicit agentk chart version pin when configured'
 );
@@ -210,6 +232,11 @@ expect(
     'AGENTK_HELM_CHART_REF: "oci://docker.artifact.internal.org/acornops/charts/acornops-agentk"'
   ),
   'platform chart should render an internal AgentK chart reference'
+);
+expect(
+  renderedWithAgentAirgapDefaults.includes('AGENTV_SYSTEMD_RELEASE_VERSION: "1.2.3"')
+    && renderedWithAgentAirgapDefaults.includes('AGENTV_SYSTEMD_RELEASE_BASE_URL: "https://artifacts.internal.example/acornops/agentv"'),
+  'platform chart should render an internal AgentV release mirror and exact version'
 );
 expect(
   renderedWithAgentAirgapDefaults.includes(
@@ -232,7 +259,9 @@ if (process.env.ACORNOPS_CHECK_PUBLISHED_ARTIFACTS === 'true') {
       `ghcr.io/acornops/agentk:${expectedAgentChart.version}`
     ])
   ];
-  const expectedPublishedCharts = [expectedPlatformChart, expectedAgentChart];
+  const expectedPublishedCharts = process.env.ACORNOPS_SKIP_CURRENT_PLATFORM_CHART_ARTIFACT === 'true'
+    ? [expectedAgentChart]
+    : [expectedPlatformChart, expectedAgentChart];
   for (const image of expectedPublishedImages) {
     expect(commandSucceeds('docker', ['manifest', 'inspect', image]), `published image should exist: ${image}`);
   }
@@ -240,6 +269,18 @@ if (process.env.ACORNOPS_CHECK_PUBLISHED_ARTIFACTS === 'true') {
     expect(
       commandSucceeds('helm', ['show', 'chart', chartRef.ref, '--version', chartRef.version]),
       `published chart should exist: ${chartRef.ref}:${chartRef.version}`
+    );
+  }
+  const agentVReleaseBase = `https://github.com/acornops/agentv/releases/download/v${expectedAgentVVersion}`;
+  for (const asset of [
+    'install-agentv.sh',
+    'install-agentv.sh.sha256',
+    `agentv-${expectedAgentVVersion}.tar.gz`,
+    `agentv-${expectedAgentVVersion}.tar.gz.sha256`
+  ]) {
+    expect(
+      commandSucceeds('curl', ['-fsSIL', `${agentVReleaseBase}/${asset}`]),
+      `published AgentV release asset should exist: ${asset}`
     );
   }
 }

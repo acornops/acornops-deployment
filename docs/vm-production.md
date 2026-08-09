@@ -15,6 +15,7 @@ Requires [Task](https://taskfile.dev/) CLI (`task`) and Docker Compose.
 3. Set production values:
    - domain/hosts (`BASE_DOMAIN=acornops.dev`, `API_HOST=api.acornops.dev`, `MANAGEMENT_CONSOLE_HOST=console.acornops.dev`, and any OIDC subdomains)
    - pinned image tags (`MANAGEMENT_CONSOLE_IMAGE`, `CONTROL_PLANE_IMAGE`, `EXECUTION_ENGINE_IMAGE`, `LLM_GATEWAY_IMAGE`)
+   - pinned VM agent release (`AGENTV_SYSTEMD_RELEASE_VERSION`) and HTTPS release source (`AGENTV_SYSTEMD_RELEASE_BASE_URL`)
    - OIDC settings (production Keycloak or equivalent provider)
    - secrets and DB credentials
    - durable execution settings (`PERSIST_RUN_EVENTS=true`, `EXECUTION_ENGINE_REDIS_URL=redis://cp-redis:6379/1`)

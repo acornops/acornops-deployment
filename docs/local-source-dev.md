@@ -48,9 +48,11 @@ Local AgentK collection and tools cover all namespaces by default. Set `ACORNOPS
 The AgentV source overlay mounts only `src/`; dependencies and its Linux native
 addon remain image-built, so an old dependency volume cannot mask a package
 change and container builds cannot overwrite host-native artifacts. The local
-fixture runs the real read-only AgentV process with mock Linux/systemd adapters
-and never advertises `restart_service` because the container has no privileged
-host helper.
+fixture runs AgentV with mock Linux/systemd adapters. It advertises an
+approval-gated simulated `restart_service` action for `ssh.service`, so local
+operator flows can be exercised without a privileged host helper. The action
+does not restart any Docker or host process. Set
+`ACORNOPS_VM_MOCK_RESTART_ENABLED=false` before `task local-up` to hide it.
 
 Optional profiles:
 

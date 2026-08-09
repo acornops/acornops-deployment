@@ -668,6 +668,24 @@
               }
             }
           }
+        },
+        "agentv": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "systemd": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["version", "releaseBaseUrl"],
+              "properties": {
+                "version": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
+                },
+                "releaseBaseUrl": { "type": "string", "maxLength": 2048, "pattern": "^https://[^/@?#\\s'\\\\]+(?:/[^?#\\s'\\\\]*)?$" }
+              }
+            }
+          }
         }
       }
     },

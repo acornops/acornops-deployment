@@ -48,6 +48,11 @@ expect(
   'Deployment manifest should expose the exact agentk install Helm values contract'
 );
 expect(
+  stable(deploymentManifest.contractSurfaces?.agentVInstallSystemdValues) ===
+    stable(['targetAgents.agentv.systemd.version', 'targetAgents.agentv.systemd.releaseBaseUrl']),
+  'Deployment manifest should expose the exact AgentV systemd install values contract'
+);
+expect(
   haSmoke.includes('installWorkloadAgent(agentKey, clusterId)') &&
     haSmoke.includes('config.clusterId=${clusterId}'),
   'HA smoke should install AgentK with the registered cluster ID'
@@ -198,6 +203,11 @@ expect(
   chartSchema.properties?.targetAgents?.properties?.agentk?.properties?.helm?.properties?.files?.properties
     ?.additionalCaBundle?.properties?.sourcePath,
   'Chart schema should expose the generated AgentK install CA source path'
+);
+expect(
+  chartSchema.properties?.targetAgents?.properties?.agentv?.properties?.systemd?.properties?.version
+    && chartSchema.properties?.targetAgents?.properties?.agentv?.properties?.systemd?.properties?.releaseBaseUrl,
+  'Chart schema should expose the generated AgentV systemd release source and exact version'
 );
 expect(
   chartSchema.properties?.agentGateway &&
@@ -493,7 +503,10 @@ expect(
   'Local agentv should use the HTTP control-plane base URL expected by agentv'
 );
 expect(localCompose.includes('ACORNOPS_VM_ALLOWED_LOG_UNITS'), 'Local agentv env should expose exact journald unit configuration');
-expect(localCompose.includes('ACORNOPS_AGENT_WRITE_ENABLED: "false"'), 'Local container AgentV must remain read-only');
+expect(
+  localCompose.includes('ACORNOPS_VM_MOCK_RESTART_ENABLED:-true') && localCompose.includes('ACORNOPS_AGENT_MOCK_ACTIONS_ENABLED'),
+  'Local container AgentV must explicitly use the mock-only restart fixture'
+);
 expect(localCompose.includes('LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES'), 'Local llm-gateway env should expose opt-in deterministic dev responses for smoke tests');
 expect(
   localUp.includes('ensure_local_gateway_signing_key') && localUp.includes('openssl genpkey'),

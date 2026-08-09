@@ -100,7 +100,9 @@ Kubernetes Lease leader election.
 VM target rollout installs versioned AgentV releases as an unprivileged
 Linux/systemd service. It connects outbound and reports bounded diagnostics.
 The optional root-owned action socket remains disabled until an operator
-installs an exact service allowlist. The AgentV container remains read-only.
+installs an exact service allowlist. The Docker-only local fixture instead uses
+an explicit mock restart of `ssh.service` to exercise the approval flow; it
+never restarts a container or host service.
 
 ## Public And Internal Boundaries
 

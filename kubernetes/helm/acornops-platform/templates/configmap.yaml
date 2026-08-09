@@ -53,6 +53,8 @@ data:
   AGENTK_HELM_NAMESPACE: {{ .Values.targetAgents.agentk.helm.namespace | quote }}
   AGENTK_HELM_VALUES_JSON: {{ .Values.targetAgents.agentk.helm.values | toJson | quote }}
   AGENTK_HELM_ADDITIONAL_CA_FILE_PATH: {{ .Values.targetAgents.agentk.helm.files.additionalCaBundle.sourcePath | quote }}
+  AGENTV_SYSTEMD_RELEASE_VERSION: {{ .Values.targetAgents.agentv.systemd.version | quote }}
+  AGENTV_SYSTEMD_RELEASE_BASE_URL: {{ .Values.targetAgents.agentv.systemd.releaseBaseUrl | quote }}
   OIDC_ENABLED: {{ .Values.userAccess.oidc.enabled | quote }}
   {{- if .Values.userAccess.oidc.enabled }}
   OIDC_PROVIDER_NAME: {{ .Values.userAccess.oidc.providerName | quote }}

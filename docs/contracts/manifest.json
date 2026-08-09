@@ -229,6 +229,10 @@
       "targetAgents.agentk.helm.chartRef",
       "targetAgents.agentk.helm.chartVersion"
     ],
+    "agentVInstallSystemdValues": [
+      "targetAgents.agentv.systemd.version",
+      "targetAgents.agentv.systemd.releaseBaseUrl"
+    ],
     "agentVLocalEnv": [
       "ACORNOPS_AGENT_PLATFORM_URL",
       "ACORNOPS_AGENT_ALLOW_INSECURE_TRANSPORT",

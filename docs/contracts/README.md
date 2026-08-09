@@ -22,6 +22,8 @@ This repository owns deployment and compatibility contracts rather than service 
 - Password email verification/reset and SMTP environment wiring
 - Release image compatibility metadata
 - agentk rollout env expectations for Kubernetes cluster installs
+- AgentV exact systemd release version/base URL wiring and published bootstrap,
+  archive, and checksum validation before a production chart is released
 - Universal starter automation provisioning is owned by control plane and is independent of optional development target fixtures
 - MCP registry bootstrap and workspace-management policy, with no public registry enabled by default
 
