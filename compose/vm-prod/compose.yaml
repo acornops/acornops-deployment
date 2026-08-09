@@ -36,7 +36,7 @@ services:
       - acornops
 
   control-plane:
-    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.33}
+    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.34}
     environment:
       NODE_ENV: production
       PORT: 8081
@@ -78,7 +78,7 @@ services:
       AGENTK_HELM_NAMESPACE: ${AGENTK_HELM_NAMESPACE:-acornops-agentk}
       AGENTK_HELM_VALUES_JSON: ${AGENTK_HELM_VALUES_JSON:-}
       AGENTK_HELM_ADDITIONAL_CA_FILE_PATH: ${AGENTK_HELM_ADDITIONAL_CA_FILE_PATH:-}
-      AGENTV_SYSTEMD_RELEASE_VERSION: ${AGENTV_SYSTEMD_RELEASE_VERSION:-0.0.1-experimental.5}
+      AGENTV_SYSTEMD_RELEASE_VERSION: ${AGENTV_SYSTEMD_RELEASE_VERSION:-0.0.1-experimental.6}
       AGENTV_SYSTEMD_RELEASE_BASE_URL: ${AGENTV_SYSTEMD_RELEASE_BASE_URL:-https://github.com/acornops/agentv/releases/download}
       OIDC_ENABLED: ${OIDC_ENABLED:-true}
       OIDC_PROVIDER_NAME: ${OIDC_PROVIDER_NAME:-keycloak}
@@ -189,7 +189,7 @@ services:
       - acornops
 
   control-plane-init:
-    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.33}
+    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.34}
     environment:
       DATABASE_URL: postgresql://${CP_DB_USER:-acornops}:${CP_DB_PASSWORD:-acornops}@cp-postgres:5432/${CP_DB_NAME:-acornops_control_plane}
     command: ["node", "dist/scripts/control-plane-db.js", "migrate"]

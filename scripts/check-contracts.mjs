@@ -504,8 +504,13 @@ expect(
 );
 expect(localCompose.includes('ACORNOPS_VM_ALLOWED_LOG_UNITS'), 'Local agentv env should expose exact journald unit configuration');
 expect(
-  localCompose.includes('ACORNOPS_VM_MOCK_RESTART_ENABLED:-true') && localCompose.includes('ACORNOPS_AGENT_MOCK_ACTIONS_ENABLED'),
-  'Local container AgentV must explicitly use the mock-only restart fixture'
+  localCompose.includes('ACORNOPS_AGENT_WRITE_ENABLED: ${ACORNOPS_VM_MOCK_RESTART_ENABLED:-true}') &&
+    localCompose.includes('ACORNOPS_AGENT_MOCK_ACTIONS_ENABLED: ${ACORNOPS_VM_MOCK_RESTART_ENABLED:-true}'),
+  'Local container AgentV must gate writes and mock actions behind the same fixture override'
+);
+expect(
+  localEnvExample.includes('ACORNOPS_VM_MOCK_RESTART_ENABLED=true'),
+  'Local env example should expose the mock restart fixture override'
 );
 expect(localCompose.includes('LLM_ENABLE_DETERMINISTIC_DEV_RESPONSES'), 'Local llm-gateway env should expose opt-in deterministic dev responses for smoke tests');
 expect(

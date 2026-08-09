@@ -24,10 +24,10 @@ stacks:
     databaseSchemaEpoch: greenfield-1
     components:
       managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.35
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.33
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.34
       executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.14
       llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.18
-      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.5
+      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.6
 
   - name: k8s-platform-v1
     description: Pinned greenfield Kubernetes stack deployed with the acornops-platform Helm chart.
@@ -39,14 +39,14 @@ stacks:
     components:
       platformAdminConsole: ghcr.io/acornops/platform-admin-console:0.0.1-experimental.5
       managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.35
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.33
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.34
       executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.14
       llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.18
-      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.5
+      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.6
 
 compatibility:
   notes:
-    - AgentV v0.0.1-experimental.5 requires control-plane v0.0.1-experimental.33 and management-console v0.0.1-experimental.35; publish both images before releasing platform chart v0.0.1-experimental.23.
+    - AgentV v0.0.1-experimental.6 requires control-plane v0.0.1-experimental.34 and management-console v0.0.1-experimental.35; publish both images before releasing platform chart v0.0.1-experimental.23.
     - Deploy control-plane, execution-engine, and llm-gateway only as one pinned matrix with execution contract version 2.
     - This greenfield schema epoch is a first-install or explicit-reset cutover, not a rolling upgrade.
     - Back up if needed, then explicitly drop and recreate both external application databases.

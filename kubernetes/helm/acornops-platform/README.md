@@ -373,7 +373,7 @@ connects a Linux/systemd VM:
 targetAgents:
   agentv:
     systemd:
-      version: 0.0.1-experimental.5
+      version: 0.0.1-experimental.6
       releaseBaseUrl: https://github.com/acornops/agentv/releases/download
 ```
 
