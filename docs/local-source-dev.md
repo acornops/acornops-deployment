@@ -33,6 +33,12 @@ task local-up
 
 `local-up` generates and persists `GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64` in `.env.local` when it is empty, then runs only the llm-gateway Alembic migrations and control-plane migrations. Keeping that key stable prevents control-plane restarts from invalidating active run tokens or leaving the gateway on a stale JWKS key.
 
+After `local-reset`, the first source startup can take several minutes while
+Docker initializes dependency volumes and the bind-mounted control plane,
+gateway, and Keycloak complete their cold builds. The local Compose overlay
+retains the normal readiness probes but gives the source services a four-minute
+startup grace period so transient CPU contention does not fail `local-up`.
+
 Local startup paths are:
 
 | Command | Control-plane data | Target agents |

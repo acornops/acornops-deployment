@@ -51,6 +51,14 @@ expect(
   defaultConfig.services['llm-gateway'].environment.LLM_PROVIDER_OPENAI_API_SURFACE === 'responses',
   'default local profile must use the OpenAI Responses API'
 );
+expect(
+  defaultConfig.services['control-plane'].healthcheck.start_period === '4m0s',
+  'local control-plane must allow four minutes for a cold source startup'
+);
+expect(
+  defaultConfig.services['llm-gateway'].healthcheck.start_period === '4m0s',
+  'local llm-gateway must allow four minutes for a cold source startup'
+);
 expect(!defaultConfig.services.agentk, 'default local profile must not include AgentK');
 expect(!defaultConfig.services.agentv, 'default local profile must not include AgentV');
 expect(!defaultConfig.services['platform-admin-console'], 'base Compose profile must not include the platform-admin console without its profile');

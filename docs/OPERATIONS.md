@@ -512,6 +512,70 @@ Both VM and Kubernetes production paths run database migrations before applicati
 
 For pre-release deployments, keep external databases disposable or resettable when schema files change.
 
+For the MCP endpoint and owner-lifecycle release containing gateway migrations
+`b20058629f4b` and `c3006973a8d2` plus control-plane migration `006`, use a
+maintenance window rather than a rolling upgrade. The Helm migration hooks do
+not stop existing application pods for you.
+
+1. Stop new run admission and schedulers, drain active runs, and set
+   `REMOTE_MCP_ENABLED=false`.
+2. Drain `mcp_secret_cleanup_jobs` to zero, then stop every old control-plane
+   API/worker and LLM gateway replica. For Kubernetes, scale both Deployments to
+   zero and verify that no old pods or leased cleanup workers remain before
+   running `helm upgrade`; for VM Compose, stop both application services before
+   running the new migration containers. Do not rely on the pre-upgrade hook or
+   Compose dependency ordering to quiesce an old binary. Mixed versions can
+   recreate retired cleanup work or dispatch with an obsolete MCP contract.
+3. Back up both service databases and the gateway secret namespace. Then run
+   `python -m app.scripts.mcp_endpoint_mismatch_preflight` with the new gateway
+   image in report mode. If it reports any non-built-in endpoint mismatch,
+   including a credential-free installation, record the affected
+   workspace/server IDs and run the same command with `--apply-cleanup`. For
+   each duplicate built-in destination, first reconcile control-plane
+   references and select one authoritative server ID. Pass every verified ID
+   as a repeated `--canonical-builtin-server-id` flag in one `--apply-cleanup`
+   invocation; sequential invocations remain nonzero until all duplicates are
+   selected. Finally
+   rerun with `--fail-on-active-connections --fail-on-duplicate-builtins` before
+   migrating. The first flag also fails on any remaining non-built-in mismatch,
+   even when it has no credential connection; gateway migration `b20058629f4b`
+   enforces the same precondition. This path performs OAuth and secret cleanup;
+   direct row deletion is unsafe. Never run its state-changing mode while an
+   old writer is active. Use the llm-gateway operations runbook as the canonical
+   detailed procedure for incident review, cleanup, and built-in deduplication.
+4. Run the gateway migrations and control-plane migration `006` with the new
+   pinned images while the old services remain stopped. Record the individual
+   reset inventory, then apply the explicit offline reset:
+
+   ```bash
+   python -m app.scripts.mcp_user_lifecycle_preflight
+   python -m app.scripts.mcp_user_lifecycle_preflight --apply-individual-reset
+   ```
+
+   The apply command must exit zero with no individual connection, individual
+   secret, or OAuth flow state and must report unchanged workspace-owned
+   connection and installation-secret baselines. Vault deployments require the
+   elevated maintenance policy documented by llm-gateway for this namespace
+   inventory; do not broaden the normal runtime token. Existing individual-user
+   MCP credentials and OAuth state are intentionally reset; workspace-owned
+   credentials are unaffected. After these migrations, application-only
+   rollback is unsafe, even if both old applications are restored together.
+   Before traffic reopens, rollback requires stopping both new services and
+   atomically restoring both database backups plus the gateway secret namespace
+   before starting the old pinned pair. After any new credential write,
+   forward-fix instead of rolling back.
+5. Start only the pinned new LLM gateway and control plane. Keep run admission
+   and remote MCP disabled until every `workspace_member_mcp_lifecycle` row is
+   `synced`, its readiness-blocker count is zero, and
+   `python -m app.scripts.mcp_user_lifecycle_preflight --fail-on-unbound`
+   succeeds with zero individual connection, individual secret, and OAuth flow
+   counts. Confirm endpoint mismatches remain zero, startup built-in
+   reconciliation succeeds, and no old replicas reappear.
+6. Deploy the management console, tell affected users to reconnect individual
+   credentials, smoke test direct Agent and target MCP registration plus
+   none/workspace/individual/OAuth credential lifecycles, and re-enable remote
+   MCP.
+
 ## Required Validation
 
 Before release or deployment changes:

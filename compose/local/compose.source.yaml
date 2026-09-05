@@ -205,6 +205,12 @@ services:
     volumes:
       - ../../../control-plane:/app
       - control-plane-node-modules:/app/node_modules
+    healthcheck:
+      # A cold bind-mounted TypeScript start can spend several minutes
+      # initializing esbuild while the rest of the source stack builds.
+      # Preserve the production readiness probe, but do not exhaust its retry
+      # budget before the development process has begun listening.
+      start_period: 240s
 
   control-plane-init:
     build:
@@ -315,6 +321,11 @@ services:
       - "${LLM_GATEWAY_PORT:-8001}:8001"
     volumes:
       - ../../../llm-gateway:/app
+    healthcheck:
+      # Importing the bind-mounted Python application can be CPU-starved by
+      # the other first-run builds. Keep /ready authoritative after startup,
+      # while allowing the reload process time to begin serving it.
+      start_period: 240s
 
   llm-gateway-init:
     build:

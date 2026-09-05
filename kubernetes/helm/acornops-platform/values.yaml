@@ -837,6 +837,8 @@ components:
 
 migrations:
   # Runs database migrations as Helm pre-install/pre-upgrade hooks.
+  # Hooks do not quiesce existing pods. Scale incompatible control-plane and
+  # llm-gateway cutovers to zero before upgrade as documented in OPERATIONS.md.
   enabled: true
   backoffLimit: 3
   activeDeadlineSeconds: 300
