@@ -133,30 +133,33 @@ the management console host.
 
 ## VM Production
 
-Prepare:
+First select the [installation or upgrade path](#installation-and-upgrade-paths).
+For a fresh installation, prepare:
 
 ```bash
 cp env/vm/.env.example env/vm/.env.prod
 ```
 
-This version establishes a greenfield schema epoch. Back up if needed, then
-explicitly drop and recreate both application databases before deploying:
+For an existing installation, preserve its configured env and secrets; do not
+replace them with the example. Remove stale `MANAGEMENT_CONSOLE_IMAGE`,
+`CONTROL_PLANE_IMAGE`, `EXECUTION_ENGINE_IMAGE`, and `LLM_GATEWAY_IMAGE`
+overrides to inherit the matrix-checked Compose pins, or deliberately set all
+required overrides to a verified coordinated release. Also remove a stale
+`AGENTV_SYSTEMD_RELEASE_VERSION` override to inherit the matrix-checked AgentV
+install version (inspect the rendered control-plane environment with `config`).
+Exported shell variables also override the env file. Inspect the actual operator configuration before
+deployment (include `compose.additional-ca.yaml` when using that overlay):
 
 ```bash
-pg_dump --format=custom --file acornops-control-plane-backup.dump "$CONTROL_PLANE_DATABASE_URL"
-dropdb --force --dbname "$POSTGRES_ADMIN_URL" "$CONTROL_PLANE_DATABASE_NAME"
-createdb --dbname "$POSTGRES_ADMIN_URL" "$CONTROL_PLANE_DATABASE_NAME"
+docker compose -f compose/vm-prod/compose.yaml --profile prod \
+  --env-file env/vm/.env.prod config --images
 ```
 
-Use provider-specific snapshots instead where appropriate. This cutover does not
-preserve pre-release data. Deploy the pinned
-control-plane, execution-engine, and llm-gateway matrix together; mixed versions
-are unsupported.
-
-During the maintenance window, stop new run admission and schedulers, drain
-active runs, set `REMOTE_MCP_ENABLED=false`, and back up the gateway database and
-secret namespace. Smoke test built-in tools plus workspace and individual
-credential lifecycles before re-enabling remote MCP.
+Compare application and migration-job images with `release/stack-versions.yaml`.
+The example inherits Compose pins; `task release-matrix-check` verifies its
+resolved images against the matrix. It does not prove published images contain
+unreleased source changes. Deploy the control-plane, execution-engine, and
+llm-gateway matrix together; mixed versions are unsupported.
 
 Vault KV v2 cleanup must delete metadata beneath the configured namespace,
 mount, `VAULT_PATH_PREFIX`, and workspace path. Limit the cleanup token to that
@@ -184,6 +187,10 @@ task prod-down
 ```
 
 ## Kubernetes Production
+
+First select the [installation or upgrade path](#installation-and-upgrade-paths).
+Migration hooks do not quiesce old application replicas; complete the applicable
+maintenance procedure before an existing-install `helm upgrade`.
 
 Validate:
 
@@ -510,7 +517,73 @@ Both VM and Kubernetes production paths run database migrations before applicati
 - control-plane SQL migrations
 - llm-gateway Alembic migrations
 
-For pre-release deployments, keep external databases disposable or resettable when schema files change.
+### Installation and upgrade paths
+
+`greenfield-1` identifies the schema epoch, not a requirement to wipe every
+existing installation. Select the path using both databases' recorded migration
+history and the selected images' migration files, not a guessed image-version
+range. No minimum published image version is certified by this runbook.
+
+| Starting state | Procedure |
+| --- | --- |
+| Fresh installation with two empty application databases | Configure secrets and endpoints, then run the pinned migration jobs and start the stack. No reset or credential cleanup is needed. |
+| Verified pre-`greenfield-1` schema | No supported in-place migration across this epoch boundary. Use the explicitly approved destructive reset below, or stop and plan a separate data migration. |
+| Existing `greenfield-1` schema with matching recorded migrations | Preserve databases and secrets and apply pending forward migrations using the procedure below. Crossing the MCP lifecycle boundary requires its coordinated maintenance runbook. |
+| Unknown epoch, missing history on non-empty databases, checksum drift, divergent revisions, or a database ahead of the selected images | Stop. Reconcile provenance and rehearse on a backup; do not stamp history, downgrade, or assume a reset is authorized. |
+
+#### Verify the existing greenfield baseline
+
+The control-plane baseline is `001_initial_schema.sql`, recorded in
+`control_plane_schema_migrations`. Run `npm run db:status` from the selected
+control-plane image against the intended database and verify applied file
+checksums match; pending later migrations are expected before upgrade. The
+gateway baseline is Alembic revision `a10047518e6a`, followed by
+`b20058629f4b` and `c3006973a8d2`. Inspect `alembic current` and `alembic history`
+from the selected gateway image and confirm the current revision belongs to
+that chain. Preserve the old image digests, env/Helm values, migration inventory,
+and secret-store configuration as release evidence.
+
+#### Explicit pre-greenfield reset
+
+Only for a verified earlier epoch and explicit operator approval to discard its
+data: stop admission/schedulers, drain work, and stop all application writers.
+Back up **both** application databases and the gateway secret namespace, verify
+restoration, then have the database owner drop and recreate precisely those two
+databases using the provider's procedure. This does not preserve pre-greenfield
+data. Reconcile the old secret namespace using the gateway runbook, then follow
+the fresh-install path. Never apply these reset steps to an ordinary existing
+greenfield upgrade or use a broad volume deletion as a substitute.
+
+#### Existing greenfield forward upgrade
+
+1. Verify the baseline above and the coherent target image/migration set.
+   Rehearse the complete selected procedure on a representative restored backup
+   before approving production. Back up both databases and the secret namespace
+   after quiescing writers; test restore and record the rollback boundary.
+2. If crossing control-plane `006` or gateway `b20058629f4b`/`c3006973a8d2`,
+   follow [the MCP coordinated upgrade](#mcp-coordinated-upgrade) below before
+   reopening traffic. Do not repeat its individual-credential reset when the
+   boundary was already completed and lifecycle reconciliation is healthy.
+3. Run pending migrations with the selected images, keeping old writers stopped
+   for incompatible boundaries. `task prod-up` runs gateway then control-plane
+   migrations, but does **not** stop old services for you. Helm pre-upgrade hooks
+   have the same limitation. Verify migration status and application readiness
+   before admitting work.
+4. For builds containing hosted-readiness changes, control-plane `007`–`012`
+   are additive forward migrations, not another reset. Follow
+   [hosted-readiness rollout](hosted-readiness.md#initial-rollout-or-catalogue-change)
+   for five-pool backfill, every-replica contract verification, and activation.
+   Capacity remains disabled by default; an already activated installation must
+   close admission and dispatch before changing mode/catalogue. Preserve policy,
+   reservation, operation, cancellation, and receipt data. Existing published
+   pins are not evidence that these source changes are included.
+5. Smoke test authentication, retained workspace/target data, run dispatch,
+   tools, and applicable MCP credential lifecycles before reopening traffic.
+   Follow the MCP rollback boundary below when crossing that contract, and the
+   [hosted-readiness rollback](hosted-readiness.md#rollback) for capacity changes;
+   disabling capacity does not authorize a downgrade to contract-unaware code.
+
+### MCP coordinated upgrade
 
 For the MCP endpoint and owner-lifecycle release containing gateway migrations
 `b20058629f4b` and `c3006973a8d2` plus control-plane migration `006`, use a

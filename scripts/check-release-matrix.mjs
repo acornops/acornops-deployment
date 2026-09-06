@@ -135,6 +135,39 @@ for (const [component, image] of Object.entries(expectedVmProdImages)) {
   expect(compose.includes(image), `VM compose fallback should pin ${component} image to ${image}`);
 }
 
+// Exercise the documented installation path, not just the source fallbacks:
+// an explicit image in the example env overrides even a correct Compose pin.
+// Do not let the caller's shell overrides mask a stale shipped example.
+const composeEnv = { ...process.env };
+for (const key of Object.keys(composeEnv)) {
+  if (key.startsWith('COMPOSE_') || key.endsWith('_IMAGE')) delete composeEnv[key];
+}
+delete composeEnv.AGENTV_SYSTEMD_RELEASE_VERSION;
+const composeResult = spawnSync('docker', [
+  'compose', '-f', 'compose/vm-prod/compose.yaml', '--profile', 'prod',
+  '--env-file', 'env/vm/.env.example', 'config', '--format', 'json'
+], { encoding: 'utf8', env: composeEnv });
+if (composeResult.status !== 0) {
+  throw new Error(composeResult.stderr || composeResult.error?.message || 'VM Compose render failed');
+}
+const vmServices = JSON.parse(composeResult.stdout).services;
+expect(
+  vmServices?.['control-plane']?.environment?.AGENTV_SYSTEMD_RELEASE_VERSION === expectedAgentVVersion,
+  `VM example should render generated AgentV installs at ${expectedAgentVVersion}; got ${vmServices?.['control-plane']?.environment?.AGENTV_SYSTEMD_RELEASE_VERSION}`
+);
+for (const [service, component] of Object.entries({
+  'management-console': 'managementConsole',
+  'control-plane': 'controlPlane',
+  'control-plane-init': 'controlPlane',
+  'execution-engine': 'executionEngine',
+  'llm-gateway': 'llmGateway',
+  'llm-gateway-init': 'llmGateway'
+})) {
+  const actual = vmServices?.[service]?.image;
+  expect(actual === expectedVmProdImages[component],
+    `VM example should render ${service} image ${expectedVmProdImages[component]}; got ${actual}`);
+}
+
 for (const [component, image] of Object.entries(expectedK8sImages)) {
   expect(
     typeof image === 'string' && image.length > 0,

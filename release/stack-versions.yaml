@@ -48,6 +48,9 @@ compatibility:
   notes:
     - AgentV v0.0.1-experimental.6 requires control-plane v0.0.1-experimental.34 and management-console v0.0.1-experimental.35; publish both images before releasing platform chart v0.0.1-experimental.23.
     - Deploy control-plane, execution-engine, and llm-gateway only as one pinned matrix with execution contract version 2.
-    - This greenfield schema epoch is a first-install or explicit-reset cutover, not a rolling upgrade.
-    - Back up if needed, then explicitly drop and recreate both external application databases.
+    - Fresh installations start with empty databases; only a verified pre-greenfield epoch requires an explicitly approved destructive reset of both application databases.
+    - Existing greenfield-1 databases use pending forward migrations with matching control-plane 001_initial_schema.sql checksums and gateway ancestry rooted at a10047518e6a; unknown or divergent history must be reconciled before deployment.
+    - Crossing control-plane 006 or gateway b20058629f4b/c3006973a8d2 requires the coordinated MCP maintenance procedure in docs/OPERATIONS.md, including individual credential reconnects and its database/secret restore rollback boundary; it is not a rolling upgrade.
+    - Hosted-readiness control-plane migrations 007-012 are additive; follow docs/hosted-readiness.md for quiesced activation and rollback. Existing pinned images do not certify inclusion of unreleased source changes.
+    - Rehearse upgrades on a representative backup and verify image provenance before release approval; this matrix does not declare an unverified supported source-image version range.
     - Treat this matrix as release source-of-truth for docs and deployment examples.

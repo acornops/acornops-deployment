@@ -37,6 +37,15 @@ For an already activated installation, **close admission and dispatch on every c
 
 Run peer checks from a trusted deployment network. Provide direct addresses for all replicas: the CLI cannot discover replicas omitted from its input. Do not leave old, contract-unaware control planes or workers serving traffic during activation. This is a quiesced rollout.
 
+Legacy attempts without an authoritative reservation timestamp are conservatively
+fenced by existing suspension history. Backfill preserves that unknown ordering;
+it does not turn retained work into a new post-restore attempt. If an older CLI
+already backfilled reservations using rollout time, keep both gates closed and
+reconcile retained attempts in workspaces with suspension history before reopening
+traffic. Those records have no provenance marker: cancel ambiguous attempts and
+create fresh authorized attempts only after checking uncertain side effects. Do
+not delete suspension history or manually change timestamps to resume old work.
+
 ## Suspension and recovery
 
 Administrative and external holds are independent; either suspends the workspace. Clearing one does not clear the other. Suspension cancels accepted queued work and requests cancellation of executing work. Durable cancellation intent survives a rapid restore. Restoring access permits new attempts and never automatically replays cancelled attempts.
