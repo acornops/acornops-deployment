@@ -641,6 +641,12 @@ if (timedOwnerLogArgs.includes('--since=5m') || !timedOwnerLogArgs.includes('--s
 }
 
 const defaultRender = helmTemplate();
+for (const component of ['execution-engine', 'llm-gateway']) {
+  const authorityConfig = manifestDocument(defaultRender, 'ConfigMap', `acornops-acornops-platform-${component}`);
+  const [metadata, data] = authorityConfig.split('\ndata:\n');
+  assertExcludes(metadata, 'ORCH_BASE_URL:', `${component} authority URL belongs in ConfigMap data`);
+  assertIncludes(data, 'ORCH_BASE_URL: "http://acornops-acornops-platform-control-plane:8081"', `${component} must reach the release-specific control plane`);
+}
 assertIncludes(defaultRender, 'kind: Ingress', 'default chart should render an Ingress');
 assertIncludes(defaultRender, 'host: "console.acornops.dev"', 'Ingress should expose the management console host');
 assertIncludes(defaultRender, 'host: "api.acornops.dev"', 'Ingress should expose the platform API host');

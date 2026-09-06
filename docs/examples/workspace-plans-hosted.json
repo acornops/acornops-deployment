@@ -1,0 +1,17 @@
+{
+  "defaultPlanKey": "hosted-v1",
+  "plans": [
+    {
+      "key": "hosted-v1",
+      "name": "Hosted",
+      "quotas": { "members": 100, "kubernetesClusters": 30, "virtualMachines": 30 },
+      "executionLimits": {
+        "chat": { "maxConcurrentRuns": 4, "maxOutstandingRuns": 20 },
+        "agent": { "maxConcurrentRuns": 4, "maxOutstandingRuns": 20 },
+        "workflow": { "maxConcurrentRuns": 8, "maxOutstandingRuns": 40 },
+        "autoTriage": { "maxConcurrentRuns": 2, "maxOutstandingRuns": 10 },
+        "insights": { "maxConcurrentRuns": 2, "maxOutstandingRuns": 10 }
+      }
+    }
+  ]
+}

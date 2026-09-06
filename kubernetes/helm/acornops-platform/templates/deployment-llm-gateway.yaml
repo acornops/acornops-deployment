@@ -88,6 +88,11 @@ spec:
                 secretKeyRef:
                   name: {{ include "acornops-platform.secretName" . }}
                   key: {{ .Values.secrets.keys.llmGateway.redisUrl }}
+            - name: ORCH_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "acornops-platform.secretName" . }}
+                  key: {{ .Values.secrets.keys.controlPlane.orchestrationServiceToken }}
             - name: ADMIN_API_TOKEN
               valueFrom:
                 secretKeyRef:

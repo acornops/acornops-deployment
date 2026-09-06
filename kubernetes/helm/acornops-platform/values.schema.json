@@ -487,6 +487,15 @@
         }
       }
     },
+    "workspaceCapacity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["enabled", "admissionEnabled", "dispatchEnabled"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "admissionEnabled": { "type": "boolean" },
+        "dispatchEnabled": { "type": "boolean" }
+      }
+    },
     "workspacePlans": {
       "type": "object",
       "additionalProperties": false,
@@ -503,6 +512,16 @@
             "properties": {
               "key": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$" },
               "name": { "type": "string", "minLength": 1 },
+              "executionLimits": {
+                "type": "object", "additionalProperties": false,
+                "properties": {
+                  "chat": { "$ref": "#/definitions/executionPoolLimits" },
+                  "agent": { "$ref": "#/definitions/executionPoolLimits" },
+                  "workflow": { "$ref": "#/definitions/executionPoolLimits" },
+                  "autoTriage": { "$ref": "#/definitions/executionPoolLimits" },
+                  "insights": { "$ref": "#/definitions/executionPoolLimits" }
+                }
+              },
               "quotas": {
                 "type": "object",
                 "additionalProperties": false,
@@ -1222,6 +1241,14 @@
     }
   },
   "definitions": {
+    "executionPoolLimits": {
+      "type": "object", "additionalProperties": false,
+      "required": ["maxConcurrentRuns", "maxOutstandingRuns"],
+      "oneOf": [
+        { "properties": { "maxConcurrentRuns": { "type": "null" }, "maxOutstandingRuns": { "type": "null" } } },
+        { "properties": { "maxConcurrentRuns": { "type": "integer", "minimum": 1 }, "maxOutstandingRuns": { "type": "integer", "minimum": 1 } } }
+      ]
+    },
     "additionalCaBundle": {
       "type": "object",
       "additionalProperties": false,

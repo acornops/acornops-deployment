@@ -114,6 +114,9 @@ services:
       TARGET_CHAT_RECENT_ACTIVITY_WINDOW_SECONDS: ${TARGET_CHAT_RECENT_ACTIVITY_WINDOW_SECONDS:-300}
       RUN_EVENT_BUFFER_SIZE: ${RUN_EVENT_BUFFER_SIZE:-200}
       PERSIST_RUN_EVENTS: ${PERSIST_RUN_EVENTS:-true}
+      WORKSPACE_ADMISSION_ENABLED: ${WORKSPACE_ADMISSION_ENABLED:-true}
+      WORKSPACE_DISPATCH_ENABLED: ${WORKSPACE_DISPATCH_ENABLED:-true}
+      WORKSPACE_PLANS_CONFIG_JSON: ${WORKSPACE_PLANS_CONFIG_JSON:-}
       WORKSPACE_ROLES_CONFIG_JSON: ${WORKSPACE_ROLES_CONFIG_JSON:-}
       PLATFORM_SETTINGS_POLICY_JSON: '${PLATFORM_SETTINGS_POLICY_JSON:-{"memberDiscovery":{"allowedModes":["disabled","exact_email","directory"],"defaultMode":"exact_email"},"aiPolicy":{"runtimeEditable":true},"userSignInMethods":{"allowedMethods":["password","oidc"],"defaultMethods":["password","oidc"]}}}'
       CONTROL_PLANE_ADMIN_API_ENABLED: ${CONTROL_PLANE_ADMIN_API_ENABLED:-false}
@@ -163,6 +166,7 @@ services:
       OIDC_ADMISSION_POLICY_JSON: '${OIDC_ADMISSION_POLICY_JSON:-{}}'
       OIDC_PRELINKED_IDENTITIES_JSON: '${OIDC_PRELINKED_IDENTITIES_JSON:-[]}'
       OIDC_USE_USERINFO: ${OIDC_USE_USERINFO:-true}
+      WORKSPACE_CAPACITY_ENABLED: ${WORKSPACE_CAPACITY_ENABLED:-false}
       ORCH_SERVICE_TOKEN: ${ORCH_SERVICE_TOKEN:-dev_orchestrator_token}
       EXECUTION_ENGINE_DISPATCH_TOKEN: ${EXECUTION_ENGINE_DISPATCH_TOKEN:-dev_execution_engine_dispatch_token}
       LLM_GATEWAY_URL: http://llm-gateway:8001
@@ -246,6 +250,7 @@ services:
     environment:
       APP_ENV: development
       ORCH_BASE_URL: http://control-plane:8081
+      WORKSPACE_CAPACITY_ENABLED: ${WORKSPACE_CAPACITY_ENABLED:-false}
       ORCH_SERVICE_TOKEN: ${ORCH_SERVICE_TOKEN:-dev_orchestrator_token}
       EXECUTION_ENGINE_DISPATCH_TOKEN: ${EXECUTION_ENGINE_DISPATCH_TOKEN:-dev_execution_engine_dispatch_token}
       EXECUTION_GATEWAY_BASE_URL: http://llm-gateway:8001
@@ -283,6 +288,9 @@ services:
       ]
     environment:
       APP_ENV: development
+      WORKSPACE_CAPACITY_ENABLED: ${WORKSPACE_CAPACITY_ENABLED:-false}
+      ORCH_BASE_URL: http://control-plane:8081
+      ORCH_SERVICE_TOKEN: ${ORCH_SERVICE_TOKEN:-dev_orchestrator_token}
       PYTHONDONTWRITEBYTECODE: "1"
       SECRETS_BACKEND: ${SECRETS_BACKEND:-database}
       SECRETS_KEK_BASE64: ${SECRETS_KEK_BASE64:-SglIGBscu1EgQ+AlpqJLADNN9QmCzS9d1ZvK3oT/e5s=}

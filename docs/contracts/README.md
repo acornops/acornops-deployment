@@ -197,3 +197,7 @@ The deployment contract for external integration account linking is:
 - `task contracts:check` validates this repository's deployment manifest and, when sibling repos are present, cross-repo contract manifests.
 - `task platform-contracts` runs the same cross-repo comparison explicitly.
 - Service API contracts remain in the service repositories and are mirrored through their `docs/contracts/manifest.json` files.
+
+## Workspace capacity contract
+
+Hosted-readiness builds advertise `capacity_contract_version: 1` and `capacity_enabled` on every execution service health endpoint. Compose and Helm propagate the same `WORKSPACE_CAPACITY_ENABLED` value to control-plane, execution-engine and llm-gateway. The gateway also receives `ORCH_BASE_URL` and the existing orchestration service token for lifecycle authorization even with capacity disabled. Control-plane admission and dispatch gates support the [quiesced rollout](../hosted-readiness.md).

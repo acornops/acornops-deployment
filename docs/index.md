@@ -48,3 +48,5 @@ This `docs/` tree is the repository-local system of record for deployment orches
 - [Security Model](/docs/security-model.md)
 - [References](/docs/references/index.md)
 - [Generated Artifacts](/docs/generated/README.md)
+
+- [Workspace execution capacity and hosted-readiness rollout](hosted-readiness.md)

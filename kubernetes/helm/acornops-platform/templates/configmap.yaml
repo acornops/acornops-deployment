@@ -1,3 +1,10 @@
+{{- range $plan := .Values.workspacePlans.plans }}
+{{- range $pool, $limits := $plan.executionLimits }}
+{{- if and (ne $limits.maxConcurrentRuns nil) (lt (int $limits.maxOutstandingRuns) (int $limits.maxConcurrentRuns)) }}
+{{- fail (printf "workspacePlans plan %s pool %s outstanding limit must cover its concurrency limit" $plan.key $pool) }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- if .Values.components.controlPlane.enabled }}
 {{- if gt (int .Values.userAccess.session.idleTimeoutSeconds) (int .Values.userAccess.session.maxAgeSeconds) }}
 {{- fail "userAccess.session.idleTimeoutSeconds must be less than or equal to userAccess.session.maxAgeSeconds" }}
@@ -9,6 +16,9 @@ metadata:
   labels:
     {{- include "acornops-platform.componentLabels" (dict "root" . "component" "control-plane") | nindent 4 }}
 data:
+  WORKSPACE_CAPACITY_ENABLED: {{ .Values.workspaceCapacity.enabled | quote }}
+  WORKSPACE_ADMISSION_ENABLED: {{ .Values.workspaceCapacity.admissionEnabled | quote }}
+  WORKSPACE_DISPATCH_ENABLED: {{ .Values.workspaceCapacity.dispatchEnabled | quote }}
   NODE_ENV: "production"
   PORT: {{ .Values.components.controlPlane.service.targetPort | quote }}
   LOG_LEVEL: {{ .Values.components.controlPlane.logLevel | quote }}
@@ -163,6 +173,7 @@ metadata:
   labels:
     {{- include "acornops-platform.componentLabels" (dict "root" . "component" "execution-engine") | nindent 4 }}
 data:
+  WORKSPACE_CAPACITY_ENABLED: {{ .Values.workspaceCapacity.enabled | quote }}
   APP_ENV: "production"
   HTTP_PORT: {{ .Values.components.executionEngine.service.targetPort | quote }}
   LOG_LEVEL: {{ .Values.components.executionEngine.logLevel | quote }}
@@ -224,6 +235,8 @@ metadata:
   labels:
     {{- include "acornops-platform.componentLabels" (dict "root" . "component" "llm-gateway") | nindent 4 }}
 data:
+  ORCH_BASE_URL: {{ include "acornops-platform.controlPlaneInternalUrl" . | quote }}
+  WORKSPACE_CAPACITY_ENABLED: {{ .Values.workspaceCapacity.enabled | quote }}
   APP_ENV: "production"
   GATEWAY_PORT: {{ .Values.components.llmGateway.service.targetPort | quote }}
   LOG_LEVEL: {{ .Values.components.llmGateway.logLevel | quote }}

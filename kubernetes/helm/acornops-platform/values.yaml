@@ -241,6 +241,11 @@ workspaceRoles:
   # Deployment-defined role templates. Custom role keys must be lowercase snake_case.
   customTemplates: []
 
+workspaceCapacity:
+  enabled: false
+  admissionEnabled: true
+  dispatchEnabled: true
+
 workspacePlans:
   defaultPlanKey: default
   plans:

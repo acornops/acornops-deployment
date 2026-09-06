@@ -1,6 +1,7 @@
 {
   "repo": "deployment",
   "version": 1,
+  "workspaceCapacityContractVersion": 1,
   "executionContractVersion": 2,
   "databaseSchemaEpoch": "greenfield-1",
   "runtimeDependencies": [

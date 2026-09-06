@@ -612,3 +612,7 @@ patch that exact Deployment, approve the pending write, and verify a healthy
 rollout. Set
 `ACORNOPS_SMOKE_RUN_REMEDIATION=false` to skip that mutation scenario. It does
 not touch production.
+
+## Workspace execution capacity
+
+For five-pool configuration, quiesced activation, catalogue verification, BYOK and rollback, follow [the hosted-readiness runbook](hosted-readiness.md). Capacity limits remain disabled by default; workspace suspension is always enforced.
