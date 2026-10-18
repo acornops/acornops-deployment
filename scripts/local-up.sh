@@ -208,6 +208,19 @@ ao_heading "Running llm-gateway migrations..."
 ao_heading "Running control-plane migrations..."
 "${COMPOSE_CMD[@]}" run --rm --build control-plane-init
 
+ao_heading "Refreshing local Node.js dependencies..."
+# Source bind mounts hide image dependencies. Remove only disposable source
+# containers and their anonymous node_modules caches, after migrations succeed.
+# State services and all named database/authentication volumes stay intact.
+NODE_SOURCE_SERVICES=(control-plane control-plane-init management-console)
+if profile_enabled platform-admin; then
+  NODE_SOURCE_SERVICES+=(platform-admin-console)
+fi
+if profile_enabled target-fixtures || profile_enabled cluster-fixture; then
+  NODE_SOURCE_SERVICES+=(agentk)
+fi
+"${COMPOSE_CMD[@]}" rm --stop --force --volumes "${NODE_SOURCE_SERVICES[@]}"
+
 ao_heading "Starting local stack..."
 "${COMPOSE_CMD[@]}" up -d --build
 "${COMPOSE_CMD[@]}" up -d --force-recreate --no-deps edge-proxy

@@ -530,7 +530,6 @@ for (const marker of [
   'target: dev',
   'command: ["npm", "run", "dev"]',
   '- ../../../platform-admin-console:/app',
-  '- platform-admin-console-node-modules:/app/node_modules',
   'ADMIN_CONSOLE_DATA_MODE: control-plane',
   'CONTROL_PLANE_ADMIN_BASE_URL: http://control-plane:8081',
   'exec 3<>/dev/tcp/127.0.0.1/9000',
@@ -577,14 +576,8 @@ expect(
   localReset.includes('--profile target-fixtures') && localReset.includes('--profile cluster-fixture'),
   'local-reset should include both fixture profiles so AgentK and AgentV are removed during a full reset'
 );
-expect(
-  localUp.includes('up -d --force-recreate --no-deps edge-proxy')
-    && localUp.includes('if profile_enabled target-fixtures; then')
-    && localUp.includes('up -d --force-recreate --no-deps agentk agentv')
-    && localUp.includes('elif profile_enabled cluster-fixture; then')
-    && localUp.includes('up -d --force-recreate --no-deps agentk'),
-  'local-up.sh should refresh edge-proxy, start both agents for target fixtures, and only AgentK for the cluster fixture'
-);
+// Dependency mounts and startup/fixture commands are checked behaviorally by
+// check-local-fixture-profiles.mjs and check-local-up.mjs.
 expect(
   localCompose.includes('SEED_DEVELOPMENT_DATA: ${SEED_DEVELOPMENT_DATA:-true}')
     && localCompose.includes('SEED_VM_AGENT_KEY: ${SEED_VM_AGENT_KEY:-ak_local_vm_dev_shared_key}')

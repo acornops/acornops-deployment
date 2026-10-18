@@ -1,5 +1,7 @@
 # Completed Execution Plans
 
+- [Local dependency refresh](local-dependency-refresh.md)
+
 - [Platform Release Hardening](platform-release-hardening.md)
 
 Move completed deployment plans here when the implementation and validation are done.

@@ -142,6 +142,22 @@ expect(platformAdminService.build.target === 'dev', 'platform-admin console must
 expect(platformAdminService.command.join(' ') === 'npm run dev', 'platform-admin console must start its hot-reload development command');
 expect(platformAdminService.volumes.some((volume) => volume.target === '/app'), 'platform-admin console must mount local source');
 expect(platformAdminService.volumes.some((volume) => volume.target === '/app/node_modules'), 'platform-admin console must isolate container dependencies');
+const localServices = { ...platformAdminConfig.services, ...targetFixtureConfig.services };
+for (const name of ['control-plane', 'control-plane-init', 'management-console', 'platform-admin-console', 'agentk']) {
+  expect(localServices[name].volumes.some((volume) => volume.target === '/app/node_modules'),
+    `${name} must isolate Linux dependencies from the host source checkout`);
+}
+for (const [name, service] of Object.entries(localServices)) {
+  for (const volume of service.volumes ?? []) {
+    if (volume.target === '/app/node_modules') {
+      expect(volume.type === 'volume' && !volume.source,
+        `${name} dependencies must be image-populated anonymous volumes, not stale named caches`);
+      expect(!volume.volume?.nocopy, `${name} dependencies must be copied from the built image`);
+    } else if (volume.type === 'volume') {
+      expect(Boolean(volume.source), `${name} application data must stay in a persistent named volume`);
+    }
+  }
+}
 expect(platformAdminService.ports[0].host_ip === '127.0.0.1', 'platform-admin console must bind only to the loopback interface');
 expect(platformAdminConfig.services['control-plane'].environment.CONTROL_PLANE_ADMIN_API_ENABLED === 'true', 'platform-admin profile must enable the admin API');
 expect(platformAdminConfig.services['control-plane'].environment.CONTROL_PLANE_ADMIN_HUMAN_AUTH_REQUIRED === 'true', 'platform-admin profile must require a human admin session');

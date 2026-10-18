@@ -18,7 +18,8 @@ services:
       VITE_CONTROL_PLANE_API_BASE_URL: ${VITE_CONTROL_PLANE_API_BASE_URL:-}
     volumes:
       - ../../../management-console:/app
-      - management-console-node-modules:/app/node_modules
+      # local-up recreates these disposable volumes from the built images.
+      - /app/node_modules
     healthcheck:
       disable: true
 
@@ -57,7 +58,7 @@ services:
       retries: 20
     volumes:
       - ../../../platform-admin-console:/app
-      - platform-admin-console-node-modules:/app/node_modules
+      - /app/node_modules
     ports:
       - "127.0.0.1:${PLATFORM_ADMIN_CONSOLE_PORT:-4173}:4173"
     restart: unless-stopped
@@ -208,7 +209,7 @@ services:
       - "${CONTROL_PLANE_PORT:-8081}:8081"
     volumes:
       - ../../../control-plane:/app
-      - control-plane-node-modules:/app/node_modules
+      - /app/node_modules
     healthcheck:
       # A cold bind-mounted TypeScript start can spend several minutes
       # initializing esbuild while the rest of the source stack builds.
@@ -227,7 +228,7 @@ services:
       DATABASE_URL: postgresql://${CP_DB_USER:-acornops}:${CP_DB_PASSWORD:-acornops}@cp-postgres:5432/${CP_DB_NAME:-acornops_control_plane}
     volumes:
       - ../../../control-plane:/app
-      - control-plane-node-modules:/app/node_modules
+      - /app/node_modules
 
   execution-engine:
     build:
@@ -468,7 +469,7 @@ services:
         condition: service_healthy
     volumes:
       - ../../../agentk:/app
-      - agentk-node-modules:/app/node_modules
+      - /app/node_modules
       - ${LOCAL_K8S_RUNTIME_DIR:-/tmp/acornops-local-kube}:/root/.kube:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -512,9 +513,5 @@ services:
       - acornops
 
 volumes:
-  management-console-node-modules:
-  platform-admin-console-node-modules:
-  control-plane-node-modules:
-  agentk-node-modules:
   keycloak-postgres-data:
   dex-data:

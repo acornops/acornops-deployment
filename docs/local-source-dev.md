@@ -33,6 +33,19 @@ task local-up
 
 `local-up` generates and persists `GATEWAY_SIGNING_PRIVATE_KEY_PEM_B64` in `.env.local` when it is empty, then runs only the llm-gateway Alembic migrations and control-plane migrations. Keeping that key stable prevents control-plane restarts from invalidating active run tokens or leaving the gateway on a stale JWKS key.
 
+The Node.js source services use disposable, container-only `node_modules`
+volumes populated from their built images. After migrations succeed, `local-up`
+stops and removes the selected Node.js source containers and their anonymous
+dependency volumes, then recreates them from the built images. This prevents
+stale caches without accumulating a new unused cache on every startup. The
+control-plane migration job gets its own fresh dependency volume. Databases,
+identity-provider state, and sessions remain in persistent named volumes;
+no reset is needed after pulling dependency updates. Source edits still
+hot-reload; rerun `task local-up` after changing a package manifest or lockfile.
+Use the task for dependency refresh rather than a bare `docker compose up`.
+Old named `*-node-modules` volumes from earlier versions are no longer used;
+startup leaves them untouched rather than pruning local Docker resources.
+
 After `local-reset`, the first source startup can take several minutes while
 Docker initializes dependency volumes and the bind-mounted control plane,
 gateway, and Keycloak complete their cold builds. The local Compose overlay

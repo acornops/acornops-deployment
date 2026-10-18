@@ -193,6 +193,7 @@ tasks:
     desc: Render and verify default, cluster-fixture, and target-fixtures local profiles
     cmds:
       - node scripts/check-local-fixture-profiles.mjs
+      - node scripts/check-local-up.mjs
 
   contracts-check:
     desc: Compatibility alias for contracts:check
