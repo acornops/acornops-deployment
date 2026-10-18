@@ -1,5 +1,8 @@
 # User Sign-In Methods
 
+> Archive review — 2026-10-18: Implementation landed (platform-admin-console d7aa0ca; acornops-deployment eb8900e; control-plane 63ba0f3). Original validation plans are preserved; this archive does not represent a new authentication rollout.
+> Original scope, checklists, and validation below are historical; this is not a new runtime or rollout validation report.
+
 ## Goal
 
 Replace the legacy password-signup deployment policy with a runtime policy for

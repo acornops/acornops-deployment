@@ -1,5 +1,8 @@
 # Ingress-Independent NetworkPolicy Access
 
+> Status review — 2026-10-18: Implementation and historical chart publication complete; target-registry promotion and live ingress verification still pending. Use the approved current chart containing the fix, not the historical version solely because it appears in this plan.
+> Existing validation entries are historical; no new live acceptance was performed in this review.
+
 ## Objective
 
 Decouple public workload NetworkPolicy allowances from Helm Ingress ownership so
