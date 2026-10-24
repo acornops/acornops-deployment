@@ -2,7 +2,7 @@ apiVersion: acornops.dev/v1alpha1
 kind: StackVersionMatrix
 metadata:
   name: acornops-stack
-  updatedAt: "2026-08-09"
+  updatedAt: "2026-10-24"
 
 stacks:
   - name: local-dev
@@ -23,10 +23,10 @@ stacks:
     executionContractVersion: 2
     databaseSchemaEpoch: greenfield-1
     components:
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.35
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.34
-      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.14
-      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.18
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.37
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.35
+      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.15
+      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.20
       agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.6
 
   - name: k8s-platform-v1
@@ -34,19 +34,20 @@ stacks:
     executionContractVersion: 2
     databaseSchemaEpoch: greenfield-1
     chart:
-      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.23
+      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.24
       acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.13
     components:
-      platformAdminConsole: ghcr.io/acornops/platform-admin-console:0.0.1-experimental.5
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.35
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.34
-      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.14
-      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.18
+      platformAdminConsole: ghcr.io/acornops/platform-admin-console:0.0.1-experimental.6
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.37
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.35
+      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.15
+      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.20
       agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.6
 
 compatibility:
   notes:
-    - AgentV v0.0.1-experimental.6 requires control-plane v0.0.1-experimental.34 and management-console v0.0.1-experimental.35; publish both images before releasing platform chart v0.0.1-experimental.23.
+    - AgentV v0.0.1-experimental.6 onboarding was introduced with control-plane v0.0.1-experimental.34 and management-console v0.0.1-experimental.35; this matrix pins their coordinated successors, not the historical minimum release set.
+    - Publish and verify all pinned images before releasing platform chart v0.0.1-experimental.24; demo validation does not replace production staging and recovery acceptance gates.
     - Deploy control-plane, execution-engine, and llm-gateway only as one pinned matrix with execution contract version 2.
     - Fresh installations start with empty databases; only a verified pre-greenfield epoch requires an explicitly approved destructive reset of both application databases.
     - Existing greenfield-1 databases use pending forward migrations with matching control-plane 001_initial_schema.sql checksums and gateway ancestry rooted at a10047518e6a; unknown or divergent history must be reconciled before deployment.
