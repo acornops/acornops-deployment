@@ -1,6 +1,6 @@
 # Demo release and fresh deployment implementation plan
 
-> **For agentic workers:** Use superpowers:executing-plans. Approved 2026-10-24; all application images published and verified. Chart publication and demo reset remain pending.
+> **Completed 2026-10-24:** Images/chart published, demo-only data reset and fresh deployment succeeded, and live infrastructure/public-route/browser sign-in checks passed. Signed-in onboarding, an actual VM connection and paid-model acceptance were not exercised; this is not blanket production certification.
 
 **Goal:** Publish the outstanding platform changes, rebuild the disposable demo with fresh data, and hand over real-VM onboarding instructions.
 
@@ -59,29 +59,29 @@ Files: deployment `kubernetes/helm/acornops-platform/{Chart.yaml,values.yaml}`, 
 - [x] Update current matrix compatibility notes to distinguish this release from historical AgentV minimum coordinates. Do not rewrite historical evidence.
 - [x] Run deployment `task validate` and `task platform-contracts`. Both passed again with the final .37 pins.
 - [x] Run published-artifact release-matrix checks (skip only the not-yet-published current platform chart during preflight). Passed after .37 publication.
-- [ ] Integrate metadata, publish the new chart tag, wait for chart/index workflows, then verify the full matrix including the published chart.
+- [x] Integrate metadata, publish the new chart tag, wait for chart/index workflows, then verify the full matrix including the published chart. Deployment commit `2f752a2`, release `40075030074`, CI `40075027568`, chart mirror `40075067688` and Pages deployment `40075079084` all passed; charts main is `78f18be`.
 
 ## 4. Reset and deploy the demo
 
 Files: demo-infra `ansible/group_vars/demo/platform.yml` and an operations record. A push changing this pin file automatically starts deployment: do not push it before teardown is complete.
 
 - [x] Prepare chart .24 and five new image pins; remove the obsolete rollout-retry comment. `task validate` passed with installed pipx Ansible on PATH and `ANSIBLE_SYNTAX_REQUIRED=true`; `task demo:secrets:validate` passed without uploading or exposing secrets.
-- [ ] Recheck VM identity, active deployments, shared lease, named PVCs and cluster-wide certificate consumers. Stop if the requested cleanup would affect an unrelated service.
-- [ ] Acquire the existing shared lease with a unique owner token and bounded wait.
-- [ ] Run `task demo:teardown:data DEMO_ENV_FILE=.env.demo -- --confirm` only after all artifacts are verified. Verify the exact platform/data/identity resources are removed; preserve host/k3d resources and shared cert-manager. Live inspection found Mattermost certificates, so cluster-wide certificate deletion would exceed scope.
-- [ ] Release the lease; integrate and push the validated demo pins, then watch the automatically triggered deploy. Avoid dispatching a duplicate run.
-- [ ] Run `task demo:verify DEMO_ENV_FILE=.env.demo`, `task demo:verify:public`, and read-only VM/Kubernetes checks. Check both consoles, TLS, identity redirects, admin readiness and actual image digests.
-- [ ] Verify browser login and fresh-workspace/VM onboarding entry points with existing authorized demo identities. Do not run paid-model calls or restart host services without separately scoped test authorization.
-- [ ] Record exact mutations, deletion/recovery boundary, release coordinates, checks, failures and remaining acceptance gates. Confirm local main and remote main alignment for changed repos.
+- [x] Recheck VM identity, active deployments, shared lease, named PVCs and cluster-wide certificate consumers. Exact targets confirmed; no competing deployment was active.
+- [x] Acquire the existing shared lease with a unique owner token and bounded wait.
+- [x] Run `task demo:teardown:data DEMO_ENV_FILE=.env.demo -- --confirm` only after all artifacts are verified. Exit 0; all three platform/data/identity namespaces and old PVs verified absent. Mattermost container identities/health and certificates, k3d containers and shared cert-manager were preserved. No forced finalizer removal, host-wide cleanup or local reset.
+- [x] Release the lease; integrate and push validated demo pins. Demo commit `69c12e6` triggered one deployment (`40076347341`); CI `40076347424` passed. No duplicate dispatch.
+- [x] Run `task demo:verify DEMO_ENV_FILE=.env.demo`, `task demo:verify:public`, and read-only VM/Kubernetes checks. Both tasks passed. All five application pods were Ready with zero restarts and image IDs matching the verified OCI index digests. Public/internal certificates were Ready; chart .24 is deployed at Helm revision 1.
+- [x] Verify browser sign-in entry points: Management Console rendered its SSO-only screen and redirected to the control-plane OIDC client; Platform Admin Console redirected to its separate admin OIDC client. Both reached the expected Keycloak form over trusted HTTPS. Signed-in workspace/VM onboarding is explicitly deferred to the user's test; no credentials were exposed, agent installed or paid-model call made.
+- [x] Record exact mutations, deletion/recovery boundary, release coordinates, checks, failures and remaining acceptance gates. The 13 relevant workspace/product/demo main branches matched live remote main; pre-existing untracked workspace `tmp/` evidence was retained. The final documentation commit is separate from the immutable chart release commit.
 
 ## 5. Real-VM handoff
 
-- [ ] Explain prerequisites: Ubuntu 24.04/systemd, sudo, Node >=22 at /usr/bin/node, curl and trusted outbound HTTPS/WebSocket access to api.demo.acornops.dev. No inbound agent port is needed.
-- [ ] Explain console path: workspace → Virtual machines → Connect VM; enter name and select Read-only or Read-write. Read-write requires exact restartable .service names and remains bounded by run/approval policy.
-- [ ] Tell the user to execute only the generated version-pinned command on the intended VM. Its target-bound enrollment token is single-use and expires in 15 minutes; never paste it into chat or docs.
-- [ ] Verify online status and telemetry, then `sudo acornops-agentv-doctor` and `sudo journalctl -u acornops-agentv -n 100 --no-pager` on the VM.
-- [ ] Start with read-only diagnostics. Test writes only against a deliberately chosen noncritical service; never recommend restarting SSH, networking, k3s, Docker or AcornOps platform dependencies on the demo host.
-- [ ] Explain that existing Kubernetes agents need fresh registration after the reset, even though their separate k3d cluster was preserved.
+- [x] Document prerequisites: Ubuntu 24.04/systemd, sudo, Node >=22 at /usr/bin/node, curl and trusted outbound HTTPS/WebSocket access to api.demo.acornops.dev. No inbound agent port is needed.
+- [x] Document console path: workspace → Virtual machines → Connect VM; enter name and select Read-only or Read-write. Read-write requires exact restartable .service names and remains bounded by run/approval policy.
+- [x] Document running only the generated version-pinned command on the intended VM. Its target-bound enrollment token is single-use and expires in 15 minutes; never paste it into chat or docs.
+- [x] Document user-side verification of online status/telemetry, `sudo acornops-agentv-doctor` and `sudo journalctl -u acornops-agentv -n 100 --no-pager`. These target-host checks await the user's installation.
+- [x] Document read-only diagnostics first and write tests only against deliberately chosen noncritical services; no restarts of SSH, networking, k3s, Docker or platform dependencies on the demo host.
+- [x] Document fresh registration for existing Kubernetes agents, and reconfiguration of AI/MCP credentials and workspace-bound integrations, even though the separate k3d/Mattermost installations were preserved. Guide: private demo-infra `docs/demo-vm-onboarding.md`, commit `69c12e6`.
 
 ## Evidence and remaining boundaries
 
@@ -92,6 +92,7 @@ Release workflow IDs: original management-console `40009902321`, replacement man
 Verified OCI index digests:
 
 - management-console .37: `sha256:6e9717f9daf851fd0082a7fd078c86c702dc2fb72b1814f6363448ad16b67961`
+- platform chart .24: `sha256:f1216ac9e899e7c6d412daa847843e3642dbd6ba7ec871fbab7b290c18bedf40`
 - control-plane .35: `sha256:5a82b169a14838d0d4ae95b296cd6e677bd33cff2e69e55fe4c03e838d4ecea4`
 - execution-engine .15: `sha256:4b2a7dcbe8992d50ec0cdf8a80ec1f8a341404596e8ade8d09e4f4ee18829362`
 - llm-gateway .20: `sha256:f0d805f7cf16cb5dea903a01044a76114d2627a3376ec5243f00c3272ae75efb`
@@ -99,7 +100,7 @@ Verified OCI index digests:
 - unchanged AgentK .13 image: `sha256:a6d6f6d1582d767c431b65a3bcfdfc929ecc59f7449b4e23ff2d40e5d4d28557`
 - unchanged AgentK .13 chart: `sha256:d45b29daa4c0e12d7f151a8e450f5dec0aa4759a3278403e1250adb616daec91`
 
-Independent metadata review found no blocking defects. Fresh deployment `task validate` and `task platform-contracts` passed; registry and live gates remain separate. Admin's first validation attempt failed because sandbox loopback binds were denied; after enabling the test environment, the existing explicit-version assertion also required .5 → .6. The final full rerun passed. Initial metadata preparation did not change application logic; the subsequently authorized console fix is recorded below.
+Independent metadata review found no blocking defects. Deployment `task validate`, `task platform-contracts` and the full published-artifact matrix passed. Admin's first validation attempt failed because sandbox loopback binds were denied; after enabling the test environment, the existing explicit-version assertion also required .5 → .6. The final full rerun passed. Initial metadata preparation did not change application logic; the subsequently authorized console fix is recorded below.
 
 ### Release blocker: settings history navigation
 
@@ -119,3 +120,28 @@ User authorized the focused navigation diagnosis/fix and subsequent release/rese
 Replacement release `40072900387` and main CI `40072897671` both passed at exact commit `78b1302a6a55cdbef2df53a80f7811cf9f71162e`; the .37 tag was verified unused before publication. Local main and remote main match. The old .36 tag is unchanged.
 
 Existing production gates (real cross-service VM acceptance, physical reboot recovery, staging remediation runs/soak) are not waived by this demo refresh.
+
+## Live outcome and recovery boundary
+
+Demo deployment `40076347341` succeeded at `69c12e6e141b66a3d01ff60419a974787fb3d390`; its CI also passed. Three fresh PVC UIDs were verified different from the deleted volumes. The four Mattermost containers and four workload-cluster containers retained their original identities and remained healthy/running. Shared cert-manager was reconciled at its existing v1.21.0 version, not removed. The deployment lease was released normally.
+
+The authorized command was exactly `task demo:teardown:data DEMO_ENV_FILE=.env.demo -- --confirm`, under the existing shared lease. It deleted the `acornops`, `acornops-data` and `acornops-identity` namespaces, their Helm releases and three old PVCs/PVs. No backup was created for this requested fresh reset. Old workspaces, stored credentials, registrations and identity state cannot be restored through the normal application flow; any separate external backup is outside this work. Operator secrets were reused, not rotated or exposed. No local repository reset, local Docker teardown, host runtime installation or unrelated service deletion occurred.
+
+Validation commands observed passing:
+
+- Management Console: `npm run validate`; repeated original/new history tests (12/12); `FIXTURE_APP_PORT=4196 npm run smoke:fixtures -- ui-polish-accessibility.spec.ts permission-profiles.spec.ts responsive-navigation.spec.ts workspace-access-selection.spec.ts --workers=2` (43/43); full post-merge `npm test` (1187/1187). The new regression failed 4/4 before the fix.
+- Platform Admin Console: `ADMIN_CONSOLE_DATA_MODE=control-plane npm run validate` (99 tests and all gates).
+- Deployment: `task validate`, `task platform-contracts`, and `ACORNOPS_CHECK_PUBLISHED_ARTIFACTS=true node scripts/check-release-matrix.mjs` including the published chart.
+- Demo: `ANSIBLE_SYNTAX_REQUIRED=true task validate` with installed Ansible on PATH; `task demo:secrets:validate DEMO_ENV_FILE=.env.demo`; `task demo:verify DEMO_ENV_FILE=.env.demo`; `task demo:verify:public`.
+- Browser: local settings Workspace/Members/AI navigation plus Back/Forward; live Management/Admin Console OIDC sign-in redirects. No authenticated live onboarding or target-host install was performed.
+
+## Execution decisions and deferred review polish
+
+- Reused existing checkouts/feature branches per the user's preference; no new worktree or local reset. Risk: metadata could appear on an unexpected branch; changed checkouts returned to main.
+- Used metadata/version assertions for release-only work instead of synthetic application tests. Risk: artifact mismatch; published manifests/provenance and the matrix were verified. The later application fix received its own red/green regression.
+- Used data teardown, not cluster teardown, because Mattermost shares cert-manager. Shared certificate infrastructure intentionally survives; no demo application/identity database survives in it.
+- Amended the approved plan for the explicitly authorized history fix instead of restarting planning. Risk: accidental scope expansion; the fix remained five files with no router-wide, style or API changes.
+- The focused reviewer did not run test processes or certify registry/live behavior. Executor-observed exit statuses, artifact checks and live verification supplied those gates; wider UI/permission audits remain outside this fix. Risk: unrelated pre-existing defects are not certified away.
+- Prepared .37 pins before image publication only for local validation; held chart publication and downtime until verification passed. Risk: temporary unavailable references in uncommitted files, never deployed.
+- Limited live browser acceptance to sign-in redirects, leaving authenticated onboarding and agent installation to the user's requested VM test. Risk: signed-in or target-specific failures may still surface; no end-to-end VM success is claimed.
+- Deferred minor: optionally add an explicit Members `aria-current` assertion after Forward in the new rapid-Back regression. URL/display are already asserted, and manual browser verification confirmed the link state; no blocking defect was found.

@@ -11,6 +11,7 @@ Move completed deployment plans here when the implementation and validation are 
 - [OpenAI Chat Completions API surface](openai-chat-completions-surface.md)
 - [Connected local platform admin profile](local-platform-admin-profile.md)
 - [Platform admin demo release](platform-admin-demo-release.md)
+- [Demo release and fresh deployment — 2026-10-24](demo-refresh-2026-10-24.md) — Published artifacts and demo reset/deployment verified; signed-in VM onboarding remains a user acceptance step.
 
 ## Archived after main reconciliation — 2026-10-18
 
