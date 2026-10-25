@@ -135,6 +135,7 @@
       "platformSettings.memberDiscovery.allowedModes",
       "platformSettings.memberDiscovery.defaultMode",
       "platformSettings.aiPolicy.runtimeEditable",
+      "platformSettings.aiPolicy.allowAdditionalModels",
       "platformSettings.userSignInMethods.allowedMethods",
       "platformSettings.userSignInMethods.defaultMethods",
       "platformSettings.kubernetesRbacAdditions.runtimeEditable",

@@ -494,6 +494,7 @@ platformSettings:
     defaultMode: exact_email
   aiPolicy:
     runtimeEditable: true
+    allowAdditionalModels: false
   userSignInMethods:
     allowedMethods: [password, oidc]
     defaultMethods: [password, oidc]
@@ -501,11 +502,27 @@ platformSettings:
 
 Enable `directory` discovery only when the AcornOps user directory is trusted
 organization-wide. AI runtime policy can narrow the provider, model, reasoning
-summary, and reasoning-effort values under `ai`; it cannot add values. User
+summary, and reasoning-effort values under `ai`. With
+`platformSettings.aiPolicy.allowAdditionalModels: true`, a full platform admin
+may also add compatible model IDs for providers already present under
+`ai.providers`, without changing credentials or defaults. The flag is false by
+default; it never permits new providers or wider reasoning limits. User
 Sign-In Methods controls workspace-user Password and OIDC login. Selecting
 Password also permits first-time self-service signup when the deployment's
 password and verification-email prerequisites are ready. Platform Admin login
 remains OIDC-only.
+
+Upgrade every control-plane replica before enabling additional model IDs, then
+deploy the compatible admin/chat clients. Disabled custom models stay listed
+for re-enablement; turning the opt-in flag off leaves their definitions stored
+but unavailable. Reset clears runtime additions and restores deployment defaults.
+Before rolling back to an older control-plane binary, restore an old-schema
+policy without `additionalProviderModels`, for example by Reset, and review the
+enabled list. Flag removal alone does not make the stored record readable by
+older binaries. Also remove the new configuration key (or restore the previous
+chart): older binaries reject it even when false. No database migration is
+required. VM Compose uses the same
+`aiPolicy.allowAdditionalModels` key in `PLATFORM_SETTINGS_POLICY_JSON`.
 
 Keep secrets, identity-provider endpoints, SMTP credentials, database and Redis
 endpoints, signing keys, and bootstrap administrator credentials deployment-only.

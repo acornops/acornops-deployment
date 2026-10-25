@@ -450,7 +450,8 @@
           "additionalProperties": false,
           "required": ["runtimeEditable"],
           "properties": {
-            "runtimeEditable": { "type": "boolean" }
+            "runtimeEditable": { "type": "boolean" },
+            "allowAdditionalModels": { "type": "boolean", "default": false }
           }
         },
         "userSignInMethods": {

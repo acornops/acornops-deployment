@@ -1224,6 +1224,11 @@ assertIncludes(defaultRender, 'WORKSPACE_ROLES_CONFIG_JSON:', 'control-plane wor
 assertMatch(defaultRender, /WORKSPACE_ROLES_CONFIG_JSON: .*owner/, 'default workspace built-in roles should render');
 assertIncludes(defaultRender, 'PLATFORM_SETTINGS_POLICY_JSON:', 'control-plane platform settings policy should render');
 assertIncludes(defaultRender, '\\"runtimeEditable\\":true', 'default platform settings policy should allow bounded AI policy editing');
+assertIncludes(defaultRender, '\\"allowAdditionalModels\\":false', 'additional model IDs must be opt-in');
+const additionalModelsRender = helmTemplate(['--set', 'platformSettings.aiPolicy.allowAdditionalModels=true']);
+assertIncludes(additionalModelsRender, '\\"allowAdditionalModels\\":true', 'additional model opt-in must reach control-plane policy');
+const invalidAdditionalModels = expectHelmFailure(['--set-string', 'platformSettings.aiPolicy.allowAdditionalModels=yes']);
+assertMatch(invalidAdditionalModels, /allowAdditionalModels/, 'model opt-in must require a boolean');
 assertIncludes(defaultRender, '\\"defaultMode\\":\\"exact_email\\"', 'default platform settings policy should use exact-email discovery');
 assertIncludes(defaultRender, '\\"defaultMethods\\":[\\"password\\",\\"oidc\\"]', 'default platform settings policy should enable password and OIDC sign-in');
 assertIncludes(defaultRender, '\\"kubernetesRbacAdditions\\":{\\"profiles\\":[],\\"runtimeEditable\\":true}', 'default platform settings policy should render an empty editable Kubernetes RBAC baseline');

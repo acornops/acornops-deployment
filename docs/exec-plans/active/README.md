@@ -1,5 +1,8 @@
 # Active Execution Plans
 
+- [Admin-managed model IDs release](admin-model-ids-release.md) — Final review,
+  coordinated image/chart publication and an in-place demo upgrade.
+
 Reviewed 2026-10-18. Implementation-only plans that have landed are in
 [Completed plans](../completed/README.md). Historical validation results are not fresh release acceptance.
 
