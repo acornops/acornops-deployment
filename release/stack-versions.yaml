@@ -24,30 +24,31 @@ stacks:
     databaseSchemaEpoch: greenfield-1
     components:
       managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.39
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.37
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.38
       executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.15
       llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.21
-      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.9
+      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.10
 
   - name: k8s-platform-v1
     description: Pinned greenfield Kubernetes stack deployed with the acornops-platform Helm chart.
     executionContractVersion: 2
     databaseSchemaEpoch: greenfield-1
     chart:
-      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.25
+      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.26
       acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.13
     components:
       platformAdminConsole: ghcr.io/acornops/platform-admin-console:0.0.1-experimental.7
       managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.39
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.37
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.38
       executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.15
       llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.21
-      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.9
+      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.10
 
 compatibility:
   notes:
     - AgentV v0.0.1-experimental.6 onboarding was introduced with control-plane v0.0.1-experimental.34 and management-console v0.0.1-experimental.35; this matrix pins their coordinated successors, not the historical minimum release set.
-    - Publish and verify all pinned images before releasing platform chart v0.0.1-experimental.25; demo validation does not replace production staging and recovery acceptance gates.
+    - Publish and verify all pinned images before releasing platform chart v0.0.1-experimental.26; demo validation does not replace production staging and recovery acceptance gates.
+    - AgentV v0.0.1-experimental.10 excludes immutable filesystem images from capacity findings; control-plane v0.0.1-experimental.38 derives inventory badges from those findings. Existing hosts need an AgentV upgrade; a platform redeploy alone does not update installed agents.
     - Platform chart v0.0.1-experimental.25 adds the default-off AI-policy model extension; upgrade every control-plane replica before writing additional model definitions. Older binaries require an old-schema policy and removal of the new configuration key before rollback; see docs/OPERATIONS.md.
     - Deploy control-plane, execution-engine, and llm-gateway only as one pinned matrix with execution contract version 2.
     - Fresh installations start with empty databases; only a verified pre-greenfield epoch requires an explicitly approved destructive reset of both application databases.

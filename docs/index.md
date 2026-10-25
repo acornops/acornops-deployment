@@ -34,6 +34,7 @@ This `docs/` tree is the repository-local system of record for deployment orches
 
 - [Plans](/docs/PLANS.md)
 - [Active Plans](/docs/exec-plans/active/README.md)
+- [Filesystem Capacity Fix Release](/docs/exec-plans/active/filesystem-capacity-release.md)
 - [Completed Plans](/docs/exec-plans/completed/README.md)
 - [Tech Debt Tracker](/docs/exec-plans/tech-debt-tracker.md)
 
