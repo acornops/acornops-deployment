@@ -230,9 +230,11 @@ helm upgrade --install acornops kubernetes/helm/acornops-platform \
 ```
 
 Kubernetes deployments require external Postgres and Redis plus a pre-created
-platform Secret. Recreate both application databases before this first-install
-cutover; it is not a rolling upgrade. All pinned stack images must be deployed
-together.
+platform Secret. Fresh installations use empty application databases. Existing
+installations preserve their databases and secrets and follow the verified
+migration-history procedure below; do not recreate databases for an ordinary
+forward upgrade. Incompatible boundaries require a maintenance window, not a
+rolling upgrade. All pinned stack images must be deployed together.
 NetworkPolicies are enabled by default. Before installing or upgrading, set
 `networkPolicies.ingressController.from` for the cluster ingress controller and
 allow any private Postgres, Redis, OIDC, Vault, webhook, or MCP destinations in
@@ -516,6 +518,10 @@ Upgrade every control-plane replica before enabling additional model IDs, then
 deploy the compatible admin/chat clients. Disabled custom models stay listed
 for re-enablement; turning the opt-in flag off leaves their definitions stored
 but unavailable. Reset clears runtime additions and restores deployment defaults.
+If removing the opt-in or tightening the deployment model list removes the last
+enabled model, new runs remain blocked until an administrator chooses a permitted
+model, restores the opt-in, or explicitly resets the policy. Previously disabled
+models and reasoning settings must not be silently restored.
 Before rolling back to an older control-plane binary, restore an old-schema
 policy without `additionalProviderModels`, for example by Reset, and review the
 enabled list. Flag removal alone does not make the stored record readable by
