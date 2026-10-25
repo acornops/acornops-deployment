@@ -1,5 +1,8 @@
 # Completed Execution Plans
 
+- [Admin-managed model IDs release](admin-model-ids-release.md) — Verified
+  application/chart releases and data-preserving demo upgrade, 2026-10-25.
+
 - [Local dependency refresh](local-dependency-refresh.md)
 
 - [Platform Release Hardening](platform-release-hardening.md)
