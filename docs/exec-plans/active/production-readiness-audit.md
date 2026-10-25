@@ -2,7 +2,7 @@
 
 Status: **not approved for production yet**. Focused corrections passed local
 validation and final independent review; their separately authorized experimental
-publication and demo rollout are tracked in [Readiness fixes demo release](readiness-fixes-demo-release.md).
+publication and demo rollout are tracked in [Readiness fixes demo release](../completed/readiness-fixes-demo-release.md).
 Security and target-environment acceptance gates below remain open. This record
 is not a substitute for a production release rehearsal.
 
@@ -21,13 +21,14 @@ Unrelated parent `tmp/` files were left alone. New work uses
 `fix/production-readiness`; the console's original `fix/dialog-opacity-handoff`
 changes joined that shared branch for coordinated publication.
 
-Published matrix checked: platform chart `.26`, Management Console `.39`, Control
+Initial published matrix checked: platform chart `.26`, Management Console `.39`, Control
 Plane `.38`, Execution Engine `.15`, LLM Gateway `.21`, Platform Admin Console
 `.7`, AgentK chart `.13`, AgentV `.10` (all `0.0.1-experimental` releases).
 `ACORNOPS_CHECK_PUBLISHED_ARTIFACTS=true task release-matrix-check` passed for the
 configured images, charts, and AgentV assets. This establishes availability, not
 inclusion of these new fixes, image-level vulnerability clearance, or production
-acceptance. Pins have deliberately not been changed to nonexistent releases.
+acceptance. The subsequent authorized release updated pins only after component
+artifacts were available; see the linked release record for the current matrix.
 
 ## Confirmed corrections
 
@@ -97,10 +98,15 @@ failures were retried with isolated services/access and are not counted as passe
    but that is not a patched dependency. Node compatibility is satisfied; verify
    typecheck, auth-email tests, and a local SMTP send before adopting the major.
    [Patched release](https://github.com/nodemailer/nodemailer/releases/tag/v10.1.4).
-3. **Scan rebuilt images, not only application lockfiles.** Application runtime
-   audits do not cover OS packages, bundled installer tools, or deployed image
-   contents. Local development/audit tooling has separate advisories and is not
-   evidence that the runtime lock includes those packages.
+3. **Remediate or explicitly qualify the remaining image findings.** The subsequent
+   experimental release scanned previous/rebuilt Linux images with Trivy: no new
+   High/Critical package/advisory pairs, but existing OS and bundled npm-toolchain
+   findings remain, including fixable ones. The console base image retains 58
+   fixable findings. Execution Engine has no remaining fixed-version High/Critical
+   findings, but retains unfixed OS findings. Refresh and qualify production base
+   images/toolchains, then rescan. Application lockfile audit results do not cover
+   the complete deployed image; no scanner suppression or security clearance was
+   added. Exact counts and limits are in the release record.
 
 Management/Admin Console runtime audits reported no known advisories. Execution
 Engine's patched production lock reported none across 21 packages; Gateway's
@@ -133,8 +139,10 @@ Zero audit findings is not a security certification.
   lifecycle (including the selected secret backend), AgentK connectivity, AgentV
   read-only/read-write policy, real-host restart/reboot, telemetry, and recovery.
   No paid requests, real VM service mutations, or production canaries were run.
-- [ ] Complete Linux visual CI and image scans; monitor canary readiness, jobs,
-  errors, and retained-work behavior before widening traffic.
+- [x] Complete Linux visual CI and image scans for the experimental release;
+  results are recorded separately and do not resolve the security gates above.
+- [ ] Monitor production canary readiness, jobs, errors, and retained-work
+  behavior before widening traffic.
 
 No production teardown or automatic data reset is part of this work.
 The two task-owned database/cache containers were removed after verification;

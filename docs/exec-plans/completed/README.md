@@ -1,5 +1,8 @@
 # Completed Execution Plans
 
+- [Readiness fixes demo release](readiness-fixes-demo-release.md) — Verified
+  coordinated releases and in-place demo chart `.27`; production gates remain open.
+
 - [Filesystem capacity fix release](filesystem-capacity-release.md) — Verified
   AgentV .10, control-plane .38, chart .26 and in-place demo upgrade, 2026-10-25.
 
