@@ -1,5 +1,8 @@
 # Completed Execution Plans
 
+- [Filesystem capacity fix release](filesystem-capacity-release.md) — Verified
+  AgentV .10, control-plane .38, chart .26 and in-place demo upgrade, 2026-10-25.
+
 - [Admin-managed model IDs release](admin-model-ids-release.md) — Verified
   application/chart releases and data-preserving demo upgrade, 2026-10-25.
 

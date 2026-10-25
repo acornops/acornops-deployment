@@ -29,19 +29,20 @@ used as exclusions. Raw measurements and ordinary filesystem alerts remain.
   snapshot trimming, genuine disk pressure, retained data and issue recovery.
 - [x] Run fresh AgentV validation, full coverage, package and curl compatibility
   smoke, and control-plane validation against isolated test databases.
-- [ ] Commit focused changes, fast-forward main, push without force, and require
+- [x] Commit focused changes, fast-forward main, push without force, and require
   successful exact-SHA CI. Publish unique tags without overwriting any release.
-- [ ] Require AgentV's hosted Node 22/24 systemd gates; verify published archive
+- [x] Require AgentV's hosted Node 22/24 systemd gates; verify published archive
   and installer checksums/provenance and both component image manifests.
-- [ ] Validate deployment with `task validate`, `task platform-contracts`, and
+- [x] Validate deployment with `task validate`, `task platform-contracts`, and
   the published-artifact matrix before chart publication; then verify the full
   matrix, chart mirror and Pages publication without a chart skip.
-- [ ] Validate private demo with required Ansible syntax and secret references.
+- [x] Validate private demo with required Ansible syntax and secret references.
   Confirm no competing deployment; push pins once to trigger the existing
   leased in-place workflow, not a duplicate dispatch or a teardown.
-- [ ] Verify demo readiness, actual image/installer pin, public routes, PVC and
+- [x] Verify demo readiness, actual image/installer pin, public routes, PVC and
   enrollment preservation; record exact versions, commits and workflow runs.
-- [ ] Synchronize affected local and remote mains and archive this record.
+- [x] Push all release commits to main and archive this record; verify the
+  final documentation commits leave local and remote mains synchronized.
 
 ## Rollout, rollback and limits
 
@@ -61,8 +62,9 @@ demo or user's VM. No paid provider calls or unrelated service restarts.
 
 ## Completion
 
-In progress. Baseline demo: chart .25, Helm revision 6, all five applications
-Ready. Private demo record owns host-specific preservation evidence.
+Released and deployed on 2026-10-25. Baseline demo: chart .25, Helm revision 6;
+verified outcome: chart .26, Helm revision 7, all five applications Ready.
+Private demo record owns host-specific preservation evidence.
 
 Fresh local evidence: AgentV `npm run validate`, `npm run test:coverage:all`
 (95 tests), `npm run smoke:package` and `npm run smoke:curl-compat` all passed.
@@ -100,3 +102,36 @@ Private demo validation also passed after disabling its existing automatic
 pending-Helm-release cleanup setting. This release preserves the deployment:
 pending state must stop for inspection, not uninstall the release. No new role
 logic, secret changes or cleanup commands were introduced.
+
+Chart source `beb58077c5e9aac3f775e788e9234a22a5807796` passed
+[CI](https://github.com/acornops/acornops-deployment/actions/runs/40204565037)
+and [release](https://github.com/acornops/acornops-deployment/actions/runs/40204654326).
+Chart .26 has appVersion .38 and OCI digest
+`sha256:aac7c1f2e4b3aaf932874ed6430cf5101b6878786ed1c9e6433a249a522b5aad`.
+The full published-artifact matrix passed without skips. Image provenance
+revisions matched both application commits. The generated
+[mirror](https://github.com/acornops/charts/actions/runs/40204687080) and
+[Pages](https://github.com/acornops/charts/actions/runs/40204699115) succeeded;
+the public chart download is byte-identical to OCI, and packaged values match
+the reviewed source. Generated charts main is
+`c7cef450abc4ebce43ebb5f2b4b64b6e7ec402ed`.
+
+Temporary PostgreSQL/Redis test containers created for this validation were
+stopped and auto-removed after verifying their task labels. Existing local
+stack containers, databases and pre-existing workspace files were not changed.
+
+Private demo commit `ff58812deb44982f1d9a4c3db71577b159ff77db` passed CI and
+its existing leased in-place deployment workflow. Post-rollout
+`task demo:verify DEMO_ENV_FILE=.env.demo` passed, including HTTPS console/API,
+identity and admin readiness. Runtime control-plane digest matched the verified
+`.38` image; its installer environment is `.10`. PVC identities, the platform
+Secret checksum and VM registration were preserved. No reset, secret upload,
+paid provider calls or manual database changes were performed.
+
+The enrolled user VM remains online on AgentV `.9`. Its immutable-image alerts
+cannot clear until its separate **Upgrade or repair AgentV** operation runs.
+That host mutation was not authorized or performed by this release task. The
+unchanged four service-failure issues are outside this filesystem fix. Browser
+flows and the user's host upgrade were not exercised; runtime configuration and
+public route checks were read-only. The full application suites, hosted release
+gates and unchanged-contract checks passed as recorded above.
