@@ -1,5 +1,9 @@
 # Completed Execution Plans
 
+- [Approval resume and compact capabilities release](approval-resume-release.md) —
+  Verified chart `.29`, retained demo data/credentials and demo-only database
+  memory correction; installed-VM and production acceptance remain separate.
+
 - [Security and agent maintenance demo release](security-maintenance-release.md) —
   Verified chart `.28`, application/agent releases and retained demo data;
   production acceptance gates remain open.
