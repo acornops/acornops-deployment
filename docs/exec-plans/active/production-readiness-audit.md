@@ -79,25 +79,58 @@ baseline was approved or changed. Run route visual comparison on the established
 Linux CI image before release. Initial missing-database and sandbox-localhost
 failures were retried with isolated services/access and are not counted as passes.
 
+## Focused dependency qualification
+
+The user approved patched Zod 4 qualification and Nodemailer remediation in the
+current checkouts on `fix/runtime-validation-security`. This follow-up does not
+authorize a new release or demo deployment; the published matrix is unchanged.
+
+- Control Plane, AgentK, and AgentV now lock Zod 4.6.7. Existing array maxima reject
+  excess collections before reading elements. Tests reproduce the former
+  amplification and verify the new behavior, including nested RBAC collections.
+- Zod compatibility adaptations preserve nested deployment defaults, partial
+  update omission, legacy arbitrary payload optionality, and protocol envelopes.
+  Agent converters now use native input-schema conversion. AgentV `query_logs`
+  fields and strictly positive PID constraints are advertised correctly; they
+  were already enforced at execution. Error-detail wording and rejection of
+  malformed timestamps/UUIDs or unsafe integers follow Zod 4.
+- Control Plane now locks Nodemailer 10.1.4 and uses its bundled types. The email
+  service is unchanged. Real loopback SMTP tests verify both token emails,
+  configured credentials, recipient rejection, and required-TLS refusal before
+  credentials or mail are sent. No real email was delivered.
+- Fresh `npm audit --omit=dev --json` reports zero runtime advisories in all
+  three repositories. This does not clear the broader resource-budget or image
+  gates below. Final review/qualification evidence is maintained in each
+  repository's `docs/exec-plans/completed/runtime-validation-security.md`.
+- Full validation passed: Control Plane 1,354 tests plus separate SQL upgrade
+  checks, AgentK 262 unit + 1 protocol test, AgentV 104 unit + 4 protocol tests
+  and package smoke. Verified temporary Node 22.23.4 passed compatibility suites
+  alongside the main Node 24.2.0 runs. Independent final review found no Critical,
+  Important, or Minor issues in the migration. Main integration and demo release
+  are now authorized and tracked in [the release plan](security-maintenance-release.md);
+  the production gates below remain separate decisions.
+- Both dependency-qualification test containers were stopped and auto-removed
+  after verification, discarding only synthetic data. Existing local/demo
+  services were untouched; evidence remains under
+  `/tmp/acornops-validation-security-y4rx7q`.
+
 ## Remaining security gates
 
-1. **Zod 3 collection validation needs dedicated remediation.** Control Plane,
-   AgentK, and AgentV still use 3.25.76. The actual Control Plane VM registration
-   schema produces many element errors despite `.max(10)`; authenticated input
-   reaches validation before workspace mutation authorization. AgentK has similar
-   bounded-write schemas. AgentV's identified collection parser is behind its
-   root-owned local helper, a narrower boundary. Body-byte limits are not a fix.
-   Add fatal raw collection limits before element validation, including currently
-   unbounded arrays, or qualify patched Zod 4 and migrate the agents' v3-dependent
-   JSON-schema converters. Assert bounded error counts and unchanged advertised
-   schemas/valid-input behavior. A `zod/v3` compatibility import does not fix it.
-   [Upstream advisory](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5).
-2. **Qualify Nodemailer 10.1.4 or document an explicit release exception.**
-   Control Plane's installed 9.0.3 still has advisories. Current simple-mailbox,
-   single operator-controlled transport use did not expose a matching trigger,
-   but that is not a patched dependency. Node compatibility is satisfied; verify
-   typecheck, auth-email tests, and a local SMTP send before adopting the major.
-   [Patched release](https://github.com/nodemailer/nodemailer/releases/tag/v10.1.4).
+1. **Define early budgets for currently unconstrained collections.** The Zod
+   [upstream patch](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5) only bounds
+   work where a schema declares an upper limit; it is not a general item/error
+   budget. Control Plane webhook event types remain unbounded and are parsed
+   after user authentication but before workspace mutation authorization. Open
+   records also lack entry/depth budgets. Workflow IDs/tags, internal run-event
+   batches, platform policy arrays, and operator configuration need separately
+   justified limits at their respective trust boundaries. The Control Plane
+   qualification plan inventories these inputs. Do not treat the 4 MiB body
+   limit or a clean dependency audit as resolution. No arbitrary business limits
+   were introduced in the approved compatibility-focused migration.
+2. **Publish and qualify the patched artifacts.** The local changes are not yet
+   merged or released. Rebuild and scan Control Plane/AgentK images and AgentV
+   archives; test production-like SMTP and installed-agent upgrade paths before
+   promotion. Installed VMs are not updated by a platform redeploy.
 3. **Remediate or explicitly qualify the remaining image findings.** The subsequent
    experimental release scanned previous/rebuilt Linux images with Trivy: no new
    High/Critical package/advisory pairs, but existing OS and bundled npm-toolchain
@@ -110,10 +143,9 @@ failures were retried with isolated services/access and are not counted as passe
 
 Management/Admin Console runtime audits reported no known advisories. Execution
 Engine's patched production lock reported none across 21 packages; Gateway's
-production lock reported none across 72. Control Plane's remaining runtime
-findings are Zod and Nodemailer. Agent dependency outcomes are recorded in their
-local plans/audit logs: AgentK and AgentV each retain only the Zod runtime finding.
-Zero audit findings is not a security certification.
+production lock reported none across 72. Those earlier checks are distinct from
+the fresh three-repository audits above. Zero audit findings is not a security
+certification and does not update already published images or installed agents.
 
 ## Production promotion checklist
 

@@ -23,31 +23,33 @@ stacks:
     executionContractVersion: 2
     databaseSchemaEpoch: greenfield-1
     components:
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.40
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.39
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.41
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.40
       executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.16
       llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.21
-      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.11
+      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.12
 
   - name: k8s-platform-v1
     description: Pinned greenfield Kubernetes stack deployed with the acornops-platform Helm chart.
     executionContractVersion: 2
     databaseSchemaEpoch: greenfield-1
     chart:
-      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.27
-      acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.14
+      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.28
+      acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.15
     components:
       platformAdminConsole: ghcr.io/acornops/platform-admin-console:0.0.1-experimental.7
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.40
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.39
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.41
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.40
       executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.16
       llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.21
-      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.11
+      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.12
 
 compatibility:
   notes:
     - AgentV v0.0.1-experimental.6 onboarding was introduced with control-plane v0.0.1-experimental.34 and management-console v0.0.1-experimental.35; this matrix pins their coordinated successors, not the historical minimum release set.
-    - Publish and verify all pinned images before releasing platform chart v0.0.1-experimental.27; demo validation does not replace production security, staging and recovery acceptance gates.
+    - Publish and verify all pinned images before releasing platform chart v0.0.1-experimental.28; demo validation does not replace production security, staging and recovery acceptance gates.
+    - Control-plane v0.0.1-experimental.40, AgentK v0.0.1-experimental.15, and AgentV v0.0.1-experimental.12 qualify patched Zod 4; control-plane also qualifies patched Nodemailer. No migration, credential, permission, or protocol version change is required. Installed agents need an explicit upgrade.
+    - Management-console v0.0.1-experimental.41 standardizes agent maintenance and consumes the additive control-plane v0.0.1-experimental.40 repair API; deploy the API first. AgentK chart v0.0.1-experimental.15 rolls pods when a chart-managed key changes. Routine repair preserves Helm values and credentials; external Secrets remain operator-owned.
     - AgentV v0.0.1-experimental.11 evaluates bounded full filesystem results before inventory trimming and reports optional finding coverage; control-plane v0.0.1-experimental.39 uses that evidence for recovery, with conservative fallback for older agents. Snapshot v2 remains compatible; there is no new migration.
     - Control-plane v0.0.1-experimental.39 preserves an empty effective AI allowlist after deployment changes until explicit repair. Execution-engine v0.0.1-experimental.16 honors dispatch pause even when capacity quotas are disabled. See docs/OPERATIONS.md.
     - AgentV v0.0.1-experimental.10 excludes immutable filesystem images from capacity findings; control-plane v0.0.1-experimental.38 derives inventory badges from those findings. Existing hosts need an AgentV upgrade; a platform redeploy alone does not update installed agents.

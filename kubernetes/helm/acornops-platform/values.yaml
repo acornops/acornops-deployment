@@ -348,7 +348,7 @@ targetAgents:
   agentv:
     systemd:
       # Exact immutable AgentV GitHub release or mirrored release version.
-      version: 0.0.1-experimental.11
+      version: 0.0.1-experimental.12
       # Mirrors must preserve the v<version>/<asset> release layout.
       releaseBaseUrl: https://github.com/acornops/agentv/releases/download
 
@@ -544,7 +544,7 @@ components:
     basePath: /
     image:
       repository: ghcr.io/acornops/management-console
-      tag: 0.0.1-experimental.40
+      tag: 0.0.1-experimental.41
       pullPolicy: IfNotPresent
     service:
       port: 80
@@ -620,7 +620,7 @@ components:
       maxSubscriptionsPerWorkspace: 100
     image:
       repository: ghcr.io/acornops/control-plane
-      tag: 0.0.1-experimental.39
+      tag: 0.0.1-experimental.40
       pullPolicy: IfNotPresent
     service:
       port: 8081
