@@ -1,5 +1,9 @@
 # Completed Execution Plans
 
+- [Security and agent maintenance demo release](security-maintenance-release.md) —
+  Verified chart `.28`, application/agent releases and retained demo data;
+  production acceptance gates remain open.
+
 - [Readiness fixes demo release](readiness-fixes-demo-release.md) — Verified
   coordinated releases and in-place demo chart `.27`; production gates remain open.
 

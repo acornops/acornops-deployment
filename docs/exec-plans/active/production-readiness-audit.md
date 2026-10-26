@@ -82,8 +82,9 @@ failures were retried with isolated services/access and are not counted as passe
 ## Focused dependency qualification
 
 The user approved patched Zod 4 qualification and Nodemailer remediation in the
-current checkouts on `fix/runtime-validation-security`. This follow-up does not
-authorize a new release or demo deployment; the published matrix is unchanged.
+current checkouts on `fix/runtime-validation-security`. That implementation
+initially excluded release work. A subsequent request authorized main integration
+and demo publication, tracked in [the release record](../completed/security-maintenance-release.md).
 
 - Control Plane, AgentK, and AgentV now lock Zod 4.6.7. Existing array maxima reject
   excess collections before reading elements. Tests reproduce the former
@@ -107,7 +108,7 @@ authorize a new release or demo deployment; the published matrix is unchanged.
   and package smoke. Verified temporary Node 22.23.4 passed compatibility suites
   alongside the main Node 24.2.0 runs. Independent final review found no Critical,
   Important, or Minor issues in the migration. Main integration and demo release
-  are now authorized and tracked in [the release plan](security-maintenance-release.md);
+  are complete and tracked in [the release record](../completed/security-maintenance-release.md);
   the production gates below remain separate decisions.
 - Both dependency-qualification test containers were stopped and auto-removed
   after verification, discarding only synthetic data. Existing local/demo
@@ -127,10 +128,15 @@ authorize a new release or demo deployment; the published matrix is unchanged.
    qualification plan inventories these inputs. Do not treat the 4 MiB body
    limit or a clean dependency audit as resolution. No arbitrary business limits
    were introduced in the approved compatibility-focused migration.
-2. **Publish and qualify the patched artifacts.** The local changes are not yet
-   merged or released. Rebuild and scan Control Plane/AgentK images and AgentV
-   archives; test production-like SMTP and installed-agent upgrade paths before
-   promotion. Installed VMs are not updated by a platform redeploy.
+2. **Qualify patched artifacts in the production environment.** Control Plane
+   `.40`, AgentK `.15`, and AgentV `.12` are now merged and published with source
+   provenance and fresh image scans. AgentV's archive/installer checksums and
+   signed provenance passed, as did hosted Node 22/24 systemd and AgentK Linux
+   Kubernetes gates. Production-like SMTP and installed-agent upgrade/reboot
+   paths remain unverified. The local Helm repair/replacement canary was blocked
+   by Docker disk capacity and ARM/AMD64 execution limits; render/controller
+   regressions and the hosted fresh-install rollout passed, but do not replace
+   that upgrade acceptance. Installed VMs are not updated by a platform redeploy.
 3. **Remediate or explicitly qualify the remaining image findings.** The subsequent
    experimental release scanned previous/rebuilt Linux images with Trivy: no new
    High/Critical package/advisory pairs, but existing OS and bundled npm-toolchain
