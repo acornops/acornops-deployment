@@ -36,8 +36,11 @@ services:
       - acornops
 
   control-plane:
+    stop_grace_period: ${CP_STOP_GRACE_SECONDS:-180}s
     image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.41}
     environment:
+      SERVICE_DRAIN_TIMEOUT_SECONDS: ${CP_DRAIN_TIMEOUT_SECONDS:-150}
+      AGENT_HANDOFF_TIMEOUT_MS: ${AGENT_HANDOFF_TIMEOUT_MS:-45000}
       NODE_ENV: production
       PORT: 8081
       LOG_LEVEL: info
@@ -204,8 +207,11 @@ services:
       - acornops
 
   execution-engine:
+    stop_grace_period: ${EE_STOP_GRACE_SECONDS:-900}s
     image: ${EXECUTION_ENGINE_IMAGE:-ghcr.io/acornops/execution-engine:0.0.1-experimental.17}
     environment:
+      SERVICE_DRAIN_TIMEOUT_SECONDS: ${EE_DRAIN_TIMEOUT_SECONDS:-870}
+      AGENT_HANDOFF_TIMEOUT_MS: ${AGENT_HANDOFF_TIMEOUT_MS:-45000}
       APP_ENV: production
       ORCH_BASE_URL: ${ORCH_BASE_URL:-http://control-plane:8081}
       WORKSPACE_CAPACITY_ENABLED: ${WORKSPACE_CAPACITY_ENABLED:-false}
@@ -247,8 +253,11 @@ services:
       - acornops
 
   llm-gateway:
+    stop_grace_period: ${GATEWAY_STOP_GRACE_SECONDS:-240}s
     image: ${LLM_GATEWAY_IMAGE:-ghcr.io/acornops/llm-gateway:0.0.1-experimental.21}
     environment:
+      SERVICE_DRAIN_TIMEOUT_SECONDS: ${GATEWAY_DRAIN_TIMEOUT_SECONDS:-210}
+      AGENT_HANDOFF_TIMEOUT_MS: ${AGENT_HANDOFF_TIMEOUT_MS:-45000}
       APP_ENV: production
       WORKSPACE_CAPACITY_ENABLED: ${WORKSPACE_CAPACITY_ENABLED:-false}
       ORCH_BASE_URL: http://control-plane:8081

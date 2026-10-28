@@ -1,0 +1,8 @@
+# Opt-in source-based lifecycle tests; ordinary development keeps hot reload.
+services:
+  control-plane:
+    command: ["node", "--import", "tsx", "src/server.ts"]
+  execution-engine:
+    command: ["python", "-m", "execution_engine.serve"]
+  llm-gateway:
+    command: ["python", "-m", "app.serve"]

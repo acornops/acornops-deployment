@@ -300,6 +300,8 @@ platformAdminAccess:
 # Shared control-plane gateway settings for both AgentK and AgentV connections.
 # This does not configure either target-side agent daemon.
 agentGateway:
+  # Extra pre-dispatch wait for an agent to reconnect during a control-plane drain.
+  handoffTimeoutMs: 45000
   distributedRouting:
     # Enables HA target ownership and cross-pod routing through external Redis.
     enabled: true
@@ -590,7 +592,8 @@ components:
     apiDocsEnabled: false
     logLevel: info
     trustProxy: "1"
-    terminationGracePeriodSeconds: 45
+    drainTimeoutSeconds: 150
+    terminationGracePeriodSeconds: 180
     corsOrigin: ""
     conversationRetention:
       days: 30
@@ -666,6 +669,8 @@ components:
   executionEngine:
     enabled: true
     replicas: 3
+    drainTimeoutSeconds: 870
+    terminationGracePeriodSeconds: 900
     apiDocsEnabled: false
     logLevel: INFO
     maxConcurrentRuns: 100
@@ -734,6 +739,8 @@ components:
   llmGateway:
     enabled: true
     replicas: 3
+    drainTimeoutSeconds: 210
+    terminationGracePeriodSeconds: 240
     apiDocsEnabled: false
     logLevel: info
     # Maximum request body size accepted by the LLM gateway.

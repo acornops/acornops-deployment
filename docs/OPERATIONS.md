@@ -188,6 +188,9 @@ task prod-down
 
 ## Kubernetes Production
 
+For compatible application versions, follow [Graceful rolling restarts](rolling-restarts.md)
+for drain budgets, resource overlap, validation and restart completion checks.
+
 First select the [installation or upgrade path](#installation-and-upgrade-paths).
 Migration hooks do not quiesce old application replicas; complete the applicable
 maintenance procedure before an existing-install `helm upgrade`.

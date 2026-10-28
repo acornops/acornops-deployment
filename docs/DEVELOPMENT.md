@@ -64,6 +64,13 @@ Validate the platform chart:
 task k8s-chart-check
 ```
 
+The chart check covers drain/termination budget alignment, replacement strategy
+and plaintext/TLS probes. See [Graceful rolling restarts](rolling-restarts.md)
+for the corresponding service and Compose lifecycle contracts.
+Source-based shutdown tests opt into `compose/local/compose.drain.yaml` so
+signals reach the production supervisors instead of development reloaders.
+Use a separate test project and isolated environment as described in the runbook.
+
 Render manually:
 
 ```bash

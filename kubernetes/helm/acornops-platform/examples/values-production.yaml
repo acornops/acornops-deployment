@@ -246,7 +246,8 @@ components:
   controlPlane:
     replicas: 3
     apiDocsEnabled: false
-    terminationGracePeriodSeconds: 45
+    drainTimeoutSeconds: 150
+    terminationGracePeriodSeconds: 180
     webhookEgress:
       # Required in addition to networkPolicies.webhooks.to for private webhook hosts.
       allowedPrivateHosts: []

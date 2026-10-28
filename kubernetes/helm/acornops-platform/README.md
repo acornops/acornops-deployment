@@ -19,6 +19,8 @@ and cache endpoints through the existing Secret configured by
 - execution-engine: `3` replicas
 - llm-gateway: `3` replicas
 - control-plane: `3` replicas
+- core service rollout: `maxUnavailable: 0`, `maxSurge: 1`, `minReadySeconds: 5`
+- drain/grace budgets (seconds): control-plane `150/180`, execution-engine `870/900`, llm-gateway `210/240`
 - API docs: disabled
 - user access: OIDC plus username/password login, with signup disabled and password reset enabled by default
 - write confirmations: required by default for write-capable agent tools
@@ -31,6 +33,12 @@ and cache endpoints through the existing Secret configured by
 - AI policy: OpenAI is the default provider, `gpt-5.5` is the default model, and the default OpenAI allow list contains only GPT-5.x models
 
 ## Values Layout
+
+`components.<component>.drainTimeoutSeconds` and
+`terminationGracePeriodSeconds` must leave at least 30 seconds for cleanup and
+shutdown headroom. `agentGateway.handoffTimeoutMs` defaults to 45000. These
+settings require compatible service binaries; see the
+[rolling restart runbook](../../../docs/rolling-restarts.md) before rollout.
 
 The chart values are organized by operator concern:
 

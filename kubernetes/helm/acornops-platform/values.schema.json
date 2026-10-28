@@ -626,6 +626,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "handoffTimeoutMs": { "type": "integer", "minimum": 1 },
         "distributedRouting": {
           "type": "object",
           "additionalProperties": false,
@@ -835,6 +836,7 @@
         "platformAdminConsole": {
           "allOf": [
             { "$ref": "#/definitions/workload" },
+            { "not": { "required": ["drainTimeoutSeconds"] } },
             { "type": "object", "additionalProperties": true }
           ]
         },
@@ -862,6 +864,7 @@
                   { "required": ["logLevel"] },
                   { "required": ["trustProxy"] },
                   { "required": ["terminationGracePeriodSeconds"] },
+                  { "required": ["drainTimeoutSeconds"] },
                   { "required": ["corsOrigin"] },
                   { "required": ["conversationRetention"] },
                   { "required": ["toolResultArtifacts"] },
@@ -896,6 +899,7 @@
               "additionalProperties": true,
               "properties": {
                 "apiDocsEnabled": { "type": "boolean" },
+                "drainTimeoutSeconds": { "type": "integer", "minimum": 1 },
                 "logLevel": { "type": "string", "enum": ["trace", "debug", "info", "warn", "error"] },
                 "trustProxy": { "type": ["string", "boolean", "integer"] },
                 "terminationGracePeriodSeconds": { "type": "integer", "minimum": 1 },
@@ -1009,6 +1013,8 @@
               "additionalProperties": true,
               "properties": {
                 "apiDocsEnabled": { "type": "boolean" },
+                "drainTimeoutSeconds": { "type": "integer", "minimum": 1 },
+                "terminationGracePeriodSeconds": { "type": "integer", "minimum": 1 },
                 "logLevel": { "type": "string", "enum": ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "trace", "debug", "info", "warn", "error"] },
                 "maxConcurrentRuns": { "type": "integer", "minimum": 1 },
                 "toolContext": {
@@ -1052,7 +1058,6 @@
                   { "required": ["basePath"] },
                   { "required": ["locales"] },
                   { "required": ["trustProxy"] },
-                  { "required": ["terminationGracePeriodSeconds"] },
                   { "required": ["corsOrigin"] },
                   { "required": ["conversationRetention"] },
                   { "required": ["toolResultArtifacts"] },
@@ -1080,6 +1085,8 @@
               "additionalProperties": true,
               "properties": {
                 "apiDocsEnabled": { "type": "boolean" },
+                "drainTimeoutSeconds": { "type": "integer", "minimum": 1 },
+                "terminationGracePeriodSeconds": { "type": "integer", "minimum": 1 },
                 "logLevel": { "type": "string", "enum": ["trace", "debug", "info", "warn", "error"] },
                 "maxRequestBodyBytes": { "type": "integer", "minimum": 1 },
                 "builtinMcpMaxResponseBytes": { "type": "integer", "minimum": 2162688, "maximum": 5242880 },
@@ -1211,7 +1218,6 @@
                   { "required": ["basePath"] },
                   { "required": ["locales"] },
                   { "required": ["trustProxy"] },
-                  { "required": ["terminationGracePeriodSeconds"] },
                   { "required": ["corsOrigin"] },
                   { "required": ["conversationRetention"] },
                   { "required": ["toolResultArtifacts"] },
@@ -1244,6 +1250,7 @@
     "executionPoolLimits": {
       "type": "object", "additionalProperties": false,
       "required": ["maxConcurrentRuns", "maxOutstandingRuns"],
+      "properties": { "maxConcurrentRuns": {}, "maxOutstandingRuns": {} },
       "oneOf": [
         { "properties": { "maxConcurrentRuns": { "type": "null" }, "maxOutstandingRuns": { "type": "null" } } },
         { "properties": { "maxConcurrentRuns": { "type": "integer", "minimum": 1 }, "maxOutstandingRuns": { "type": "integer", "minimum": 1 } } }
@@ -1357,7 +1364,8 @@
         "openaiApiSurface": { "type": "string" },
         "providerBaseUrls": { "type": "object" },
         "trustProxy": { "type": ["string", "boolean", "integer"] },
-        "terminationGracePeriodSeconds": { "type": "integer" },
+        "terminationGracePeriodSeconds": { "type": "integer", "minimum": 1 },
+        "drainTimeoutSeconds": { "type": "integer", "minimum": 1 },
         "corsOrigin": { "type": "string" },
         "conversationRetention": { "type": "object" },
         "toolResultArtifacts": { "type": "object" },

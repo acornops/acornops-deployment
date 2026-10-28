@@ -140,7 +140,7 @@ for (const [component, image] of Object.entries(expectedVmProdImages)) {
 // Do not let the caller's shell overrides mask a stale shipped example.
 const composeEnv = { ...process.env };
 for (const key of Object.keys(composeEnv)) {
-  if (key.startsWith('COMPOSE_') || key.endsWith('_IMAGE')) delete composeEnv[key];
+  if (key.startsWith('COMPOSE_') || key.endsWith('_IMAGE') || key.endsWith('_DRAIN_TIMEOUT_SECONDS') || key.endsWith('_STOP_GRACE_SECONDS') || key === 'AGENT_HANDOFF_TIMEOUT_MS') delete composeEnv[key];
 }
 delete composeEnv.AGENTV_SYSTEMD_RELEASE_VERSION;
 const composeResult = spawnSync('docker', [
@@ -151,6 +151,12 @@ if (composeResult.status !== 0) {
   throw new Error(composeResult.stderr || composeResult.error?.message || 'VM Compose render failed');
 }
 const vmServices = JSON.parse(composeResult.stdout).services;
+for (const [name, drain, grace] of [['control-plane', 150, 180], ['execution-engine', 870, 900], ['llm-gateway', 210, 240]]) {
+  const service = vmServices[name];
+  expect(service.stop_grace_period === `${grace}s` || service.stop_grace_period === `${grace / 60}m0s`, `${name} Compose stop grace must cover drain and cleanup`);
+  expect(service.environment.SERVICE_DRAIN_TIMEOUT_SECONDS === String(drain), `${name} Compose drain budget must match Kubernetes defaults`);
+  expect(service.environment.AGENT_HANDOFF_TIMEOUT_MS === '45000', `${name} Compose handoff allowance must be consistent`);
+}
 expect(
   vmServices?.['control-plane']?.environment?.AGENTV_SYSTEMD_RELEASE_VERSION === expectedAgentVVersion,
   `VM example should render generated AgentV installs at ${expectedAgentVVersion}; got ${vmServices?.['control-plane']?.environment?.AGENTV_SYSTEMD_RELEASE_VERSION}`

@@ -14,6 +14,12 @@ metadata:
   {{- end }}
 spec:
   replicas: {{ .Values.components.llmGateway.replicas }}
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       {{- include "acornops-platform.selectorLabels" (dict "root" . "component" "llm-gateway") | nindent 6 }}
@@ -30,6 +36,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      terminationGracePeriodSeconds: {{ .Values.components.llmGateway.terminationGracePeriodSeconds }}
       securityContext:
         {{- toYaml .Values.components.llmGateway.podSecurityContext | nindent 8 }}
       {{- with .Values.global.imagePullSecrets }}

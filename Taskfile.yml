@@ -220,6 +220,16 @@ tasks:
     cmds:
       - node scripts/k8s-ha-smoke.mjs
 
+  k8s-drain-check:
+    desc: Check rollout fixture assertions, isolation guards, and rendered capacity profiles
+    cmds:
+      - node --test scripts/fixtures/drain-runtime.test.mjs scripts/lib/k8s-drain-smoke/*.test.mjs
+
+  k8s-drain-smoke:
+    desc: Run opt-in real rolling restarts in an explicitly selected isolated k3d cluster
+    cmds:
+      - node scripts/k8s-drain-smoke.mjs {{.CLI_ARGS}}
+
   release-matrix-check:
     desc: Validate release version metadata against Compose and Helm defaults
     cmds:
@@ -239,6 +249,7 @@ tasks:
       - node scripts/check-install-linux.mjs
       - task python-standards-check
       - task k8s-chart-check
+      - task k8s-drain-check
       - task release-matrix-check
       - ./scripts/validate-prod-edge.sh
       - ./scripts/validate-prod-images.sh

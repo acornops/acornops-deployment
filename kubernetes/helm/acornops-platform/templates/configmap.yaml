@@ -1,3 +1,9 @@
+{{- range $name := list "controlPlane" "executionEngine" "llmGateway" }}
+{{- $component := index $.Values.components $name }}
+{{- if and $component.enabled (lt (int $component.terminationGracePeriodSeconds) (add (int $component.drainTimeoutSeconds) 30)) }}
+{{- fail (printf "components.%s.terminationGracePeriodSeconds must be at least drainTimeoutSeconds + 30 (cleanup and shutdown headroom)" $name) }}
+{{- end }}
+{{- end }}
 {{- range $plan := .Values.workspacePlans.plans }}
 {{- range $pool, $limits := $plan.executionLimits }}
 {{- if and (ne $limits.maxConcurrentRuns nil) (lt (int $limits.maxOutstandingRuns) (int $limits.maxConcurrentRuns)) }}
@@ -22,6 +28,8 @@ data:
   NODE_ENV: "production"
   PORT: {{ .Values.components.controlPlane.service.targetPort | quote }}
   LOG_LEVEL: {{ .Values.components.controlPlane.logLevel | quote }}
+  SERVICE_DRAIN_TIMEOUT_SECONDS: {{ .Values.components.controlPlane.drainTimeoutSeconds | quote }}
+  AGENT_HANDOFF_TIMEOUT_MS: {{ .Values.agentGateway.handoffTimeoutMs | quote }}
   ENABLE_API_DOCS: {{ .Values.components.controlPlane.apiDocsEnabled | quote }}
   TRUST_PROXY: {{ .Values.components.controlPlane.trustProxy | quote }}
   CONTROL_PLANE_BASE_URL: {{ include "acornops-platform.publicUrl" . | quote }}
@@ -177,6 +185,8 @@ data:
   APP_ENV: "production"
   HTTP_PORT: {{ .Values.components.executionEngine.service.targetPort | quote }}
   LOG_LEVEL: {{ .Values.components.executionEngine.logLevel | quote }}
+  SERVICE_DRAIN_TIMEOUT_SECONDS: {{ .Values.components.executionEngine.drainTimeoutSeconds | quote }}
+  AGENT_HANDOFF_TIMEOUT_MS: {{ .Values.agentGateway.handoffTimeoutMs | quote }}
   ENABLE_API_DOCS: {{ .Values.components.executionEngine.apiDocsEnabled | quote }}
   ORCH_BASE_URL: {{ include "acornops-platform.controlPlaneInternalUrl" . | quote }}
   EXECUTION_GATEWAY_BASE_URL: {{ include "acornops-platform.internalUrl" (dict "root" . "component" "llm-gateway" "port" .Values.components.llmGateway.service.port) | quote }}
@@ -239,6 +249,8 @@ data:
   APP_ENV: "production"
   GATEWAY_PORT: {{ .Values.components.llmGateway.service.targetPort | quote }}
   LOG_LEVEL: {{ .Values.components.llmGateway.logLevel | quote }}
+  SERVICE_DRAIN_TIMEOUT_SECONDS: {{ .Values.components.llmGateway.drainTimeoutSeconds | quote }}
+  AGENT_HANDOFF_TIMEOUT_MS: {{ .Values.agentGateway.handoffTimeoutMs | quote }}
   ENABLE_API_DOCS: {{ .Values.components.llmGateway.apiDocsEnabled | quote }}
   MAX_REQUEST_BODY_BYTES: {{ .Values.components.llmGateway.maxRequestBodyBytes | int | quote }}
   BUILTIN_MCP_MAX_RESPONSE_BYTES: {{ .Values.components.llmGateway.builtinMcpMaxResponseBytes | int | quote }}

@@ -27,6 +27,14 @@ This repository owns deployment and compatibility contracts rather than service 
 - Universal starter automation provisioning is owned by control plane and is independent of optional development target fixtures
 - MCP registry bootstrap and workspace-management policy, with no public registry enabled by default
 
+## Graceful rolling restarts
+
+The additive `gracefulDrainContract` is mirrored by control plane, execution
+engine, gateway and console. It fixes the pre-admission retry envelope, optional
+remaining-lease metadata and cancellation/handoff semantics without changing
+existing contract versions. The [rolling restart runbook](../rolling-restarts.md)
+defines deployment budgets, compatibility order and operational limits.
+
 ## Internal Transport TLS
 
 Kubernetes platform deployments use HTTP for service-to-service calls by default.

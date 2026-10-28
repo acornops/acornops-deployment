@@ -35,6 +35,13 @@ const localSmoke = readFileSync(path.join(root, 'scripts/local-smoke.mjs'), 'utf
 expect(deploymentManifest.repo === 'deployment', 'Deployment manifest repo should be deployment');
 expect(deploymentManifest.version === 1, 'Deployment manifest version should be 1');
 expect(
+  deploymentManifest.gracefulDrainContract?.errorCode === 'SERVICE_DRAINING'
+    && deploymentManifest.gracefulDrainContract?.httpStatus === 503
+    && deploymentManifest.gracefulDrainContract?.outcome === 'not_started'
+    && deploymentManifest.gracefulDrainContract?.retryable === true,
+  'Deployment must document the exact pre-admission drain retry contract'
+);
+expect(
   deploymentManifest.runtimeDependencies?.length === 7,
   'Deployment manifest should list the seven runtime component dependencies'
 );
@@ -651,6 +658,9 @@ if (missing.length === 0) {
   for (const [repoName, manifest] of Object.entries(manifests)) {
     expect(manifest.repo === repoName, `Manifest repo mismatch for ${repoName}`);
     expect(manifest.version === 1, `Manifest version mismatch for ${repoName}`);
+    if (['control-plane', 'execution-engine', 'llm-gateway', 'management-console'].includes(repoName)) {
+      expect(stable(manifest.gracefulDrainContract) === stable(deploymentManifest.gracefulDrainContract), `${repoName} must mirror the graceful drain contract`);
+    }
   }
 
   expectCounterpart('control-plane', 'management-console', 'management-console', 'control-plane');

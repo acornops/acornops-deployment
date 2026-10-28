@@ -6,17 +6,22 @@ const composeFiles = [
   '-f', 'compose/local/compose.source.yaml'
 ];
 
-function render(extraProfiles, environment) {
+function render(extraProfiles, environment, extraFiles = []) {
   const profileArgs = ['--profile', 'local', '--profile', 'oidc-dex'];
   for (const profile of extraProfiles) profileArgs.push('--profile', profile);
+  // Check shipped defaults independently of the caller's deployment overrides.
+  const inheritedEnv = { ...process.env };
+  for (const key of Object.keys(inheritedEnv)) {
+    if (key.endsWith('_DRAIN_TIMEOUT_SECONDS') || key.endsWith('_STOP_GRACE_SECONDS') || key === 'AGENT_HANDOFF_TIMEOUT_MS') delete inheritedEnv[key];
+  }
   const result = spawnSync(
     'docker',
-    ['compose', ...composeFiles, ...profileArgs, '--env-file', 'env/local/.env.example', 'config', '--format', 'json'],
+    ['compose', ...composeFiles, ...extraFiles.flatMap((file) => ['-f', file]), ...profileArgs, '--env-file', 'env/local/.env.example', 'config', '--format', 'json'],
     {
       cwd: process.cwd(),
       encoding: 'utf8',
       env: {
-        ...process.env,
+        ...inheritedEnv,
         SEED_DEVELOPMENT_DATA: 'true',
         SEED_AGENT_KEY: 'ak_local_dev_shared_key',
         SEED_VM_AGENT_KEY: 'ak_local_vm_dev_shared_key',
@@ -39,6 +44,20 @@ function expect(condition, message) {
 }
 
 const defaultConfig = render([], {});
+const drainConfig = render([], {}, ['compose/local/compose.drain.yaml']);
+for (const [name, command, drain, grace] of [
+  ['control-plane', ['node', '--import', 'tsx', 'src/server.ts'], 150, '3m0s'],
+  ['execution-engine', ['python', '-m', 'execution_engine.serve'], 870, '15m0s'],
+  ['llm-gateway', ['python', '-m', 'app.serve'], 210, '4m0s']
+]) {
+  const service = drainConfig.services[name];
+  expect(JSON.stringify(service.command) === JSON.stringify(command), `${name} lifecycle tests must signal the native server directly`);
+  expect(service.environment.SERVICE_DRAIN_TIMEOUT_SECONDS === String(drain), `${name} local drain budget must match its launcher`);
+  expect(service.stop_grace_period === grace, `${name} local stop grace must cover cleanup`);
+}
+for (const name of ['execution-engine', 'llm-gateway']) {
+  expect(defaultConfig.services[name].command.includes('--reload'), `${name} ordinary development keeps hot reload`);
+}
 expect(defaultConfig.services['control-plane'].environment.SEED_DEVELOPMENT_DATA === 'true', 'default local profile must seed development targets');
 expect(defaultConfig.services['control-plane'].environment.SEED_AGENT_KEY === 'ak_local_dev_shared_key', 'default local profile must pass the AgentK seed key');
 expect(defaultConfig.services['control-plane'].environment.SEED_VM_AGENT_KEY === 'ak_local_vm_dev_shared_key', 'default local profile must pass the AgentV seed key');

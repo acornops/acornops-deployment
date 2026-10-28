@@ -641,6 +641,41 @@ if (timedOwnerLogArgs.includes('--since=5m') || !timedOwnerLogArgs.includes('--s
 }
 
 const defaultRender = helmTemplate();
+const drainBudgets = [
+  ['controlPlane', 'control-plane', 150, 180],
+  ['executionEngine', 'execution-engine', 870, 900],
+  ['llmGateway', 'llm-gateway', 210, 240]
+];
+for (const [tls, render] of [[false, defaultRender], [true, helmTemplate(internalTlsArgs)]]) {
+  for (const [, name, drain, grace] of drainBudgets) {
+    const deployment = manifestDocument(render, 'Deployment', `acornops-acornops-platform-${name}`);
+    const config = manifestDocument(render, 'ConfigMap', `acornops-acornops-platform-${name}`);
+    assertIncludes(deployment, `terminationGracePeriodSeconds: ${grace}`, `${name} reserves drain and cleanup time`);
+    assertMatch(deployment, /strategy:\s+type: RollingUpdate\s+rollingUpdate:\s+maxUnavailable: 0\s+maxSurge: 1/, `${name} waits for replacement capacity`);
+    assertIncludes(deployment, 'minReadySeconds: 5', `${name} waits for stable replacement readiness`);
+    assertIncludes(config, `SERVICE_DRAIN_TIMEOUT_SECONDS: "${drain}"`, `${name} uses its application drain budget`);
+    assertIncludes(config, 'AGENT_HANDOFF_TIMEOUT_MS: "45000"', `${name} shares the handoff allowance`);
+    const probePort = tls && name !== 'control-plane' ? 'health' : 'http';
+    assertMatch(deployment, new RegExp(`readinessProbe:\\s+httpGet:\\s+path: /ready\\s+port: ${probePort}`), `${name} retains reachable readiness with TLS=${tls}`);
+    assertMatch(deployment, new RegExp(`livenessProbe:\\s+httpGet:\\s+path: /health\\s+port: ${probePort}`), `${name} retains distinct liveness with TLS=${tls}`);
+  }
+}
+for (const [key, name] of drainBudgets) {
+  for (const setting of ['drainTimeoutSeconds', 'terminationGracePeriodSeconds']) {
+    for (const invalid of [0, -1, 1.5]) expectHelmFailure(['--set', `components.${key}.${setting}=${invalid}`], `${key}.${setting} must be a positive integer`);
+  }
+  expectHelmFailure(['--set', `components.${key}.drainTimeoutSeconds=120`, '--set', `components.${key}.terminationGracePeriodSeconds=149`], `${key} needs 30 seconds beyond its drain budget`);
+  const custom = helmTemplate(['--set', `components.${key}.drainTimeoutSeconds=120`, '--set', `components.${key}.terminationGracePeriodSeconds=150`, '--set', 'agentGateway.handoffTimeoutMs=30000']);
+  assertIncludes(manifestDocument(custom, 'Deployment', `acornops-acornops-platform-${name}`), 'terminationGracePeriodSeconds: 150', `${key} accepts matching custom budgets`);
+  const customConfig = manifestDocument(custom, 'ConfigMap', `acornops-acornops-platform-${name}`);
+  assertIncludes(customConfig, 'SERVICE_DRAIN_TIMEOUT_SECONDS: "120"', `${key} renders custom drain window`);
+  assertIncludes(customConfig, 'AGENT_HANDOFF_TIMEOUT_MS: "30000"', `${key} renders custom handoff allowance`);
+  helmTemplate(['--set', `components.${key}.enabled=false`, '--set', `components.${key}.terminationGracePeriodSeconds=1`]);
+}
+expectHelmFailure(['--set', 'agentGateway.handoffTimeoutMs=0'], 'handoff allowance must be positive');
+for (const key of ['managementConsole', 'platformAdminConsole']) {
+  expectHelmFailure(['--set', `components.${key}.drainTimeoutSeconds=150`], `${key} must reject unused backend drain settings`);
+}
 assertExcludes(defaultRender, 'STALE_ACTIVE_RUN_RECOVERY_ON_STARTUP', 'recovery must not require a startup bypass');
 expectHelmFailure(
   ['--set', 'components.executionEngine.durability.staleActiveRunRecoveryOnStartup=false'],
@@ -1429,11 +1464,6 @@ assertIncludes(defaultRender, 'OIDC_ADMISSION_POLICY_JSON: "{}"', 'OIDC admissio
 assertIncludes(defaultRender, 'OIDC_POST_LOGOUT_REDIRECT_URI: "https://console.acornops.dev/api/v1/auth/oidc/logout/callback"', 'OIDC post-logout callback should default to the console callback');
 assertIncludes(defaultRender, 'OIDC_HTTP_TIMEOUT_MS: "10000"', 'OIDC outbound timeout should render');
 assertIncludes(defaultRender, 'fieldPath: metadata.name', 'control-plane should use pod name as instance identity');
-assertMatch(
-  defaultRender,
-  /kind: Deployment[\s\S]*?name: acornops-acornops-platform-control-plane[\s\S]*?terminationGracePeriodSeconds: 45/,
-  'control-plane should render a shutdown grace period'
-);
 
 const distinctOidcProvidersRender = helmTemplate([
   '--set-string',

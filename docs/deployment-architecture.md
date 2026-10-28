@@ -93,6 +93,12 @@ execution engine, and LLM gateway through the platform Helm chart. It expects
 operator-provided Postgres and Redis, pre-created secrets, and cluster ingress
 configuration.
 
+Core service Deployments retain accepted work during bounded termination and
+wait for healthy replacements before removing serving capacity. The
+[rolling restart contract](rolling-restarts.md) aligns application drain
+deadlines, Kubernetes grace and Compose stop grace. Active execution stays on
+the draining pod; durable queues and existing recovery handle pending work.
+
 Workload-cluster agent rollout installs the AgentK into target clusters. The
 agent connects outbound to the control plane and can run active-passive HA with
 Kubernetes Lease leader election.
