@@ -202,6 +202,13 @@ task k8s-chart-check
 task release-matrix-check
 ```
 
+The chart release workflow also requires the tag version to match both
+`Chart.yaml` and the release matrix before packaging. To check an intended
+tag locally, set `ACORNOPS_RELEASE_VERSION` to its version without the `v` prefix.
+Artifact existence checks do not verify that an image contains the intended
+source revision; confirm the published image digests and build provenance
+before promotion.
+
 Run the control-plane HA smoke against a non-production cluster before release promotion:
 
 ```bash
@@ -228,9 +235,18 @@ helm upgrade --install acornops kubernetes/helm/acornops-platform \
   --namespace acornops \
   --create-namespace \
   --atomic \
+  --timeout 60m \
   --cleanup-on-fail \
   -f kubernetes/helm/acornops-platform/examples/values-production.yaml
 ```
+
+The timeout is an example for three replicas and the default drain budgets;
+calculate it for the actual rollout, hooks, startup and resource/quota headroom
+as described in [rolling restart budgets](rolling-restarts.md#budgets-and-rollout-settings).
+Before the first upgrade from binaries without draining, complete
+[first-cutover quiescence](rolling-restarts.md#first-cutover-from-binaries-without-draining)
+without restarting the old applications to change startup flags. Helm readiness
+does not prove old-pod drain completion; verify the recorded old pod UIDs exit.
 
 Kubernetes deployments require external Postgres and Redis plus a pre-created
 platform Secret. Fresh installations use empty application databases. Existing
@@ -369,8 +385,12 @@ back and repeat the policy, Service, EndpointSlice, and route checks:
 
 ```bash
 helm -n acornops history acornops
-helm -n acornops rollback acornops <revision> --wait --cleanup-on-fail
+helm -n acornops rollback acornops <revision> --wait --timeout 60m --cleanup-on-fail
 ```
+
+Recalculate the rollback timeout for the actual replicas and grace periods,
+including capacity for overlapping generations. Quiesce first when the target
+binary lacks draining, and verify old pod UIDs exit after rollback readiness.
 
 If the target revision predates ingress-independent policy rendering and the
 deployment uses an external Ingress, apply or retain the temporary additive

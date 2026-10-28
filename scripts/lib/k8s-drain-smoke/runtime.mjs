@@ -5,6 +5,9 @@ import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { ownershipLabel, validateCluster } from './config.mjs';
 
+export const capacityProbePorts = (internalTls) => [['control-plane', 8081],
+  ['execution-engine', internalTls ? 18080 : 8080], ['llm-gateway', internalTls ? 18001 : 8001]];
+
 export function verifyPodImages(component, pods, verified) {
   if (!/^sha256:[a-f0-9]{64}$/.test(verified?.id || '')) throw new Error(`No verified local image ID for ${component}`);
   const ready = pods.filter((pod) => !pod.metadata.deletionTimestamp
@@ -58,6 +61,12 @@ export function createRuntime(config, reportDirectory) {
   const redactions = new Set();
   const verifiedImages = new Map();
   const runningImages = [];
+  const addRedaction = (secret) => {
+    redactions.add(secret);
+    redactions.add(JSON.stringify(secret).slice(1, -1));
+    redactions.add(Buffer.from(secret).toString('base64'));
+    if (secret.includes('-----BEGIN')) for (const line of secret.split('\n')) redactions.add(line);
+  };
   let context, platform, fixtureUrl;
   const args = () => ['--kubeconfig', config.kubeconfig, ...(context ? ['--context', context] : [])];
   const kubectl = (argv, options) => run('kubectl', [...args(), ...argv], options);
@@ -113,7 +122,7 @@ export function createRuntime(config, reportDirectory) {
   }
 
   async function install(generated) {
-    Object.values(generated.secret).forEach((secret) => redactions.add(secret));
+    [...Object.values(generated.secret), ...(generated.tlsRedactions || [])].forEach(addRedaction);
     // Create, never adopt or overwrite, a namespace for this run.
     await kubectl(['create', '-f', '-'], { input: JSON.stringify({ apiVersion: 'v1', kind: 'Namespace',
       metadata: { name: generated.namespace, labels: generated.labels } }) });
@@ -151,7 +160,7 @@ export function createRuntime(config, reportDirectory) {
   async function capacityCommand(command) {
     const peers = [];
     let controlPlanePod;
-    for (const [component, port] of [['control-plane', 8081], ['execution-engine', 8080], ['llm-gateway', 8001]]) {
+    for (const [component, port] of capacityProbePorts(config.internalTls)) {
       const active = (await pods(component)).filter((pod) => !pod.metadata.deletionTimestamp
         && pod.status.conditions?.some((condition) => condition.type === 'Ready' && condition.status === 'True'));
       if (!active.length) throw new Error(`No ready ${component} peers for capacity activation`);
@@ -291,5 +300,5 @@ export function createRuntime(config, reportDirectory) {
     }
   }
   return { preflight, verifyImages, verifyRunningImages, install, control, pods, scoped, apply, get, restart, drained, settled,
-    redis, sql, observeRpc, save, addRedaction: (secret) => redactions.add(secret), diagnostics, cleanup };
+    redis, sql, observeRpc, save, addRedaction, diagnostics, cleanup };
 }

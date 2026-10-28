@@ -15,6 +15,7 @@ metadata:
 spec:
   replicas: {{ .Values.components.llmGateway.replicas }}
   minReadySeconds: 5
+  progressDeadlineSeconds: {{ max 600 (add (int .Values.components.llmGateway.terminationGracePeriodSeconds) 300) }}
   strategy:
     type: RollingUpdate
     rollingUpdate:

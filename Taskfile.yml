@@ -233,6 +233,7 @@ tasks:
   release-matrix-check:
     desc: Validate release version metadata against Compose and Helm defaults
     cmds:
+      - node --test scripts/check-release-matrix.test.mjs
       - node scripts/check-release-matrix.mjs
 
   platform-contracts:

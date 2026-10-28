@@ -57,6 +57,16 @@ by default for diagnosis. Add `--cleanup` to delete only its exact namespace
 after checking the ownership label. Remove retained test namespaces and the
 isolated cluster when finished; neither is a production deployment.
 
+Add `--internal-tls` to run either capacity profile with mutually authenticated
+TLS on the chart's internal control-plane, engine and gateway Services. This
+requires local `openssl`. The runner generates a one-day ephemeral CA and distinct
+role certificates with Service DNS SANs and server/client authentication usage,
+deletes its temporary key files, and installs a labeled namespace-owned Secret.
+The chart mounts the CA and role keys with client certificates required; peer
+verification stays enabled. Capacity activation reads metadata from CP's public
+8081 listener and the engine/gateway's dedicated plaintext health listeners on
+18080/18001. Application traffic uses the chart-derived HTTPS Service URLs.
+
 The scenarios check active inference during each service restart, a held
 cross-replica agent reply followed by owner handoff, queued work during engine
 drain, cancellation after the old engine leaves ready endpoints, and overlapping
@@ -66,16 +76,20 @@ than only replacement readiness. With capacity disabled, queue recovery must
 finish on the replacement while the old engine still holds its active run.
 
 The fixture uses dummy credentials and a namespace egress policy; no paid model
-or real agent tool executes. This profile uses internal plaintext and HTTP
-Ingress, with `NODE_ENV=development` to permit local HTTP URLs; it keeps native
-server commands and disables development seeds. TLS process tests and chart
-render checks are separate evidence. This test does not establish crash
+or real agent tool executes. The default profile uses internal plaintext;
+`--internal-tls` enables internal mTLS. Both retain HTTP Ingress and controlled
+HTTP provider/WS agent fixtures, with `NODE_ENV=development` to permit those local
+URLs; they keep native server commands and disable development seeds. The report's
+`internalTls` field records the selected mode. Render checks and native TLS process
+tests remain separate evidence until the selected rollout matrix completes.
+This test does not establish crash
 resumption, mixed-version rollout safety, arbitrary write exactly-once behavior,
 or uninterrupted execution beyond the configured drain deadlines.
 
 Reports contain fixture events, accepted IDs, HTTP statuses, image revisions,
 pod/endpoint observations and scoped old-pod logs. Generated Secret values,
-session cookies, agent keys and provider credentials are not written to reports.
+session cookies, agent keys, provider credentials and ephemeral TLS keys are
+redacted from reports, including PEM, JSON-escaped and base64 representations.
 `running-images.json` records the checked container IDs at installation and
 replacement readiness. Each completed case records the verified client message
 ID, durable user message ID, session/run association and assistant completion ID.

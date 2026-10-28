@@ -642,15 +642,16 @@ if (timedOwnerLogArgs.includes('--since=5m') || !timedOwnerLogArgs.includes('--s
 
 const defaultRender = helmTemplate();
 const drainBudgets = [
-  ['controlPlane', 'control-plane', 150, 180],
-  ['executionEngine', 'execution-engine', 870, 900],
-  ['llmGateway', 'llm-gateway', 210, 240]
+  ['controlPlane', 'control-plane', 150, 180, 600],
+  ['executionEngine', 'execution-engine', 870, 900, 1200],
+  ['llmGateway', 'llm-gateway', 210, 240, 600]
 ];
 for (const [tls, render] of [[false, defaultRender], [true, helmTemplate(internalTlsArgs)]]) {
-  for (const [, name, drain, grace] of drainBudgets) {
+  for (const [, name, drain, grace, progressDeadline] of drainBudgets) {
     const deployment = manifestDocument(render, 'Deployment', `acornops-acornops-platform-${name}`);
     const config = manifestDocument(render, 'ConfigMap', `acornops-acornops-platform-${name}`);
     assertIncludes(deployment, `terminationGracePeriodSeconds: ${grace}`, `${name} reserves drain and cleanup time`);
+    assertIncludes(deployment, `progressDeadlineSeconds: ${progressDeadline}`, `${name} allows a full termination window before reporting stalled progress`);
     assertMatch(deployment, /strategy:\s+type: RollingUpdate\s+rollingUpdate:\s+maxUnavailable: 0\s+maxSurge: 1/, `${name} waits for replacement capacity`);
     assertIncludes(deployment, 'minReadySeconds: 5', `${name} waits for stable replacement readiness`);
     assertIncludes(config, `SERVICE_DRAIN_TIMEOUT_SECONDS: "${drain}"`, `${name} uses its application drain budget`);
@@ -667,6 +668,9 @@ for (const [key, name] of drainBudgets) {
   expectHelmFailure(['--set', `components.${key}.drainTimeoutSeconds=120`, '--set', `components.${key}.terminationGracePeriodSeconds=149`], `${key} needs 30 seconds beyond its drain budget`);
   const custom = helmTemplate(['--set', `components.${key}.drainTimeoutSeconds=120`, '--set', `components.${key}.terminationGracePeriodSeconds=150`, '--set', 'agentGateway.handoffTimeoutMs=30000']);
   assertIncludes(manifestDocument(custom, 'Deployment', `acornops-acornops-platform-${name}`), 'terminationGracePeriodSeconds: 150', `${key} accepts matching custom budgets`);
+  assertIncludes(manifestDocument(custom, 'Deployment', `acornops-acornops-platform-${name}`), 'progressDeadlineSeconds: 600', `${key} keeps the minimum progress allowance for short custom grace`);
+  const longGrace = helmTemplate(['--set', `components.${key}.terminationGracePeriodSeconds=1800`]);
+  assertIncludes(manifestDocument(longGrace, 'Deployment', `acornops-acornops-platform-${name}`), 'progressDeadlineSeconds: 2100', `${key} extends progress allowance for long custom grace`);
   const customConfig = manifestDocument(custom, 'ConfigMap', `acornops-acornops-platform-${name}`);
   assertIncludes(customConfig, 'SERVICE_DRAIN_TIMEOUT_SECONDS: "120"', `${key} renders custom drain window`);
   assertIncludes(customConfig, 'AGENT_HANDOFF_TIMEOUT_MS: "30000"', `${key} renders custom handoff allowance`);

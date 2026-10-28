@@ -85,6 +85,10 @@ const expectedK8sImages = {
   llmGateway: componentLine(k8sPlatformStack, 'llmGateway')
 };
 const expectedPlatformChart = splitVersionedOciRef(chartLine(k8sPlatformStack, 'acornopsPlatform'));
+if (process.env.ACORNOPS_RELEASE_VERSION !== undefined
+    && process.env.ACORNOPS_RELEASE_VERSION !== expectedPlatformChart.version) {
+  throw new Error(`Release tag does not match the platform chart version ${expectedPlatformChart.version}`);
+}
 const expectedAgentChart = splitVersionedOciRef(chartLine(k8sPlatformStack, 'acornopsAgentK'));
 const expectedVmAgentVRelease = componentLine(vmProdStack, 'agentV');
 const expectedK8sAgentVRelease = componentLine(k8sPlatformStack, 'agentV');

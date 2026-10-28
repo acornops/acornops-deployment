@@ -40,6 +40,10 @@ shutdown headroom. `agentGateway.handoffTimeoutMs` accepts integers from 1 to
 45000 milliseconds and defaults to 45000. These
 settings require compatible service binaries; see the
 [rolling restart runbook](../../../docs/rolling-restarts.md) before rollout.
+The chart derives the progress deadline as the larger of 600 seconds or
+termination grace plus 300 seconds: 600 seconds for control plane and gateway,
+1200 seconds for execution engine by default. Progress allowance does not
+reserve rollout capacity or verify that old pods have finished draining.
 
 The chart values are organized by operator concern:
 
@@ -626,6 +630,7 @@ helm upgrade --install acornops ./kubernetes/helm/acornops-platform \
   --namespace acornops \
   --create-namespace \
   --atomic \
+  --timeout 60m \
   --cleanup-on-fail \
   -f ./kubernetes/helm/acornops-platform/examples/values-k3s-single-node.yaml
 ```
@@ -637,6 +642,7 @@ helm upgrade --install acornops ./kubernetes/helm/acornops-platform \
   --namespace acornops \
   --create-namespace \
   --atomic \
+  --timeout 60m \
   --cleanup-on-fail \
   -f ./kubernetes/helm/acornops-platform/examples/values-k3s-keycloak.yaml
 ```
@@ -648,9 +654,19 @@ helm upgrade --install acornops ./kubernetes/helm/acornops-platform \
   --namespace acornops \
   --create-namespace \
   --atomic \
+  --timeout 60m \
   --cleanup-on-fail \
   -f ./kubernetes/helm/acornops-platform/examples/values-production.yaml
 ```
+
+The 60-minute operation timeout illustrates three default execution-engine
+replicas with up to 45 minutes of serial termination and 15 minutes for hooks
+and startup. Calculate a timeout for the actual replicas, budgets, placement and
+resource/quota headroom; even one terminating pod can block the next surge pod.
+Follow the [first-cutover procedure](../../../docs/rolling-restarts.md#first-cutover-from-binaries-without-draining)
+before replacing binaries that cannot drain. After Helm readiness, verify the
+recorded old pod UIDs have exited; see [rollout budgets](../../../docs/rolling-restarts.md#budgets-and-rollout-settings)
+for timeout semantics and rollback planning.
 
 Run chart checks from the deployment repository root:
 

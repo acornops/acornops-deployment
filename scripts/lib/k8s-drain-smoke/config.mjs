@@ -1,5 +1,6 @@
 import { generateKeyPairSync, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { createCertificates } from './certificates.mjs';
 
 export const ownershipLabel = 'acornops.dev/rollout-smoke';
 export function validateConfig(config) {
@@ -10,6 +11,7 @@ export function validateConfig(config) {
   if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.pathname !== '/'
     || url.username || url.password || url.search || url.hash) throw new Error('Ingress must be a loopback HTTP origin');
   if (!['on', 'off'].includes(config.capacity)) throw new Error('Capacity must be on or off');
+  if (config.internalTls !== undefined && typeof config.internalTls !== 'boolean') throw new Error('Internal TLS must be boolean');
 }
 
 export function validateCluster(config, document) {
@@ -31,7 +33,8 @@ function image(value) {
 }
 
 export function createConfiguration(config, id) {
-  const namespace = `drain-${id}`, release = namespace, name = (component) => `${release}-acornops-platform-${component}`;
+  const namespace = `drain-${id}`, release = namespace;
+  const name = (component) => `${release}-acornops-platform-${component}`.slice(0, 63).replace(/-$/, '');
   const host = `${namespace}.localhost`, port = new URL(config.ingress).port;
   const origin = `http://${host}${port ? `:${port}` : ''}`;
   const secretName = `${namespace}-secrets`;
@@ -86,6 +89,8 @@ export function createConfiguration(config, id) {
     networkPolicies: { enabled: false }, secrets: { existingSecretName: secretName },
   };
   const labels = { [ownershipLabel]: id };
+  const tls = config.internalTls ? createCertificates(namespace, name) : undefined;
+  if (tls) values.internalTransport.tls = tls.values;
   const object = (kind, name, spec, apiVersion = 'v1') => ({ apiVersion, kind,
     metadata: { name, namespace, labels }, ...spec });
   function dependency(name, imageName, port, env, extra = {}) {
@@ -100,6 +105,7 @@ export function createConfiguration(config, id) {
   const envSecret = (key) => ({ name: key, valueFrom: { secretKeyRef: { name: secretName, key } } });
   const dependencies = [
     object('Secret', secretName, { type: 'Opaque', stringData: secret }),
+    ...(tls ? [object('Secret', tls.values.ca.secretName, { type: 'Opaque', stringData: tls.material })] : []),
     object('ConfigMap', 'drain-init', { data: { 'init.sql': 'CREATE DATABASE control_plane;\nCREATE DATABASE gateway;\n' } }),
     ...dependency('drain-postgres', 'postgres:16-alpine', 5432,
       [{ name: 'POSTGRES_USER', value: 'acornops' }, envSecret('POSTGRES_PASSWORD')], {
@@ -125,6 +131,6 @@ export function createConfiguration(config, id) {
         'kubernetes.io/metadata.name': 'kube-system' } } }], ports: [{ protocol: 'UDP', port: 53 }, { protocol: 'TCP', port: 53 }] }] } },
     'networking.k8s.io/v1'),
   ];
-  return { namespace, release, host, origin, secret, values, dependencies, name, labels,
+  return { namespace, release, host, origin, secret, values, dependencies, name, labels, tlsRedactions: tls?.redactions || [],
     agentUrl: `ws://${name('control-plane')}:8081/api/v1/agent/connect` };
 }

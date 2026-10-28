@@ -36,6 +36,34 @@ pods to overlap. Kubernetes can retain several terminating pods beyond the
 surge count while their accepted work finishes. A PodDisruptionBudget does not
 replace Deployment rollout settings.
 
+With three replicas, one rollout can retain three old pods while three
+replacements run. Reserve CPU, memory, pod slots and namespace quota for that
+overlap, including simultaneous service rollouts and rollback. Steady-state
+capacity plus one surge pod can be insufficient: after the first replacement
+becomes ready, an old pod may continue consuming quota for its full drain
+window and block the next replacement.
+
+The chart sets `progressDeadlineSeconds` to the larger of 600 seconds or the
+component's termination grace plus 300 seconds. Defaults are 600 seconds for
+control plane and gateway, and 1200 seconds for execution engine. This allows
+a full old-pod termination window plus progress margin; it does not reserve
+capacity or bound the total rollout. Kubernetes reports stalled progress when
+this deadline expires; it does not itself terminate the draining pods or roll
+back. See [Deployment progress and terminating pods](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/).
+
+Set an explicit Helm operation timeout for upgrades and rollbacks. Calculate
+from the slowest service's replica count, possible serial termination windows,
+migration hooks and replacement startup under the actual resource/quota limits.
+For the default three execution-engine replicas, three serial 900-second
+termination windows allow 45 minutes; an illustrative 15-minute allowance for
+migrations and startup gives `--timeout 60m`. Recalculate for custom replicas,
+budgets, slow hooks, placement and concurrent rollouts. Helm's default is five
+minutes; `--atomic` can initiate rollback if readiness does not complete within
+that operation timeout. A release can also become ready before old pods exit,
+so a longer Helm timeout alone does not verify drain completion. See
+[Helm 3 upgrade options](https://helm.sh/docs/v3/helm/helm_upgrade/) and
+[rollback options](https://helm.sh/docs/v3/helm/helm_rollback/).
+
 No `preStop` sleep is needed: the application handles SIGTERM and rejects late
 admission during endpoint propagation. A custom `preStop` hook consumes the same
 termination grace window and must be accounted for separately. Do not use
@@ -72,16 +100,18 @@ remain in force.
 ## Operating a restart
 
 1. Validate the chart and contracts, and verify the deployed service versions
-   implement the drain contract. For a first cutover, deploy compatible consumers
-   before enabling new producer behavior and follow the maintenance procedure.
+   implement the drain contract. If any old binary lacks draining, complete
+   [the first cutover](#first-cutover-from-binaries-without-draining) below.
 2. Confirm healthy replicas, replacement capacity, aligned grace periods and
    durable PostgreSQL/Redis availability. Capacity enforcement remains an
    independent setting; this feature does not enable it.
-3. Run `kubectl --context <context> -n <namespace> rollout restart
+3. Record the existing pod names and UIDs for each intended Deployment. Run
+   `kubectl --context <context> -n <namespace> rollout restart
    deployment/<name>` for the intended deployment and watch rollout status,
    readiness, active runs and terminating pods. A rollout can report new replicas
-   available while old pods are still draining; wait for those pods to exit
-   before declaring the restart fully complete.
+   available while old pods are still draining; verify every recorded old UID
+   has disappeared before declaring the restart fully complete. Retain scoped
+   old-pod logs and inspect any drain-deadline or forced-exit messages.
 4. Check accepted runs reach the expected durable terminal state, queued work
    progresses, cancellation still takes effect, and no duplicate tool actions
    occurred. Investigate deadline-exceeded shutdowns rather than retrying an
@@ -90,6 +120,51 @@ remain in force.
 Rollback to a binary without draining removes the restart guarantee. Keep
 compatible data/contracts and use a controlled maintenance window for that
 rollback. Longer Kubernetes grace alone cannot make an old process drain.
+
+## First cutover from binaries without draining
+
+Use a maintenance window. Preserve the old image digests, values, schema
+inventory and applicable backup/restore evidence from the
+[installation and upgrade procedure](OPERATIONS.md#installation-and-upgrade-paths).
+Keep PostgreSQL, Redis and application dependencies available throughout.
+
+1. Inventory every source of new work: browser/API submissions, operator jobs,
+   schedules, webhook/event triggers, automation, auto-triage and other enabled
+   background producers. Pause each using controls supported by the installed
+   version that take effect without restarting application processes, or pause
+   the source upstream. Record the prior settings for restoration.
+2. Put new-work routes into maintenance at the edge and stop direct clients
+   that bypass it. Keep monitoring and cancellation routes, existing agent
+   connections and reconnect paths, internal callbacks, lease renewals and
+   CP/EE/gateway communication available. Verify a new submission is blocked
+   while monitoring and cancellation still work. A blanket block of `/api` or
+   the internal network can interrupt the work being allowed to finish.
+3. Leave the old applications running. Observe durable run state and tool/
+   provider activity until accepted queued, dispatching and executing work has
+   settled and no producer creates more work. Resolve approval waits explicitly;
+   if cancelling a run, wait for its durable terminal state and bounded
+   operations to settle. Investigate uncertain writes before an intentional
+   retry. Check every replica and worker, including active claims and callbacks,
+   rather than using an empty browser queue as evidence of idleness.
+4. Only after that verification, stop the old application replicas without
+   stopping their stores. Deploy the coherent, provenance-verified compatible
+   image/chart set with admission, dispatch and autonomous producers kept
+   closed. Run only the migrations required by the selected upgrade path.
+   Verify no old binary remains and that every new replica is healthy and uses
+   the intended contracts and budgets.
+5. With producers paused and edge access restricted, open the required startup
+   gates on the new compatible replicas for controlled smoke tests. Verify any
+   resulting rollout completes, then check retained data, cancellation, tool
+   outcomes and queue progress. Restore producers and edge access in a
+   controlled order before reopening all traffic.
+
+`WORKSPACE_ADMISSION_ENABLED`, `WORKSPACE_DISPATCH_ENABLED` and worker environment
+switches are startup settings. Changing them through Helm or Compose can restart
+old binaries: do not use that rollout to establish the initial quiescence in
+steps 1–3. If an installed producer has no live pause or upstream stop control,
+arrange verified natural idleness or deliberate cancellation before proceeding;
+the runbook cannot promise a lossless first cutover while it keeps creating work.
+Apply the same quiescence requirement before rolling back to old binaries.
 
 ## Verification
 

@@ -53,6 +53,7 @@ jobs:
 
       - name: Verify pinned stack dependencies are published
         env:
+          ACORNOPS_RELEASE_VERSION: ${{ steps.version.outputs.version }}
           ACORNOPS_CHECK_PUBLISHED_ARTIFACTS: "true"
           ACORNOPS_SKIP_CURRENT_PLATFORM_CHART_ARTIFACT: "true"
         run: node scripts/check-release-matrix.mjs

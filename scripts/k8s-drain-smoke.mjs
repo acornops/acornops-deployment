@@ -13,10 +13,11 @@ const { values } = parseArgs({ options: {
   preflight: { type: 'boolean' }, run: { type: 'boolean' }, cleanup: { type: 'boolean', default: false },
   kubeconfig: { type: 'string' }, 'expected-cluster': { type: 'string' }, ingress: { type: 'string' },
   capacity: { type: 'string', default: 'on' }, 'cp-image': { type: 'string' },
+  'internal-tls': { type: 'boolean', default: false },
   'ee-image': { type: 'string' }, 'gw-image': { type: 'string' },
 } });
 const config = { ...values, expectedCluster: values['expected-cluster'], cpImage: values['cp-image'],
-  eeImage: values['ee-image'], gwImage: values['gw-image'] };
+  eeImage: values['ee-image'], gwImage: values['gw-image'], internalTls: values['internal-tls'] };
 const id = `${Date.now().toString(36)}-${randomBytes(3).toString('hex')}`;
 const reportDirectory = join(tmpdir(), `acornops-drain-${id}`);
 const runtime = createRuntime(config, reportDirectory);
@@ -32,11 +33,11 @@ try {
     api = await bootstrap(config, platform, runtime);
     await runScenarios(config, platform, runtime, api);
     runtime.save('result.json', { status: 'passed', capacity: config.capacity, namespace: platform.namespace,
-      internalTls: false, provider: 'controlled fixture', agent: 'protocol fixture' });
+      internalTls: config.internalTls, provider: 'controlled fixture', agent: 'protocol fixture' });
     console.log(`Kubernetes rolling restart smoke passed (capacity ${config.capacity}).`);
   }
 } catch (error) {
-  runtime.save('result.json', { status: 'failed', message: error.message });
+  runtime.save('result.json', { status: 'failed', internalTls: config.internalTls, message: error.message });
   console.error(error.message);
   process.exitCode = 1;
 } finally {
