@@ -182,3 +182,135 @@ need the procedures in the runbook. Real write-tool exactly-once behavior and
 paid provider acceptance were not claimed by the fake-provider test. Existing
 Starlette/httpx deprecation and Helm icon recommendation are unchanged baseline
 noise; dependency cleanup was kept out of scope.
+
+## Follow-up regression audit — 2026-10-29
+
+The user requested a fresh comprehensive review of the complete change after
+implementation. Review the current base-to-head diffs and interacting callers,
+independently of the earlier review conclusions. Preserve unrelated workspace
+changes and make only evidence-backed fixes.
+
+- [x] Review control-plane admission, asynchronous lifetimes, ownership and handoff.
+- [x] Review engine scheduling, lease authority, cancellation and task cleanup.
+- [x] Review gateway dispatch fencing, retries, full request lifetime and shutdown.
+- [x] Review console observer/mutation behavior and deployment settings/harness.
+- [x] Reproduce concrete findings with failing tests, apply focused fixes and review them.
+- [x] Run fresh component validation, database/process tests and relevant deployment checks.
+- [x] Record results, remaining limits and ownership-verified test-resource cleanup.
+
+Fresh audit evidence is kept separately in
+`/tmp/acornops-restart-reaudit-20261029`. The starting aggregate deployment check
+still fails on the independently owned CP/AgentK `podLogsUnavailable` contract
+mismatch; do not alter that unrelated contract to hide the failure.
+
+
+The fresh audit reproduced and corrected these boundaries:
+
+- Control-plane background sweeps now recheck admission before each new claim,
+  including after awaited reconciliation, cleanup and scheduler-lease acquisition.
+  Claimed work and lease release still finish normally.
+- Engine drain fences parked continuation caches as well as queued work after
+  finalizers finish. Late direct cancellation or a held stale reference cannot
+  overwrite a replacement's completed state.
+- Engine queued-claim release runs in one tracked task off the event loop, retains
+  uncertain releases for owner-conditional retry, and remains attached to an
+  in-flight Redis call through deadline cancellation. Slow cleanup cannot block
+  active lease renewal or disappear when the pod has only queued work.
+- Native engine/gateway launchers retain their watchdog through asynchronous
+  runner/executor teardown. Non-finite drain settings are rejected; normal early
+  exit and embedded listener use remain covered.
+- Console terminal polling closes a stale SSE connection. Completion waits for
+  durable assistant-message reconciliation, preserving observer ownership and the
+  placeholder across competing session hydration. Exact drain classifications
+  are required before mutation replay. A second review found a later-page message
+  lookup gap; cursor-aware reconciliation now finds older durable replies while
+  preserving the newest page and stable streaming message identity.
+- The rollout harness waits for the final message after completed status and
+  rejects every duplicate or malformed assistant row, including duplicates with
+  different content.
+- A live rollout exposed a provider-settings GET that failed fresh chat creation
+  during gateway drain. Credential and catalog reads now share one bounded admin
+  transport, retrying only the complete drain rejection on GET. The deadline
+  covers response bodies and waits; caller cancellation and existing error
+  semantics are preserved. Neither writes nor the message submission are replayed.
+- Control-plane dispatch now checks the exact drain message as well as the code,
+  retryable flag and not-started outcome before replay, matching the other clients.
+
+All material fixes have failing-before/passing-after regression evidence. Fresh
+post-fix validation: CP 1,465 tests with zero skips; EE canonical 401 tests plus
+29 keyless scenarios and native full suite 431 tests with zero skips; GW 788 tests
+plus 52 keyless scenarios. Console's final pagination-corrected revision passed
+1,232 tests and all canonical gates. Deployment's 27 drain tests and all 13 checks
+after the aggregate contract gate passed.
+
+CP's full validation now also encounters an independently changed docs-website
+OpenAPI response: the checked-in pod-log 409 response is specialized while this
+CP branch generates the older generic response (28,348 versus 28,341 lines).
+The same failure occurs without the test environment overrides. The artifact and
+unrelated CP/AgentK contract remain untouched; neither aggregate is reported green.
+
+
+The independent review found no remaining actionable defects in the audit
+fixes. Its original pagination reproduction passes unchanged after the correction.
+Review evidence: `/tmp/acornops-restart-reaudit-20261029/final-review.md`.
+After the live gateway-read failure, a separate follow-up review verified the fix
+and dispatch classifier with 41 focused tests, including TLS cancellation and MCP
+error mapping. Evidence: `gateway-read-review.md` in the same directory.
+The retained baseline offline-status race identified by the CP reviewer predates
+this feature and is recorded separately in `cp-fix-report.md`; the unrelated
+concurrent offline-agent work was left untouched.
+
+Runtime revisions for the final fresh Kubernetes matrix:
+
+| Repository | Follow-up revision |
+| --- | --- |
+| control-plane | `ab93d996de2a01d361efcbbfe109e7ebe8a3176b` |
+| execution-engine | `c550d426741a1663b5f5cc269b8f19d3b1cc7f03` |
+| llm-gateway | `9d4611e20b506da66990ca4f709c40a249bdb03a` |
+| management-console | `178fbfaa265b2de8a4b02da85c6db96740ef4fcb` (canonical console validation) |
+| acornops-deployment | `1c0f41707fcb9e5d80a97cc4db69d94b7687e6c9` (acceptance harness) |
+
+The earlier capacity-disabled Kubernetes matrix passed with CP `b48638d` and the
+same engine/gateway revisions. It covered active inference/fresh work, agent reply
+and owner handoff, queued handoff, cancellation after readiness withdrawal and
+overlapping restarts.
+The first capacity-enabled run failed during fresh chat creation while the gateway
+was draining: the control-plane provider-credential GET propagated the gateway's
+pre-admission 503 instead of retrying that safe read. The run had not been created.
+Evidence: `/tmp/acornops-restart-reaudit-20261029/rollout-on.log` and
+`/var/folders/x8/4xl1p7zd17j1356bbfytq3qc0000gn/T/acornops-drain-mvsjzlb2-437e54`.
+The read-client correction passed its 29 new regressions; three dispatch-classifier
+negatives also failed before and passed after the correction. The final full CP
+suite passed 1,465 tests, and type/style/migration/authz/membership/run-event/contract
+checks passed. The unchanged external OpenAPI drift stops the aggregate; harness
+and build passed separately. The final capacity-enabled rerun passed all scenarios
+with 36 actual-container image checks across 27 phases. Evidence:
+`/tmp/acornops-restart-reaudit-20261029/rollout-on-final.log` and
+`/var/folders/x8/4xl1p7zd17j1356bbfytq3qc0000gn/T/acornops-drain-mvskp1u7-d89d01`.
+Setup required reimporting unchanged engine/gateway images after isolated-cluster
+image garbage collection; this occurred before application scenarios started.
+The final capacity-disabled rerun also passed all scenarios, with 30
+actual-container image checks across 23 phases. Evidence:
+`/tmp/acornops-restart-reaudit-20261029/rollout-off-final.log` and
+`/var/folders/x8/4xl1p7zd17j1356bbfytq3qc0000gn/T/acornops-drain-mvskz5fm-8182e1`.
+Both final matrices and the earlier failing run have complete evidence copies
+under `/tmp/acornops-restart-reaudit-20261029`.
+
+In the final capacity-disabled run, one replacement control-plane pod retried
+startup after a TCP connection refusal to the test Postgres service, before
+readiness. Its previous-container
+log identifies the existing database migration check; `src/infra/db.ts` and
+`src/infra/migrations.ts` are unchanged from the pre-feature base. Kubernetes
+restarted the pod and the acceptance scenarios completed without lost accepted
+work. The final capacity-enabled snapshot also shows a startup exit, without its
+previous-container log. The precise local networking cause is not established;
+the captured evidence is in `cp-startup-observations`. Neither matrix is presented
+as a run with zero container restarts.
+
+After both matrices, namespace cleanup completed and the ownership-verified
+cluster, dedicated PG/Redis containers and anonymous volumes, four task-built
+images, and private kubeconfig were removed. The existing demo-cluster context
+remains selected. `cleanup.json` records the removal results. Full command and
+validation evidence is summarized in `final-validation.md` in the audit directory.
+All code changes remain local on the coordinated feature branches; the unrelated
+workspace edits and external contract/OpenAPI gates remain untouched.
