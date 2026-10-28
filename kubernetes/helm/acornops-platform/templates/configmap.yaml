@@ -193,7 +193,6 @@ data:
   TERMINAL_RUN_TTL_SECONDS: {{ .Values.components.executionEngine.durability.terminalRunTtlSeconds | quote }}
   TERMINAL_COMMIT_RETENTION_SECONDS: {{ .Values.components.executionEngine.durability.terminalCommitRetentionSeconds | quote }}
   TERMINAL_COMMIT_RETRY_INTERVAL_SECONDS: {{ .Values.components.executionEngine.durability.terminalCommitRetryIntervalSeconds | quote }}
-  STALE_ACTIVE_RUN_RECOVERY_ON_STARTUP: {{ .Values.components.executionEngine.durability.staleActiveRunRecoveryOnStartup | quote }}
   RUN_ID_LOCK_TTL_SECONDS: {{ .Values.components.executionEngine.durability.runIdLockTtlSeconds | quote }}
   READINESS_CHECK_TIMEOUT_MS: {{ .Values.components.executionEngine.timeouts.readinessCheckMs | quote }}
   ORCH_RETRY_MAX_ELAPSED_SECONDS: {{ .Values.components.executionEngine.timeouts.orchestratorRetryMaxElapsedSeconds | quote }}

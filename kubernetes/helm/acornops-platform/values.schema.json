@@ -1029,7 +1029,6 @@
                     "terminalRunTtlSeconds": { "type": "integer", "minimum": 1 },
                     "terminalCommitRetentionSeconds": { "type": "integer", "minimum": 1 },
                     "terminalCommitRetryIntervalSeconds": { "type": "integer", "minimum": 1 },
-                    "staleActiveRunRecoveryOnStartup": { "type": "boolean" },
                     "runIdLockTtlSeconds": { "type": "integer", "minimum": 1 }
                   }
                 },

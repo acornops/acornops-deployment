@@ -641,6 +641,11 @@ if (timedOwnerLogArgs.includes('--since=5m') || !timedOwnerLogArgs.includes('--s
 }
 
 const defaultRender = helmTemplate();
+assertExcludes(defaultRender, 'STALE_ACTIVE_RUN_RECOVERY_ON_STARTUP', 'recovery must not require a startup bypass');
+expectHelmFailure(
+  ['--set', 'components.executionEngine.durability.staleActiveRunRecoveryOnStartup=false'],
+  'removed recovery bypass should be rejected by the chart schema'
+);
 for (const component of ['execution-engine', 'llm-gateway']) {
   const authorityConfig = manifestDocument(defaultRender, 'ConfigMap', `acornops-acornops-platform-${component}`);
   const [metadata, data] = authorityConfig.split('\ndata:\n');

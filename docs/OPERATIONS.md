@@ -712,3 +712,33 @@ not touch production.
 ## Workspace execution capacity
 
 For five-pool configuration, quiesced activation, catalogue verification, BYOK and rollback, follow [the hosted-readiness runbook](hosted-readiness.md). Capacity limits remain disabled by default; workspace suspension is always enforced.
+
+## Execution recovery tuning
+
+Execution-engine recovery no longer blocks API startup. Remove
+`components.executionEngine.durability.staleActiveRunRecoveryOnStartup` from
+saved Helm overrides and `STALE_ACTIVE_RUN_RECOVERY_ON_STARTUP` from environment
+files before upgrading. The value and environment wiring have been removed;
+the chart rejects the old Helm key. There is no replacement enable/disable flag.
+
+The existing operator settings remain available:
+
+| Helm value under `components.executionEngine` | Compose environment | Default |
+| --- | --- | --- |
+| `durability.terminalCommitRetryIntervalSeconds` | `TERMINAL_COMMIT_RETRY_INTERVAL_SECONDS` | 5 seconds between recovery passes |
+| `timeouts.orchestratorRetryMaxElapsedSeconds` | `ORCH_RETRY_MAX_ELAPSED_SECONDS` | 30 seconds per retry budget |
+| `durability.terminalCommitRetentionSeconds` | `TERMINAL_COMMIT_RETENTION_SECONDS` | 86400 seconds |
+
+There is no maximum lifetime retry count. Failed delivery remains pending for
+later passes; terminal commits retain their existing retention window. A
+permanent missing-run or authority error needs operator investigation. A larger
+request budget can slow backlog draining; increasing the pass interval reduces
+retry load. Neither setting controls probe success.
+
+Engine and gateway probes keep the current `/health` and `/ready` paths and
+ports. Updated service images supervise both listeners and reject probe success
+before the business listener starts. The engine also checks its essential
+loops. Deploy the service fixes when publishing the next compatible release;
+this configuration cleanup does not update or certify an image tag. Rolling
+back to an older engine uses its default recovery-enabled behavior when the
+removed setting is absent.

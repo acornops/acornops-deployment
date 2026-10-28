@@ -679,7 +679,6 @@ components:
       terminalRunTtlSeconds: 3600
       terminalCommitRetentionSeconds: 86400
       terminalCommitRetryIntervalSeconds: 5
-      staleActiveRunRecoveryOnStartup: true
       runIdLockTtlSeconds: 900
     timeouts:
       readinessCheckMs: 1000
