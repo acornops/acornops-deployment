@@ -1,5 +1,10 @@
 # Graceful rolling restarts implementation plan
 
+**Latest verification:** The [production-readiness audit](#production-readiness-audit--2026-10-29)
+supersedes earlier commit and aggregate-gate snapshots below. All local gates and
+both native mutual-TLS Kubernetes matrices pass; target production configuration
+and published release provenance still require verification before promotion.
+
 **Goal:** Let accepted assistant and Workflow runs finish during ordinary Kubernetes rolling restarts, with bounded shutdown, durable queued work, and safe client reconnection.
 
 **Authorization:** The user approved implementation on 2026-10-29 after reviewing the drain design and regression risks. Implement and validate without another design gate. Production rollout is not part of this task.
@@ -314,3 +319,75 @@ remains selected. `cleanup.json` records the removal results. Full command and
 validation evidence is summarized in `final-validation.md` in the audit directory.
 All code changes remain local on the coordinated feature branches; the unrelated
 workspace edits and external contract/OpenAPI gates remain untouched.
+
+## Production-readiness audit — 2026-10-29
+
+Merged the already-published current control-plane and console `main` changes
+into their local feature branches. This resolves the earlier pod-log
+contract/OpenAPI mismatch without replacing the upstream implementation.
+All current component aggregates, workspace contracts and runtime-truth checks
+now pass. No feature branch was pushed or merged into `main`.
+
+The fresh full control-plane suite exposed a real timeout-settlement race:
+fractional native timers could reject the caller just before its monotonic
+deadline, leaving a resumed owner lookup able to publish. Independent review
+also reproduced nested owner handoffs bypassing outer revocation and an outer
+watchdog interrupting already-dispatched work. One shared logical dispatch
+fence/watchdog now closes on settlement, survives recursive owner changes,
+disarms at dispatch and rearms after a trusted predispatch rejection without
+extending the original deadline. Deterministic RED/GREEN regressions and the
+original wall-clock tests cover all three boundaries. Independent re-review
+found no remaining actionable issue in the correction.
+
+Deployment followups derive progress deadlines from termination grace, require
+the chart release tag to match the checked matrix, document a safe first
+cutover and explicit Helm timeout/headroom calculations, and add an optional
+mutual-TLS mode to the isolated acceptance runner. Native engine tests now
+require and verify client certificates instead of bypassing TLS verification.
+These changes add no runtime dependency, database migration or public API break.
+
+| Repository | Reviewed runtime/configuration commit | Final validation |
+| --- | --- | --- |
+| control-plane | `10c8d0760be265425d0fc3253b74a3c1f92c9c58` | `npm run validate`: 1,475 tests and all gates; optional SQL upgrade checks passed |
+| execution-engine | `aa9217f3e4ff0b6c79b179de3d3c78c10ea4152e` | `task validate`: 401 unit + 29 keyless; complete native suite: 431 passed |
+| llm-gateway | `9d4611e20b506da66990ca4f709c40a249bdb03a` | `task validate`: 788 unit + 52 keyless passed |
+| management-console | `7fa2bcf45dda54dff88507b67c7e6561c238650f` | Control-plane-mode `npm run validate`: 1,240 tests and all gates passed |
+| acornops-deployment | `9c2b2ebe9fa00af88435b8aa7c972532e4379b2f` before this evidence update | `task validate`: all gates, 30 drain tests and 3 release-tag tests passed |
+
+Both final literal Kubernetes matrices passed with `--internal-tls --cleanup`,
+capacity on and off, using the same committed native images and distinct
+CA-verified role certificates with client authentication required. Capacity-on
+recorded 36 actual-container image comparisons across 27 phases and 18 completed
+cases; capacity-off recorded 30 comparisons across 23 phases and 14 completed
+cases. Both additionally proved durable cancellation. Cases assert exact
+accepted/message/run identities, one durable assistant final, expected provider
+attempt counts and one raw dispatch for each tool case. They cover each service
+restart, cross-replica owner handoff, queued work and overlapping draining pods.
+
+The local kubelet garbage-collected unused engine/gateway images before the
+first installation; its removal logs match the verified image IDs. Reimporting
+the identical images unblocked setup before scenarios started. Some replacement
+control-plane pods retried startup after TCP refusal from the test PostgreSQL
+Service, before readiness; captured previous-container logs identify the
+unchanged migration check. Both matrices still completed accepted work, and
+neither is claimed to have zero container restarts. The precise networking
+cause is unproven. No production startup retry behavior was changed to hide it.
+
+Production promotion remains separate: actual values, current/target digests,
+replicas, quotas, ingress/IDP/policy settings and the current schema were not
+provided. Existing release pins predate these local changes. Publish and qualify
+the intended coherent artifacts, verify provenance and the actual deployment,
+and follow first-cutover quiescence for old binaries. The local test uses
+development password bootstrap, a controlled provider/protocol agent, Traefik
+HTTP ingress and a namespace isolation policy; it is not a production load or
+ingress/IDP certification. The inherited offline-status overwrite race remains
+in the separate offline-agent work, not a newly introduced restart regression.
+
+Exact commands, independent reviews, red/green evidence, source/image mappings
+and both complete rollout reports are retained under
+`/tmp/acornops-production-readiness-20261029`, summarized in `final-validation.md`.
+Ownership-verified cleanup removed the isolated cluster, PG/Redis containers and
+anonymous volumes, task-built images and private kubeconfig. The original
+`k3d-acornops-demo-cluster` context and existing stacks were preserved; unrelated
+planning files retain their original hashes. No production change or publishing
+operation was performed.
