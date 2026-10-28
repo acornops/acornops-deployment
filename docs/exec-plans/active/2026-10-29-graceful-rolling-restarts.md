@@ -93,10 +93,10 @@ Files: three Deployment templates, Helm values/config validation, Compose stop g
 
 ## Task 6: Independent review and final evidence
 
-- [ ] Review each service change against the contracts and high-risk boundaries, including normal operation and mixed versions.
-- [ ] Reproduce material review findings in failing tests, then fix and rerun appropriate suites.
-- [ ] Record exact commands, results, environment limitations and any remaining risks. No claim of seamless production behavior without completed rollout evidence.
-- [ ] Keep the coordinated branch/diff reviewable; update plans and operational guidance with implementation evidence.
+- [x] Review each service change against the contracts and high-risk boundaries, including normal operation and mixed versions.
+- [x] Reproduce material review findings in failing tests, then fix and rerun appropriate suites.
+- [x] Record exact commands, results, environment limitations and any remaining risks. No claim of seamless production behavior without completed rollout evidence.
+- [x] Keep the coordinated branch/diff reviewable; update plans and operational guidance with implementation evidence.
 
 ## Baseline evidence
 
@@ -120,6 +120,65 @@ Files: three Deployment templates, Helm values/config validation, Compose stop g
 - Console `VITE_APP_DATA_MODE=control-plane npm run validate`: 234 files / 1,226 tests and all gates passed at `abbad5c`.
 - Deployment `task validate` and workspace platform contracts stop at the unrelated CP↔agentk `podLogsUnavailable` manifest mismatch introduced in agentk `d3351d9`. The drain contract mirrors match. All 13 remaining deployment validation commands passed independently, including chart, fixture, release and Compose checks.
 - Literal Kubernetes rollout matrix passed with capacity disabled and enabled, using native CP `24958b4`, EE `ab93ab6`, GW `b2d4e3f` images. Both profiles cover active inference plus fresh work, cross-replica agent replies/owner handoff, queue recovery/capacity gates, durable cancellation and simultaneous old pods draining. Capacity-on used the native prepare/verify activation procedure.
-- Task review requires two acceptance-harness improvements before final completion: compare actual pod image IDs against local verified images, and assert durable accepted-message/client identity and uniqueness. Service component reviews are closed; broad final review remains pending.
+- Task review closed both acceptance-harness findings: actual pod image IDs are checked against verified images, and durable accepted/client/user/run/assistant identity is asserted. Stronger complete native matrices passed again with capacity off and on, including 23 and 27 recorded image comparisons respectively. The broad review found one handoff configuration mismatch; the final scoped review approved its fix with zero remaining findings.
 
 The full-stack test uses internal plaintext, a protocol agent and a controlled model fixture; native service tests cover TLS separately. This is bounded graceful restart evidence, not production rollout, arbitrary crash resumption or a promise that work beyond the drain deadline completes. No user stack or production cluster was restarted.
+
+## Final handoff
+
+Implementation and independent review are complete on local
+`feat/graceful-rolling-restarts` branches. No production release, push or merge
+was performed. The current aggregate contract check remains blocked by the
+independently owned AgentK counterpart mismatch described above; it must be
+aligned before claiming a green workspace integration gate.
+
+| Repository | Final runtime/configuration commit |
+| --- | --- |
+| control-plane | `5210787ae0426dcf1f49754b840b382a9fef8dc5` |
+| execution-engine | `ab93ab64a6196cd5b31e0ec77c59569b8d30ea9b` |
+| llm-gateway | `b2d4e3f6249c9ea033950dcc9d87b9a823d241f9` |
+| management-console | `abbad5c` |
+| acornops-deployment | `74d807f1785f186cb389e1d8b33b7912ea74b37f` (before this evidence-only update) |
+
+The final CP/Helm fix rejects handoff settings outside integer `1..45000ms`;
+tested valid defaults and lifecycle algorithms are unchanged. Its focused
+configuration suite passed 72 tests, plus CP typecheck/build/harness/style and
+actual Helm render/boundary/lint checks. No full runtime matrix was repeated
+for that invalid-setting-only rejection. Existing custom grace overrides must
+satisfy the documented drain-plus-30-second rule.
+
+Exact final rollout commands, from this repository, were:
+
+```sh
+node scripts/k8s-drain-smoke.mjs --run --capacity off --kubeconfig /tmp/acornops-drain-kubeconfig --expected-cluster acornops-drain-20261029 --ingress http://127.0.0.1:18089 --cp-image acornops-drain-cp:24958b4 --ee-image acornops-drain-ee:ab93ab6 --gw-image acornops-drain-gw:b2d4e3f
+node scripts/k8s-drain-smoke.mjs --run --capacity on --kubeconfig /tmp/acornops-drain-kubeconfig --expected-cluster acornops-drain-20261029 --ingress http://127.0.0.1:18089 --cp-image acornops-drain-cp:24958b4 --ee-image acornops-drain-ee:ab93ab6 --gw-image acornops-drain-gw:b2d4e3f
+```
+
+Both passed using native images and the reviewed harness at `94a51fe`.
+Logs: `/tmp/acornops-drain-rollout-off-final.log` and
+`/tmp/acornops-drain-rollout-on-final.log`. Redacted per-case identity, image,
+RPC, pod and fixture evidence is in the corresponding temporary report folders
+`acornops-drain-mvsi4kq0-2ee293` and `acornops-drain-mvsi8wjl-392be4`.
+Reproduction requires rebuilding/importing current committed images and a new
+isolated cluster; see the [acceptance instructions](../../../kubernetes/rollout-smoke/README.md).
+
+`task k8s-drain-check` passed 18 fixture/configuration/identity tests.
+`task k8s-chart-check` passed, including exact 1/30000/45000 and invalid
+0/-1/1.5/45001/60000 handoff boundaries. All other 13-command deployment checks
+passed independently after `task validate` stopped at the external contract
+mismatch. The diagnostic current-manifests plus pre-log-change AgentK snapshot
+passed both contract checkers; this isolates provenance and does not replace the
+failing current-workspace gate.
+
+Ownership-verified cleanup removed only this task's isolated Kubernetes cluster,
+PostgreSQL/Redis containers and disposable image tags. The default Kubernetes
+context remains `k3d-acornops-demo-cluster`. No existing user stack was restarted.
+Canonical/component logs and review records were retained separately under
+`/tmp/acornops-graceful-restarts-evidence-20261029`.
+
+Remaining limits are operational: initial cutover/rollback from older binaries,
+forced termination/crash, drain-deadline overruns, and production resource sizing
+need the procedures in the runbook. Real write-tool exactly-once behavior and
+paid provider acceptance were not claimed by the fake-provider test. Existing
+Starlette/httpx deprecation and Helm icon recommendation are unchanged baseline
+noise; dependency cleanup was kept out of scope.

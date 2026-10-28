@@ -7,4 +7,4 @@ Reviewed 2026-10-18. Implementation-only plans that have landed are in
 - [Production Tool Results](production-tool-results.md) — Implementation complete; coordinated staging soak and production release acceptance still pending.
 - [Production Readiness Audit — 2026-10-26](production-readiness-audit.md) — Focused corrections and fresh validation; security and target-environment release gates remain open.
 
-- [Graceful rolling restarts](2026-10-29-graceful-rolling-restarts.md) — Native service draining and isolated Kubernetes acceptance; final review in progress.
+- [Graceful rolling restarts](2026-10-29-graceful-rolling-restarts.md) — Implementation and isolated Kubernetes acceptance complete; separate AgentK contract gate remains open before merge.
