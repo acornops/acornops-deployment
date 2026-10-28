@@ -62,8 +62,9 @@ defaults to 45000, and becomes
 before dispatch; it does not enlarge the actual tool execution timeout. Waiting
 must stop when execution authority or cancellation says the run may not proceed.
 
-Only a trusted HTTP 503 with error code `SERVICE_DRAINING`, `retryable: true`
-and `outcome: not_started` grants permission to replay an otherwise
+Only a trusted HTTP 503 with error code `SERVICE_DRAINING`, message
+`Service is draining`, `retryable: true` and `outcome: not_started` grants
+permission to replay an otherwise
 non-idempotent request. Connection errors, redirects, provider failures and
 uncertain writes do not. Stable logical identities and approval receipt fencing
 remain in force.

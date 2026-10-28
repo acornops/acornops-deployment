@@ -27,6 +27,7 @@ export async function bootstrap(config, platform, runtime) {
       runtime.save('requests.json', transcript);
       const error = result.error;
       if (attempt < 3 && response.status === 503 && error?.code === 'SERVICE_DRAINING'
+        && error.message === 'Service is draining'
         && error.outcome === 'not_started' && error.retryable === true && !response.redirected) {
         await delay(1000);
         continue;
@@ -87,7 +88,13 @@ export async function bootstrap(config, platform, runtime) {
       if (['failed', 'cancelled'].includes(current.status)) throw new Error(`${run.runId} ${current.status}: ${JSON.stringify(current.error || '')}`);
       return current.status === 'completed' && current;
     });
-    const messages = await request('GET', `/sessions/${run.sessionId}/messages`);
+    const messages = await waitFor(`${run.caseId} durable assistant message`, async () => {
+      const page = await request('GET', `/sessions/${run.sessionId}/messages`);
+      const items = Array.isArray(page) ? page : page.items;
+      // Completion status may be visible before the final row is persisted.
+      // Return every assistant row to the strict assertions, including malformed ones.
+      return items.some((item) => item.role === 'assistant') && page;
+    });
     const items = Array.isArray(messages) ? messages : messages.items;
     assert.ok(!messages.nextCursor, 'Durable message identity requires the complete session message list');
     const users = items.filter((item) => item.role === 'user');
@@ -100,11 +107,13 @@ export async function bootstrap(config, platform, runtime) {
     assert.equal(durableRun.id, run.runId, 'Returned durable run identity');
     assert.equal(durableRun.sessionId, run.sessionId, 'Run session association');
     assert.equal(durableRun.messageId, run.messageId, 'Run message association');
-    const finals = items.filter((item) => item.role === 'assistant'
-      && JSON.stringify(item.content).includes(`case:${run.caseId}:completed`));
+    const finals = items.filter((item) => item.role === 'assistant');
     assert.equal(finals.length, 1, 'Exactly one durable assistant completion');
+    assert.ok(typeof finals[0].id === 'string' && finals[0].id.length > 0, 'Valid durable assistant message ID');
+    assert.equal(finals[0].kind, 'assistant_final', 'Assistant completion kind');
     assert.equal(finals[0].runId, run.runId, 'Assistant completion run association');
     assert.equal(finals[0].sessionId, run.sessionId, 'Assistant completion session association');
+    assert.ok(JSON.stringify(finals[0].content).includes(`case:${run.caseId}:completed`), 'Assistant completion marker');
     const identity = { clientMessageId: user.clientMessageId, messageId: user.id, sessionId: user.sessionId,
       runId: user.runId, assistantMessageId: finals[0].id };
     const evidence = await state(run);

@@ -28,16 +28,21 @@ test('records every ready replica image ID and refuses missing runtime status', 
 
 const messageId = '12345678-1234-4123-8123-123456789abc';
 const runId = '12345678-1234-4123-8123-123456789def';
-async function exercise(t, { acceptedId = messageId, duplicate = false, badAssociation = false } = {}) {
+async function exercise(t, { acceptedId = messageId, duplicate = false, badAssociation = false, mutationError,
+  pendingMessageReads = 0, duplicateFinal = false, assistantOverride = {} } = {}) {
   const saved = new Map();
+  const mutations = [];
+  let messageReads = 0;
   const user = { id: messageId, sessionId: 'session', runId, role: 'user', kind: 'user',
     content: 'ROLLOUT_CASE:baseline', clientMessageId: 'msg-baseline', createdAt: '2026-10-29T00:00:00Z' };
   const assistant = { id: 'assistant', sessionId: 'session', runId, role: 'assistant', kind: 'assistant_final',
-    content: 'case:baseline:completed', createdAt: '2026-10-29T00:00:01Z' };
+    content: 'case:baseline:completed', createdAt: '2026-10-29T00:00:01Z', ...assistantOverride };
   const server = http.createServer(async (req, res) => {
-    for await (const chunk of req) { /* Consume request body before response. */ }
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
     const path = req.url.replace('/api/v1', '');
     let body;
+    let status = 200;
     if (path === '/auth/csrf') body = { csrfToken: 'csrf' };
     else if (path === '/workspaces') body = { id: 'workspace' };
     else if (path === '/workspaces/workspace/kubernetes-clusters' && req.method === 'POST') body = { cluster: { id: 'target' }, agentKey: 'key' };
@@ -45,10 +50,20 @@ async function exercise(t, { acceptedId = messageId, duplicate = false, badAssoc
     else if (path.includes('/mcp/catalog')) body = { servers: [{ type: 'builtin', connectionStatus: 'ok', tools: [{ name: 'rollout_probe', enabledEffective: true }] }] };
     else if (path.endsWith('/sessions')) body = { id: 'session' };
     else if (path === '/sessions/session/messages' && req.method === 'POST') body = { message_id: acceptedId, run_id: runId, runtimeSelection: { provider: 'openai', model: 'gpt-5.4-mini', reasoningEffort: 'off' } };
-    else if (path.startsWith('/sessions/session/messages')) body = { items: [user, ...(duplicate ? [{ ...user, id: 'duplicate' }] : []), assistant], nextCursor: null };
+    else if (path.startsWith('/sessions/session/messages')) {
+      messageReads += 1;
+      const assistants = messageReads <= pendingMessageReads ? []
+        : [assistant, ...(duplicateFinal ? [{ ...assistant, id: 'duplicate-final', content: 'Unexpected duplicate' }] : [])];
+      body = { items: [user, ...(duplicate ? [{ ...user, id: 'duplicate' }] : []), ...assistants], nextCursor: null };
+    }
     else if (path === `/runs/${runId}`) body = { id: runId, sessionId: 'session', messageId: badAssociation ? 'wrong' : messageId, status: 'completed' };
+    else if (path === '/mutation') {
+      mutations.push({ body: Buffer.concat(chunks).toString(), csrf: req.headers['x-csrf-token'] });
+      status = mutations.length === 1 ? 503 : 200;
+      body = status === 503 ? { error: mutationError } : { accepted: true };
+    }
     else body = {};
-    res.writeHead(200, { 'content-type': 'application/json' });
+    res.writeHead(status, { 'content-type': 'application/json' });
     res.end(JSON.stringify(body));
   });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -56,7 +71,26 @@ async function exercise(t, { acceptedId = messageId, duplicate = false, badAssoc
   const api = await bootstrap({ ingress: `http://127.0.0.1:${server.address().port}`, capacity: 'off' },
     { host: 'drain.localhost', origin: 'http://drain.localhost', namespace: 'drain-test', secret: { FIXTURE_PROVIDER_KEY: 'fixture-key' } },
     { addRedaction() {}, save: (name, value) => saved.set(name, value), control: async () => ({ providerCalls: [{}], events: [] }) });
-  return { api, saved };
+  return { api, saved, mutations, messageReads: () => messageReads };
+}
+
+test('retries only the complete drain classification with stable body and CSRF', async (t) => {
+  const { api, mutations } = await exercise(t, { mutationError: {
+    code: 'SERVICE_DRAINING', message: 'Service is draining', retryable: true, outcome: 'not_started' } });
+  assert.deepEqual(await api.request('POST', '/mutation', { clientMessageId: 'same-message' }), { accepted: true });
+  assert.deepEqual(mutations, [
+    { body: '{"clientMessageId":"same-message"}', csrf: 'csrf' },
+    { body: '{"clientMessageId":"same-message"}', csrf: 'csrf' },
+  ]);
+});
+
+for (const message of [undefined, 'Upstream failed after dispatch']) {
+  test(`does not replay a mutation with missing or wrong drain message (${message})`, async (t) => {
+    const { api, mutations } = await exercise(t, { mutationError: {
+      code: 'SERVICE_DRAINING', message, retryable: true, outcome: 'not_started' } });
+    await assert.rejects(() => api.request('POST', '/mutation', { clientMessageId: 'same-message' }), /503/);
+    assert.equal(mutations.length, 1);
+  });
 }
 
 test('rejects a mismatched accepted message ID despite a successful assistant completion', async (t) => {
@@ -87,3 +121,29 @@ test('records the verified durable client, message, session and run identity', a
   assert.deepEqual(saved.get('baseline.json').identity, { clientMessageId: 'msg-baseline', messageId,
     sessionId: 'session', runId, assistantMessageId: 'assistant' });
 });
+
+test('waits for final message persistence after a completed run status', async (t) => {
+  const { api, saved, messageReads } = await exercise(t, { pendingMessageReads: 2 });
+  await api.completed(await api.start('baseline'));
+  assert.equal(messageReads(), 3);
+  assert.equal(saved.get('baseline.json').identity.assistantMessageId, 'assistant');
+});
+
+test('rejects a second final assistant row even when only one contains the completion marker', async (t) => {
+  const { api, messageReads } = await exercise(t, { duplicateFinal: true });
+  await assert.rejects(async () => api.completed(await api.start('baseline')), /Exactly one durable assistant completion/);
+  assert.equal(messageReads(), 1);
+});
+
+for (const [field, value, expected] of [
+  ['id', '', /durable assistant message ID/],
+  ['kind', 'unexpected_kind', /Assistant completion kind/],
+  ['runId', 'wrong-run', /Assistant completion run association/],
+  ['sessionId', 'wrong-session', /Assistant completion session association/],
+]) {
+  test(`rejects a malformed final assistant ${field} without retrying it`, async (t) => {
+    const { api, messageReads } = await exercise(t, { assistantOverride: { [field]: value } });
+    await assert.rejects(async () => api.completed(await api.start('baseline')), expected);
+    assert.equal(messageReads(), 1);
+  });
+}
