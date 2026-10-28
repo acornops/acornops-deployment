@@ -407,3 +407,22 @@ test-only dependency and CI installs its lockfile; its explicit in-container
 package override remains unchanged. This does not alter any application image
 or dependency. The separate demo execution plan records artifact publication,
 first-cutover quiescence, and live acceptance.
+
+The matched releases are now published: CP `.42`, engine `.18`, gateway `.22`,
+console `.45`, chart `.30` (all `0.0.1-experimental`). Exact-source CI and release
+jobs passed; image provenance and the packaged chart were verified. Demo was
+upgraded from non-draining binaries under explicit quiescence, with root-only
+backups fully restored into disposable databases before upgrade. Its deployment
+succeeded, and the released native processes passed a literal simultaneous idle
+three-service rolling restart with all old UIDs absent in 23.7 seconds. Real
+model and read-only AgentK tool chats passed; original data counts, stable
+identities, credentials and storage were preserved. Public traffic and workers
+were restored, temporary resources removed, and the deployment lease released.
+The private demo-infra completed release plan contains exact live evidence.
+
+Uvicorn's `Cancel 0 running task(s)` message during the supervisors' zero-wait
+transport cleanup was traced to its timeout implementation. Both Python
+processes completed normal application shutdown; no application drain budget
+expired. The restart runbook documents this distinction without changing runtime
+timeouts or suppressing errors. Production promotion remains separate from this
+verified demo deployment and the earlier in-flight Kubernetes mTLS matrices.

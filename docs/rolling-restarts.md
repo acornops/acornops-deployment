@@ -121,6 +121,15 @@ Rollback to a binary without draining removes the restart guarantee. Keep
 compatible data/contracts and use a controlled maintenance window for that
 rollback. Longer Kubernetes grace alone cannot make an old process drain.
 
+The Python supervisors settle application work before asking Uvicorn to close
+idle transports without an additional wait. Uvicorn can then log
+`Cancel 0 running task(s), timeout graceful shutdown exceeded`, even when no
+application work remains. This is its transport-cleanup timeout, not the
+application drain deadline. Confirm normal `Application shutdown complete` and
+`Finished server process` messages and old-pod exit. Nonzero task cancellation,
+unfinished application shutdown or an exhausted application drain budget still
+needs investigation.
+
 ## First cutover from binaries without draining
 
 Use a maintenance window. Preserve the old image digests, values, schema
