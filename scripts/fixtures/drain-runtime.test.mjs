@@ -98,7 +98,7 @@ test('tool response preserves the trusted model-context envelope and UTF-8 byte 
 });
 
 test('agent holds replies on their original connection and records duplicate raw dispatch', async (t) => {
-  const require = createRequire(new URL('../../../control-plane/package.json', import.meta.url));
+  const require = createRequire(import.meta.url);
   const { WebSocketServer } = require('ws');
   const sockets = new WebSocketServer({ port: 0, host: '127.0.0.1' });
   await once(sockets, 'listening');

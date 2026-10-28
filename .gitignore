@@ -5,3 +5,4 @@ env/vm/.env.prod
 env/vm/.env.agent
 env/k8s/.env.agent
 .DS_Store
+node_modules/

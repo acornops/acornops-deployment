@@ -1,0 +1,8 @@
+{
+  "name": "acornops-deployment-test-fixtures",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "ws": "8.21.1"
+  }
+}

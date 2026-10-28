@@ -11,7 +11,7 @@ It does not own application runtime code. Runtime code stays in the component re
 - Docker or Docker Desktop
 - Docker Compose plugin
 - Task CLI
-- Node.js for validation scripts
+- Node.js 22 for validation scripts
 - Helm for Kubernetes chart validation
 - Optional: k3d/kubectl for local workload cluster testing
 
@@ -82,8 +82,14 @@ helm template acornops kubernetes/helm/acornops-platform --namespace acornops
 Canonical validation:
 
 ```bash
+npm ci --prefix scripts/fixtures --ignore-scripts
 task validate
 ```
+
+The rollout fixture owns its pinned WebSocket test dependency. Validation works
+from a standalone checkout and does not borrow a sibling repository's packages.
+The Kubernetes fixture still uses the selected control-plane image's package
+through its explicit `FIXTURE_WS_PACKAGE` setting.
 
 Focused checks:
 

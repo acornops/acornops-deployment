@@ -391,3 +391,19 @@ anonymous volumes, task-built images and private kubeconfig. The original
 `k3d-acornops-demo-cluster` context and existing stacks were preserved; unrelated
 planning files retain their original hashes. No production change or publishing
 operation was performed.
+
+## Release verification on main (2026-10-29)
+
+The user authorized integration, push, release publication and demo deployment.
+Fresh local validation passed: CP 1,475 tests and SQL upgrade checks; EE 401
+unit/29 keyless plus 431 complete native tests; gateway 788/52; console 1,240;
+deployment chart/Compose/release checks and workspace contracts/runtime truth.
+A fresh independent review found no additional runtime blocker.
+
+Standalone GitHub CI exposed a fixture dependency hidden by the workspace: the
+agent test resolved `ws` from the sibling control-plane checkout. Reproduced in
+a scratch standalone checkout before correction. The fixture now owns a pinned
+test-only dependency and CI installs its lockfile; its explicit in-container
+package override remains unchanged. This does not alter any application image
+or dependency. The separate demo execution plan records artifact publication,
+first-cutover quiescence, and live acceptance.

@@ -92,5 +92,7 @@ jobs:
         uses: arduino/setup-task@v2
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install rollout fixture test dependencies
+        run: npm ci --prefix scripts/fixtures --ignore-scripts
       - name: Run validation
         run: task validate

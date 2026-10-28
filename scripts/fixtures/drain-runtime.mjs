@@ -128,7 +128,7 @@ export function createFixture({ token, providerKey, agentUrl, wsPackage } = {}) 
   function connectAgent() {
     if (stopped || !agentConfig) return;
     if (!reconnectOpen) { reconnect = setTimeout(connectAgent, 100); return; }
-    const require = createRequire(wsPackage || fileURLToPath(new URL('../../../control-plane/package.json', import.meta.url)));
+    const require = createRequire(wsPackage || import.meta.url);
     const WebSocket = require('ws');
     const current = ++generation;
     const socket = new WebSocket(agentConfig.websocketUrl, { headers: {
