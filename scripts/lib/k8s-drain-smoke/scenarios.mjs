@@ -71,6 +71,7 @@ async function ownerHandoff(platform, runtime, api) {
 async function setConcurrency(platform, runtime, count) {
   await runtime.scoped(['set', 'env', `deployment/${platform.name('execution-engine')}`, `MAX_CONCURRENT_RUNS=${count}`]);
   await runtime.scoped(['rollout', 'status', `deployment/${platform.name('execution-engine')}`, '--timeout=180s'], { timeoutMs: 190000 });
+  await runtime.verifyRunningImages('execution-engine', 'concurrency-rollout');
 }
 
 async function queuedReclaim(config, platform, runtime, api) {

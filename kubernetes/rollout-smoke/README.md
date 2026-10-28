@@ -35,6 +35,10 @@ Create that isolated cluster with `--kubeconfig-update-default=false` and
 its kubeconfig to a private file. The runner checks the image revision against
 the sibling checkout and refuses uncommitted runtime source changes. No package
 installation takes place in the fixture pod; it uses the CP image's `ws` module.
+Before bootstrap and capacity activation, the runner compares every ready service
+container's Kubernetes image ID to the locally verified immutable Docker image
+ID. It repeats that check for replacements before accepting a rollout. Reimport
+images after rebuilding a tag; a stale cluster copy fails this check.
 
 ```bash
 task k8s-drain-check
@@ -72,3 +76,6 @@ or uninterrupted execution beyond the configured drain deadlines.
 Reports contain fixture events, accepted IDs, HTTP statuses, image revisions,
 pod/endpoint observations and scoped old-pod logs. Generated Secret values,
 session cookies, agent keys and provider credentials are not written to reports.
+`running-images.json` records the checked container IDs at installation and
+replacement readiness. Each completed case records the verified client message
+ID, durable user message ID, session/run association and assistant completion ID.

@@ -61,12 +61,16 @@ export async function bootstrap(config, platform, runtime) {
   async function start(caseId, { kind = 'text', holdPhase = 'provider_final' } = {}) {
     await runtime.control('/cases', { caseId, kind, holdPhase });
     const session = await request('POST', `/workspaces/${workspace.id}/targets/${targetId}/sessions`, { title: caseId });
+    const clientMessageId = `msg-${caseId}`;
     const accepted = await request('POST', `/sessions/${session.id}/messages`, {
-      content: `ROLLOUT_CASE:${caseId}`, toolAccessMode: 'read_only', clientMessageId: `msg-${caseId}`,
+      content: `ROLLOUT_CASE:${caseId}`, toolAccessMode: 'read_only', clientMessageId,
       llm: { provider: 'openai', model: 'gpt-5.4-mini', reasoningEffort: 'off' } });
     assert.ok(accepted.run_id, 'Acceptance must return a durable run ID');
     assert.match(accepted.run_id, /^[A-Za-z0-9_-]{1,200}$/);
-    const run = { caseId, sessionId: session.id, runId: accepted.run_id, messageId: accepted.message_id, kind };
+    assert.ok(typeof accepted.message_id === 'string'
+      && /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(accepted.message_id),
+    'Acceptance must return a valid durable message ID');
+    const run = { caseId, sessionId: session.id, runId: accepted.run_id, messageId: accepted.message_id, clientMessageId, kind };
     transcript.push({ accepted: run });
     return run;
   }
@@ -78,16 +82,31 @@ export async function bootstrap(config, platform, runtime) {
     return current.events.some((item) => item.type === event) && current;
   });
   async function completed(run) {
-    await waitFor(`${run.caseId} durable completion`, async () => {
+    const durableRun = await waitFor(`${run.caseId} durable completion`, async () => {
       const current = await status(run);
       if (['failed', 'cancelled'].includes(current.status)) throw new Error(`${run.runId} ${current.status}: ${JSON.stringify(current.error || '')}`);
-      return current.status === 'completed';
+      return current.status === 'completed' && current;
     });
     const messages = await request('GET', `/sessions/${run.sessionId}/messages`);
     const items = Array.isArray(messages) ? messages : messages.items;
+    assert.ok(!messages.nextCursor, 'Durable message identity requires the complete session message list');
+    const users = items.filter((item) => item.role === 'user');
+    assert.equal(users.length, 1, 'Exactly one durable user message in the case session');
+    const user = users[0];
+    assert.equal(user.clientMessageId, run.clientMessageId, 'Durable logical client message identity');
+    assert.equal(user.id, run.messageId, 'Durable user message matches the accepted message ID');
+    assert.equal(user.sessionId, run.sessionId, 'User message session association');
+    assert.equal(user.runId, run.runId, 'User message run association');
+    assert.equal(durableRun.id, run.runId, 'Returned durable run identity');
+    assert.equal(durableRun.sessionId, run.sessionId, 'Run session association');
+    assert.equal(durableRun.messageId, run.messageId, 'Run message association');
     const finals = items.filter((item) => item.role === 'assistant'
       && JSON.stringify(item.content).includes(`case:${run.caseId}:completed`));
     assert.equal(finals.length, 1, 'Exactly one durable assistant completion');
+    assert.equal(finals[0].runId, run.runId, 'Assistant completion run association');
+    assert.equal(finals[0].sessionId, run.sessionId, 'Assistant completion session association');
+    const identity = { clientMessageId: user.clientMessageId, messageId: user.id, sessionId: user.sessionId,
+      runId: user.runId, assistantMessageId: finals[0].id };
     const evidence = await state(run);
     assert.equal(evidence.providerCalls.length, run.kind === 'tool' ? 2 : 1, 'No duplicate provider attempts');
     assert.equal(evidence.events.some((item) => ['hold_expired', 'fixture_error', 'provider_disconnected'].includes(item.type)), false,
@@ -102,7 +121,7 @@ export async function bootstrap(config, platform, runtime) {
         `SELECT count(*) FROM workspace_run_reservations WHERE run_id='${run.runId}' AND settled_at IS NULL;`) === '0');
       assert.equal(await runtime.sql(`SELECT count(*) FROM workspace_run_operations WHERE run_id='${run.runId}' AND finished_at IS NULL;`), '0');
     }
-    runtime.save(`${run.caseId}.json`, { run, evidence });
+    runtime.save(`${run.caseId}.json`, { run, identity, evidence });
     console.log(`ok ${run.caseId}`);
     return evidence;
   }

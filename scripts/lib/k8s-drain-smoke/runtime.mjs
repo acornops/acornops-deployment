@@ -5,6 +5,22 @@ import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { ownershipLabel, validateCluster } from './config.mjs';
 
+export function verifyPodImages(component, pods, verified) {
+  if (!/^sha256:[a-f0-9]{64}$/.test(verified?.id || '')) throw new Error(`No verified local image ID for ${component}`);
+  const ready = pods.filter((pod) => !pod.metadata.deletionTimestamp
+    && pod.status.conditions?.some((condition) => condition.type === 'Ready' && condition.status === 'True'));
+  if (!ready.length) throw new Error(`No ready ${component} pods to verify`);
+  return ready.map((pod) => {
+    const container = pod.status.containerStatuses?.find((item) => item.name === component);
+    if (!container?.ready) throw new Error(`${pod.metadata.name} has no ready runtime container ${component}`);
+    if (container.imageID !== verified.id) {
+      throw new Error(`${pod.metadata.name} image ID ${container.imageID} differs from verified local ${verified.id} (${verified.image})`);
+    }
+    return { component, pod: pod.metadata.name, uid: pod.metadata.uid, container: container.name,
+      imageId: container.imageID, verifiedImageId: verified.id };
+  });
+}
+
 export async function waitFor(label, action, timeoutMs = 120000) {
   const deadline = Date.now() + timeoutMs;
   let failure;
@@ -40,6 +56,8 @@ export function createRuntime(config, reportDirectory) {
   const observations = [];
   const podLogs = new Map();
   const redactions = new Set();
+  const verifiedImages = new Map();
+  const runningImages = [];
   let context, platform, fixtureUrl;
   const args = () => ['--kubeconfig', config.kubeconfig, ...(context ? ['--context', context] : [])];
   const kubectl = (argv, options) => run('kubectl', [...args(), ...argv], options);
@@ -82,8 +100,16 @@ export function createRuntime(config, reportDirectory) {
         throw new Error(`${name} image must match the committed runtime source revision and native production command`);
       }
       evidence.push({ name, image, id: metadata.Id, command, revision: metadata.Config.Labels['org.opencontainers.image.revision'] });
+      verifiedImages.set(name, evidence.at(-1));
     }
     save('images.json', evidence);
+  }
+
+  async function verifyRunningImages(component, phase) {
+    const evidence = verifyPodImages(component, await pods(component), verifiedImages.get(component));
+    runningImages.push({ phase, at: new Date().toISOString(), containers: evidence });
+    save('running-images.json', runningImages);
+    return evidence;
   }
 
   async function install(generated) {
@@ -119,6 +145,7 @@ export function createRuntime(config, reportDirectory) {
     await run('helm', ['upgrade', '--install', platform.release, 'kubernetes/helm/acornops-platform',
       '--kubeconfig', config.kubeconfig, '--kube-context', context,
       '-n', platform.namespace, '-f', join(reportDirectory, file), '--wait', '--timeout', '10m'], { timeoutMs: 610000 });
+    for (const component of verifiedImages.keys()) await verifyRunningImages(component, phase);
   }
 
   async function capacityCommand(command) {
@@ -191,6 +218,9 @@ export function createRuntime(config, reportDirectory) {
       const slices = await get('endpointslices', `kubernetes.io/service-name=${platform.name(record.component)}`);
       const ready = slices.items.flatMap((item) => item.endpoints || []).filter((item) => item.conditions?.ready);
       if (ready.some((endpoint) => oldUids.has(endpoint.targetRef?.uid))) return false;
+      if (!current.some((pod) => !record.old.some((old) => old.uid === pod.metadata.uid)
+        && !pod.metadata.deletionTimestamp && pod.status.conditions?.some((condition) => condition.type === 'Ready' && condition.status === 'True'))) return false;
+      await verifyRunningImages(record.component, 'replacement-ready');
       record.samples.push({ at: new Date().toISOString(), terminating: terminating.map((pod) => pod.metadata.uid),
         ready: ready.map((endpoint) => endpoint.targetRef?.uid) });
       return terminating;
@@ -203,6 +233,7 @@ export function createRuntime(config, reportDirectory) {
       const current = await pods(record.component);
       return !current.some((pod) => record.old.some((old) => old.uid === pod.metadata.uid));
     }, 180000);
+    await verifyRunningImages(record.component, 'rollout-settled');
     record.finishedAt = new Date().toISOString();
   }
 
@@ -259,6 +290,6 @@ export function createRuntime(config, reportDirectory) {
       await kubectl(['delete', 'namespace', platform.namespace, '--wait=false']);
     }
   }
-  return { preflight, verifyImages, install, control, pods, scoped, apply, get, restart, drained, settled,
+  return { preflight, verifyImages, verifyRunningImages, install, control, pods, scoped, apply, get, restart, drained, settled,
     redis, sql, observeRpc, save, addRedaction: (secret) => redactions.add(secret), diagnostics, cleanup };
 }
