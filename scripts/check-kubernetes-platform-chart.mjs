@@ -672,7 +672,16 @@ for (const [key, name] of drainBudgets) {
   assertIncludes(customConfig, 'AGENT_HANDOFF_TIMEOUT_MS: "30000"', `${key} renders custom handoff allowance`);
   helmTemplate(['--set', `components.${key}.enabled=false`, '--set', `components.${key}.terminationGracePeriodSeconds=1`]);
 }
-expectHelmFailure(['--set', 'agentGateway.handoffTimeoutMs=0'], 'handoff allowance must be positive');
+for (const timeout of [1, 30000, 45000]) {
+  const render = helmTemplate(['--set', `agentGateway.handoffTimeoutMs=${timeout}`]);
+  for (const [, name] of drainBudgets) {
+    const config = manifestDocument(render, 'ConfigMap', `acornops-acornops-platform-${name}`);
+    assertIncludes(config, `AGENT_HANDOFF_TIMEOUT_MS: "${timeout}"`, `${name} accepts a ${timeout}ms handoff allowance`);
+  }
+}
+for (const timeout of [0, -1, 1.5, 45001, 60000]) {
+  expectHelmFailure(['--set', `agentGateway.handoffTimeoutMs=${timeout}`], `handoff allowance ${timeout} must be an integer in 1..45000ms`);
+}
 for (const key of ['managementConsole', 'platformAdminConsole']) {
   expectHelmFailure(['--set', `components.${key}.drainTimeoutSeconds=150`], `${key} must reject unused backend drain settings`);
 }

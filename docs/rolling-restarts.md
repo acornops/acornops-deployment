@@ -56,7 +56,8 @@ draining. Ensure the container entrypoint delivers signals to the application.
 - The console can reconnect its event stream and reconcile durable run/message
   state. A network failure or monitoring timeout does not establish run failure.
 
-`agentGateway.handoffTimeoutMs` defaults to 45000 and becomes
+`agentGateway.handoffTimeoutMs` accepts integers from 1 to 45000 milliseconds,
+defaults to 45000, and becomes
 `AGENT_HANDOFF_TIMEOUT_MS` in all three services. This allowance is for waiting
 before dispatch; it does not enlarge the actual tool execution timeout. Waiting
 must stop when execution authority or cancellation says the run may not proceed.

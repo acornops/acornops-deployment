@@ -300,7 +300,7 @@ platformAdminAccess:
 # Shared control-plane gateway settings for both AgentK and AgentV connections.
 # This does not configure either target-side agent daemon.
 agentGateway:
-  # Extra pre-dispatch wait for an agent to reconnect during a control-plane drain.
+  # Extra pre-dispatch wait for an agent to reconnect during a control-plane drain (1..45000 milliseconds).
   handoffTimeoutMs: 45000
   distributedRouting:
     # Enables HA target ownership and cross-pod routing through external Redis.

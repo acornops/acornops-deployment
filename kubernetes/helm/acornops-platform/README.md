@@ -36,7 +36,8 @@ and cache endpoints through the existing Secret configured by
 
 `components.<component>.drainTimeoutSeconds` and
 `terminationGracePeriodSeconds` must leave at least 30 seconds for cleanup and
-shutdown headroom. `agentGateway.handoffTimeoutMs` defaults to 45000. These
+shutdown headroom. `agentGateway.handoffTimeoutMs` accepts integers from 1 to
+45000 milliseconds and defaults to 45000. These
 settings require compatible service binaries; see the
 [rolling restart runbook](../../../docs/rolling-restarts.md) before rollout.
 
