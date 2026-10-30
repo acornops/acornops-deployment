@@ -202,6 +202,15 @@ task k8s-chart-check
 task release-matrix-check
 ```
 
+Bundled Helm examples inherit the chart's matrix-aligned AgentV install version.
+The release check renders every example, including production with the air-gapped
+overlay, to catch stale pins. Existing operator files with an explicit
+`targetAgents.agentv.systemd.version` still override that default: remove stale
+pins to inherit it, or select a deliberately qualified release. The independent
+`releaseBaseUrl` setting continues to support private HTTPS mirrors. These settings
+control generated AgentV installation commands; upgrading already installed agents
+requires a separate explicit host upgrade.
+
 The chart release workflow also requires the tag version to match both
 `Chart.yaml` and the release matrix before packaging. To check an intended
 tag locally, set `ACORNOPS_RELEASE_VERSION` to its version without the `v` prefix.

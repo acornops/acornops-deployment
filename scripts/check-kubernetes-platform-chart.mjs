@@ -524,6 +524,19 @@ for (const [args, message] of [
   expectHelmFailure(args, message);
 }
 
+for (const version of ['latest', 'v1.2.3', '']) {
+  expectHelmFailure(
+    ['--set-string', `targetAgents.agentv.systemd.version=${version}`],
+    'AgentV install versions must remain exact semver pins'
+  );
+}
+for (const url of ['http://mirror.example/agentv', 'https://user@mirror.example/agentv', 'https://mirror.example/agentv?token=secret']) {
+  expectHelmFailure(
+    ['--set-string', `targetAgents.agentv.systemd.releaseBaseUrl=${url}`],
+    'AgentV release mirrors must remain safe HTTPS base URLs'
+  );
+}
+
 const ambiguousOidcAdditionalCaFailure = expectHelmFailure(
   ['--skip-schema-validation', ...configMapCaArgs, ...secretCaArgs],
   'template validation should reject ambiguous OIDC additional CA configuration'

@@ -9,3 +9,4 @@ Reviewed 2026-10-18. Implementation-only plans that have landed are in
 
 - [Graceful rolling restarts](2026-10-29-graceful-rolling-restarts.md) — Implementation and isolated Kubernetes acceptance complete; separate AgentK contract gate remains open before merge.
 - [Safe upgrade guidance](2026-10-30-safe-upgrade-guidance.md) — Preserve/forward-migrate/reset guidance implemented and locally validated; public publication acceptance remains pending.
+- [Production AgentV version alignment](2026-10-30-production-agentv-version-alignment.md) — Inherited example versions and effective-render regressions implemented and locally validated; independent review passed; immutable chart release pending. Installed-agent upgrades remain separate.

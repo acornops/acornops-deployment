@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { agentVExampleFailures } from './lib/release-matrix-agentv.mjs';
 
 const chartPath = 'kubernetes/helm/acornops-platform';
 
@@ -258,9 +259,33 @@ expect(
   rendered.includes('AGENTK_HELM_CHART_VERSION: ""'),
   'platform chart should leave the optional agentk chart version pin unset by default'
 );
+failures.push(...agentVExampleFailures(rendered, expectedAgentVVersion, 'platform chart defaults'));
+for (const example of readdirSync(`${chartPath}/examples`).filter((file) => /\.ya?ml$/.test(file)).sort()) {
+  const exampleRender = run('helm', [
+    'template', 'acornops', chartPath, '--namespace', 'acornops', '-f', `${chartPath}/examples/${example}`
+  ]);
+  failures.push(...agentVExampleFailures(exampleRender, expectedAgentVVersion, example));
+}
+
+const productionAndAirgapArgs = [
+  'template', 'acornops', chartPath, '--namespace', 'acornops',
+  '-f', `${chartPath}/examples/values-production.yaml`,
+  '-f', `${chartPath}/examples/values-air-gapped-catalog.yaml`
+];
+const productionAndAirgap = run('helm', productionAndAirgapArgs);
+failures.push(...agentVExampleFailures(productionAndAirgap, expectedAgentVVersion, 'production + air-gapped examples'));
 expect(
-  rendered.includes(`AGENTV_SYSTEMD_RELEASE_VERSION: "${expectedAgentVVersion}"`),
-  'platform chart should render the release-matrix AgentV version'
+  productionAndAirgap.includes('AGENTV_SYSTEMD_RELEASE_BASE_URL: "https://artifacts.internal.example/acornops/agentv"'),
+  'production + air-gapped examples should preserve the AgentV release mirror'
+);
+const explicitAgentVOverride = run('helm', [
+  ...productionAndAirgapArgs, '--set-string', 'targetAgents.agentv.systemd.version=1.2.3',
+  '--set-string', 'targetAgents.agentv.systemd.releaseBaseUrl=https://operator.example/agentv'
+]);
+failures.push(...agentVExampleFailures(explicitAgentVOverride, '1.2.3', 'operator AgentV override'));
+expect(
+  explicitAgentVOverride.includes('AGENTV_SYSTEMD_RELEASE_BASE_URL: "https://operator.example/agentv"'),
+  'an explicit operator AgentV release mirror should override bundled examples'
 );
 expect(
   rendered.includes('AGENTV_SYSTEMD_RELEASE_BASE_URL: "https://github.com/acornops/agentv/releases/download"'),

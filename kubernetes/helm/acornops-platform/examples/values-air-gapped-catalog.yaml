@@ -33,5 +33,5 @@ components:
 targetAgents:
   agentv:
     systemd:
-      version: 0.0.1-experimental.6
+      # Inherit the chart's matrix-aligned version; pin only for an intentional override.
       releaseBaseUrl: https://artifacts.internal.example/acornops/agentv
