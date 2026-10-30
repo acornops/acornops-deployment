@@ -10,6 +10,12 @@ Requires [Task](https://taskfile.dev/) CLI (`task`) and Docker Compose.
 
 ## Environment
 
+The template-copy and secret-generation steps below are for a fresh installation.
+For an upgrade, preserve the existing environment files, encryption keys and
+other secrets. Do not overwrite them with templates or generate replacement keys;
+follow the [upgrade procedure](OPERATIONS.md#installation-and-upgrade-paths) and
+change only the configuration required by the selected release.
+
 1. Copy template: `cp env/vm/.env.example env/vm/.env.prod`
 2. Copy agent template if deploying cluster agents against this VM platform: `cp env/vm/.env.agent.example env/vm/.env.agent`
 3. Set production values:
@@ -23,9 +29,9 @@ Requires [Task](https://taskfile.dev/) CLI (`task`) and Docker Compose.
    - optional organization CA (`ADDITIONAL_CA_BUNDLE_SOURCE_PATH`); when non-empty,
      `prod-up` enables `compose.additional-ca.yaml` for every server component
      and migration job
-4. Use a disposable or resettable Postgres database while the platform remains pre-release.
+4. Verify the starting database state using the [installation and upgrade paths](OPERATIONS.md#installation-and-upgrade-paths); pre-release status does not authorize discarding existing data.
 
-Generate every production secret before starting the stack. Runtime validation rejects placeholder/default values such as `change-me`, `replace-me`, development service tokens, default database passwords, and the local gateway KEK.
+For a fresh installation, generate every production secret before starting the stack. Runtime validation rejects placeholder/default values such as `change-me`, `replace-me`, development service tokens, default database passwords, and the local gateway KEK.
 
 ```bash
 # Shared bearer tokens, OIDC client secrets, and CSRF signing secrets.
@@ -58,33 +64,33 @@ URLs, plus gateway Redis and encrypted secret storage. Complete the checklist in
 
 ## Deploy
 
-This version establishes a greenfield schema epoch. Back up if needed, then
-explicitly drop and recreate both application databases:
+First follow the [installation and upgrade paths](OPERATIONS.md#installation-and-upgrade-paths)
+using both databases' recorded migration history and the selected images:
 
-```bash
-pg_dump --format=custom --file acornops-control-plane-backup.dump "$CONTROL_PLANE_DATABASE_URL"
-dropdb --force --dbname "$POSTGRES_ADMIN_URL" "$CONTROL_PLANE_DATABASE_NAME"
-createdb --dbname "$POSTGRES_ADMIN_URL" "$CONTROL_PLANE_DATABASE_NAME"
-```
+- Fresh empty databases need initialization, with no reset.
+- Existing matching `greenfield-1` databases and secrets are preserved through pending forward migrations.
+- A verified earlier epoch requires a separate data migration or explicit approval to discard data using the scoped reset procedure.
+- Unknown history, checksum drift, divergent revisions, or a database ahead of the selected images require stopping and investigation.
 
-Pre-release data is not preserved. This is a first-install/reset cutover; deploy
-the control-plane, execution-engine, gateway,
-deployment configuration, and documentation as one pinned matrix.
+For an upgrade, rehearse restoration and the selected procedure, quiesce writers
+as required, and back up both databases plus the matching gateway secret
+namespace. Deploy the control plane, execution engine, gateway and deployment
+configuration as one pinned matrix.
 
 ```bash
 task prod-up
 ```
 
-`prod-up` runs `llm-gateway-init` and `control-plane-init` before either
-application starts. Inspect logs or
+`prod-up` runs `llm-gateway-init` and `control-plane-init` before the new
+applications start; it does not stop existing writers. Inspect logs or
 run the control-plane `db:status` command inside the service image when checking
 migration state.
 
-Perform the credential-model release in a maintenance window: pause admission
-and schedulers, drain runs, disable remote MCP, back up Postgres and the secret
-namespace, then deploy the pinned matrix. Smoke test built-in tools plus
-workspace and individual credential connect, verify, rotation, and disconnect
-before re-enabling remote MCP.
+When crossing the MCP credential-model boundary, follow the
+[coordinated upgrade](OPERATIONS.md#mcp-coordinated-upgrade) maintenance and
+rollback procedure. Do not repeat its credential reset after the boundary is
+already complete. Smoke test retained data, built-in tools and applicable
+credential lifecycles before reopening traffic.
 
 ## Operate
 
@@ -100,4 +106,4 @@ task prod-down
 2. Use `release/stack-versions.yaml` to keep cross-service versions compatible.
 3. Run events are persisted in control-plane Postgres by default for production replay. The execution engine uses Redis DB 1 for run-id coordination, event outbox retry, terminal commit retry, and stale-run recovery.
 4. VM Compose gates execution-engine and llm-gateway traffic on `/ready`; `/health` remains liveness-only for those services.
-5. Reset disposable deployment databases when schema files have been rewritten from an older local state.
+5. Investigate migration-history or checksum mismatches using the upgrade runbook; do not reset an existing installation to bypass them.
