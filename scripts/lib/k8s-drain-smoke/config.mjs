@@ -68,7 +68,7 @@ export function createConfiguration(config, id) {
     userAccess: { oidc: { enabled: false }, password: { enabled: true,
       emailVerificationRequired: false, signupAllowUnverifiedEmail: true } },
     platformSettings: { userSignInMethods: { allowedMethods: ['password'], defaultMethods: ['password'] } },
-    automation: { runtimeMode: 'off' }, agentGateway: { distributedRouting: { enabled: true } },
+    agentGateway: { distributedRouting: { enabled: true } },
     workspaceCapacity: { enabled: config.capacity === 'on', admissionEnabled: true, dispatchEnabled: true },
     workspacePlans: { defaultPlanKey: 'default', plans: [{ key: 'default', name: 'Rollout fixture',
       quotas: { members: 10, kubernetesClusters: 10, virtualMachines: 10 }, executionLimits: {

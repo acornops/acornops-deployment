@@ -38,8 +38,6 @@ data:
   CONTROL_PLANE_DISTRIBUTED_ROUTING_ENABLED: {{ .Values.agentGateway.distributedRouting.enabled | quote }}
   CONTROL_PLANE_AGENT_OWNER_TTL_SECONDS: {{ .Values.agentGateway.distributedRouting.ownerTtlSeconds | quote }}
   CONTROL_PLANE_AGENT_SNAPSHOT_INTERVAL_SECONDS: {{ .Values.agentGateway.snapshotIntervalSeconds | quote }}
-  AUTOMATION_RUNTIME_MODE: {{ .Values.automation.runtimeMode | quote }}
-  AUTOMATION_CANARY_WORKSPACE_IDS: {{ .Values.automation.canaryWorkspaceIds | quote }}
   AUTOMATION_WORKER_INTERVAL_MS: {{ .Values.automation.workerIntervalMs | quote }}
   AGENT_WS_MAX_PAYLOAD_BYTES: {{ .Values.agentGateway.maxWebSocketPayloadBytes | int | quote }}
   CORS_ORIGIN: {{ default (ternary (printf "%s,%s" (include "acornops-platform.managementConsoleUrl" .) .Values.platform.adminConsoleUrl) (include "acornops-platform.managementConsoleUrl" .) .Values.components.platformAdminConsole.enabled) .Values.components.controlPlane.corsOrigin | quote }}

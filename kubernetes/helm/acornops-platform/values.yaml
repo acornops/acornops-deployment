@@ -25,9 +25,6 @@ platform:
   adminConsoleUrl: https://admin.acornops.dev
 
 automation:
-  # off, shadow, canary, or on. Keep off until migrations/backfill complete.
-  runtimeMode: "off"
-  canaryWorkspaceIds: ""
   workerIntervalMs: 1000
 
 mcpOAuth:

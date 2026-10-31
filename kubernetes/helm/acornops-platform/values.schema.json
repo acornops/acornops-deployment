@@ -28,8 +28,6 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "runtimeMode": { "type": "string", "enum": ["off", "shadow", "canary", "on"] },
-        "canaryWorkspaceIds": { "type": "string" },
         "workerIntervalMs": { "type": "integer", "minimum": 250 }
       }
     },

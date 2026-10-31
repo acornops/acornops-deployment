@@ -44,6 +44,39 @@ The loopback binding, raw token, client secret, CSRF secret, and test user are
 local-development material only. Production remains governed by the generated
 Secret, TLS, MFA, ingress, and NetworkPolicy requirements below.
 
+## Workflow Dispatch Configuration
+
+Workflow dispatch starts enabled. Apply migrations before control-plane startup.
+`AUTOMATION_WORKER_INTERVAL_MS` (Helm `automation.workerIntervalMs`) controls
+worker cadence and defaults to 1000 milliseconds.
+
+The existing workspace controls provide explicit maintenance pauses:
+
+| Environment variable | Helm value | Effect when false |
+| --- | --- | --- |
+| `WORKSPACE_ADMISSION_ENABLED` | `workspaceCapacity.admissionEnabled` | Reject new execution admissions; accepted work can drain. |
+| `WORKSPACE_DISPATCH_ENABLED` | `workspaceCapacity.dispatchEnabled` | Retain accepted work without dispatching it, subject to its queue deadline. |
+
+Both default to true, apply across workspace execution types, and do not stop
+already-running work. Set both false when maintenance requires a complete pause
+of new admissions and dispatch. Review pending work before reopening dispatch.
+
+These templates require a control-plane release that removes the automation
+rollout mode. The currently pinned `0.0.1-experimental.42` image predates this
+change; publish the updated control plane and advance the release-matrix and
+image pins before deploying these templates. Removing the environment variables
+alone from an older binary leaves that binary's dispatch default at `off`.
+
+Remove `AUTOMATION_RUNTIME_MODE` and `AUTOMATION_CANARY_WORKSPACE_IDS` from env
+files, and `automation.runtimeMode` and `automation.canaryWorkspaceIds` from
+Helm overrides. New binaries ignore the retired environment variables; Helm's
+strict values schema rejects the removed properties. For an existing release,
+use a cleaned values file instead of `--reuse-values`, retaining the installation's
+other overrides. Replace any intentional rollout pause with the workspace
+controls before upgrading. Diagnostics now report `runtime.admissionEnabled`
+and `runtime.dispatchEnabled` instead of `runtime.mode` and
+`runtime.workspaceEnabled`.
+
 ## Durable Webhook Delivery
 
 Every control-plane replica may run the Postgres-backed webhook worker. Claims
