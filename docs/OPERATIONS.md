@@ -61,11 +61,16 @@ Both default to true, apply across workspace execution types, and do not stop
 already-running work. Set both false when maintenance requires a complete pause
 of new admissions and dispatch. Review pending work before reopening dispatch.
 
-These templates require a control-plane release that removes the automation
-rollout mode. The currently pinned `0.0.1-experimental.42` image predates this
-change; publish the updated control plane and advance the release-matrix and
-image pins before deploying these templates. Removing the environment variables
-alone from an older binary leaves that binary's dispatch default at `off`.
+These templates pin control-plane `0.0.1-experimental.43`, which removes the
+automation rollout mode and repairs capacity-maintenance Workflow summaries.
+Verify that image is published before deploying these templates. Removing the
+environment variables alone from `0.0.1-experimental.42` or an older binary
+leaves that binary's dispatch default at `off`. The new image also includes
+forward migration `013_target_delete_indexes.sql` from the target-deletion fix;
+run the normal migration initializer before starting the new control plane.
+Index creation briefly blocks writes to triage history, so schedule installations
+with substantial history in a quiet maintenance window; no database reset is
+needed.
 
 Remove `AUTOMATION_RUNTIME_MODE` and `AUTOMATION_CANARY_WORKSPACE_IDS` from env
 files, and `automation.runtimeMode` and `automation.canaryWorkspaceIds` from
