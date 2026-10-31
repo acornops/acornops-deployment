@@ -44,6 +44,44 @@ The loopback binding, raw token, client secret, CSRF secret, and test user are
 local-development material only. Production remains governed by the generated
 Secret, TLS, MFA, ingress, and NetworkPolicy requirements below.
 
+## Workflow Dispatch Configuration
+
+Workflow dispatch starts enabled. Apply migrations before control-plane startup.
+`AUTOMATION_WORKER_INTERVAL_MS` (Helm `automation.workerIntervalMs`) controls
+worker cadence and defaults to 1000 milliseconds.
+
+The existing workspace controls provide explicit maintenance pauses:
+
+| Environment variable | Helm value | Effect when false |
+| --- | --- | --- |
+| `WORKSPACE_ADMISSION_ENABLED` | `workspaceCapacity.admissionEnabled` | Reject new execution admissions; accepted work can drain. |
+| `WORKSPACE_DISPATCH_ENABLED` | `workspaceCapacity.dispatchEnabled` | Retain accepted work without dispatching it, subject to its queue deadline. |
+
+Both default to true, apply across workspace execution types, and do not stop
+already-running work. Set both false when maintenance requires a complete pause
+of new admissions and dispatch. Review pending work before reopening dispatch.
+
+These templates pin control-plane `0.0.1-experimental.43`, which removes the
+automation rollout mode and repairs capacity-maintenance Workflow summaries.
+Verify that image is published before deploying these templates. Removing the
+environment variables alone from `0.0.1-experimental.42` or an older binary
+leaves that binary's dispatch default at `off`. The new image also includes
+forward migration `013_target_delete_indexes.sql` from the target-deletion fix;
+run the normal migration initializer before starting the new control plane.
+Index creation briefly blocks writes to triage history, so schedule installations
+with substantial history in a quiet maintenance window; no database reset is
+needed.
+
+Remove `AUTOMATION_RUNTIME_MODE` and `AUTOMATION_CANARY_WORKSPACE_IDS` from env
+files, and `automation.runtimeMode` and `automation.canaryWorkspaceIds` from
+Helm overrides. New binaries ignore the retired environment variables; Helm's
+strict values schema rejects the removed properties. For an existing release,
+use a cleaned values file instead of `--reuse-values`, retaining the installation's
+other overrides. Replace any intentional rollout pause with the workspace
+controls before upgrading. Diagnostics now report `runtime.admissionEnabled`
+and `runtime.dispatchEnabled` instead of `runtime.mode` and
+`runtime.workspaceEnabled`.
+
 ## Durable Webhook Delivery
 
 Every control-plane replica may run the Postgres-backed webhook worker. Claims

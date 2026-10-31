@@ -35,6 +35,7 @@ This `docs/` tree is the repository-local system of record for deployment orches
 
 - [Plans](/docs/PLANS.md)
 - [Active Plans](/docs/exec-plans/active/README.md)
+- [Remove Automation Rollout Configuration](/docs/exec-plans/active/2026-10-31-remove-automation-rollout.md)
 - [Approval Resume Release](/docs/exec-plans/completed/approval-resume-release.md)
 - [Production Readiness Audit](/docs/exec-plans/active/production-readiness-audit.md)
 - [Readiness Fixes Demo Release](/docs/exec-plans/completed/readiness-fixes-demo-release.md)

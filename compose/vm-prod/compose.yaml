@@ -37,7 +37,7 @@ services:
 
   control-plane:
     stop_grace_period: ${CP_STOP_GRACE_SECONDS:-180}s
-    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.42}
+    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.43}
     environment:
       SERVICE_DRAIN_TIMEOUT_SECONDS: ${CP_DRAIN_TIMEOUT_SECONDS:-150}
       AGENT_HANDOFF_TIMEOUT_MS: ${AGENT_HANDOFF_TIMEOUT_MS:-45000}
@@ -52,8 +52,6 @@ services:
       CONTROL_PLANE_DISTRIBUTED_ROUTING_ENABLED: ${CONTROL_PLANE_DISTRIBUTED_ROUTING_ENABLED:-true}
       CONTROL_PLANE_AGENT_OWNER_TTL_SECONDS: ${CONTROL_PLANE_AGENT_OWNER_TTL_SECONDS:-90}
       CONTROL_PLANE_AGENT_SNAPSHOT_INTERVAL_SECONDS: ${CONTROL_PLANE_AGENT_SNAPSHOT_INTERVAL_SECONDS:-60}
-      AUTOMATION_RUNTIME_MODE: ${AUTOMATION_RUNTIME_MODE:-off}
-      AUTOMATION_CANARY_WORKSPACE_IDS: ${AUTOMATION_CANARY_WORKSPACE_IDS:-}
       AUTOMATION_WORKER_INTERVAL_MS: ${AUTOMATION_WORKER_INTERVAL_MS:-1000}
       AGENT_WS_MAX_PAYLOAD_BYTES: ${AGENT_WS_MAX_PAYLOAD_BYTES:-3145728}
       CORS_ORIGIN: ${CORS_ORIGIN:-https://console.${BASE_DOMAIN:-acornops.dev}}
@@ -195,7 +193,7 @@ services:
       - acornops
 
   control-plane-init:
-    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.42}
+    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/acornops/control-plane:0.0.1-experimental.43}
     environment:
       DATABASE_URL: postgresql://${CP_DB_USER:-acornops}:${CP_DB_PASSWORD:-acornops}@cp-postgres:5432/${CP_DB_NAME:-acornops_control_plane}
     command: ["node", "dist/scripts/control-plane-db.js", "migrate"]

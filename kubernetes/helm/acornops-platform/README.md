@@ -61,7 +61,7 @@ The chart values are organized by operator concern:
 - `assistantRuntime`: AI assistant budgets, limits, and write-approval defaults
 - `targetAgents.agentk.helm`: defaults for generated AgentK install commands
 - `builtinTargetMcp`: shared AgentK and AgentV target-tool bridge identity
-- `automation`: durable runtime mode, canary workspace allow-list, and worker poll interval
+- `automation`: durable workflow worker poll interval; use `workspaceCapacity.admissionEnabled` and `workspaceCapacity.dispatchEnabled` for maintenance pauses
 - `mcpOAuth`: enabled-by-default automatic individual-user OAuth, flow and
   refresh timing, outbound metadata response limits, and an operator kill switch
 - `internalTransport.tls`: optional operator-supplied internal HTTPS/mTLS for service-to-service traffic

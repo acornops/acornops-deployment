@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [Remove Automation Rollout Configuration](2026-10-31-remove-automation-rollout.md) — Remove retired mode settings; compatible control-plane release and image pins required before deployment.
+
 Reviewed 2026-10-18. Implementation-only plans that have landed are in
 [Completed plans](../completed/README.md). Historical validation results are not fresh release acceptance.
 

@@ -2,7 +2,7 @@ apiVersion: acornops.dev/v1alpha1
 kind: StackVersionMatrix
 metadata:
   name: acornops-stack
-  updatedAt: "2026-10-29"
+  updatedAt: "2026-10-31"
 
 stacks:
   - name: local-dev
@@ -24,7 +24,7 @@ stacks:
     databaseSchemaEpoch: greenfield-1
     components:
       managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.45
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.42
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.43
       executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.18
       llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.22
       agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.13
@@ -39,13 +39,14 @@ stacks:
     components:
       platformAdminConsole: ghcr.io/acornops/platform-admin-console:0.0.1-experimental.7
       managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.45
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.42
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.43
       executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.18
       llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.22
       agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.13
 
 compatibility:
   notes:
+    - Control-plane v0.0.1-experimental.43 removes workflow rollout-mode configuration, enables eligible dispatch by default, and repairs capacity-maintenance workflow summaries without redispatching expired work. Keep explicit workspace admission/dispatch pauses for maintenance and remove retired mode/canary overrides. The workflow repair adds no schema or engine protocol change; this image also includes the separately merged forward migration 013 for target-delete indexes. Run the normal migration initializer before starting the new control plane.
     - Platform chart v0.0.1-experimental.30 coordinates graceful rolling restarts with control-plane .42, execution-engine .18, llm-gateway .22, and management-console .45. Complete first-cutover quiescence before replacing older binaries; verify termination budgets and old pod disappearance using docs/rolling-restarts.md. This release adds no migrations or protocol changes.
     - AgentV v0.0.1-experimental.6 onboarding was introduced with control-plane v0.0.1-experimental.34 and management-console v0.0.1-experimental.35; this matrix pins their coordinated successors, not the historical minimum release set.
     - Publish and verify all pinned images before releasing platform chart v0.0.1-experimental.30; demo validation does not replace production security, staging and recovery acceptance gates.
