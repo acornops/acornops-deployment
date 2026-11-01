@@ -347,7 +347,7 @@ targetAgents:
   agentv:
     systemd:
       # Exact immutable AgentV GitHub release or mirrored release version.
-      version: 0.0.1-experimental.13
+      version: 0.0.1-experimental.15
       # Mirrors must preserve the v<version>/<asset> release layout.
       releaseBaseUrl: https://github.com/acornops/agentv/releases/download
 
@@ -507,7 +507,7 @@ components:
     replicas: 2
     image:
       repository: ghcr.io/acornops/platform-admin-console
-      tag: 0.0.1-experimental.7
+      tag: 0.0.1-experimental.8
       pullPolicy: IfNotPresent
     service:
       port: 80
@@ -543,7 +543,7 @@ components:
     basePath: /
     image:
       repository: ghcr.io/acornops/management-console
-      tag: 0.0.1-experimental.45
+      tag: 0.0.1-experimental.46
       pullPolicy: IfNotPresent
     service:
       port: 80
@@ -620,7 +620,7 @@ components:
       maxSubscriptionsPerWorkspace: 100
     image:
       repository: ghcr.io/acornops/control-plane
-      tag: 0.0.1-experimental.43
+      tag: 0.0.1-experimental.44
       pullPolicy: IfNotPresent
     service:
       port: 8081
@@ -691,7 +691,7 @@ components:
     maxRequestBodyBytes: 1000000
     image:
       repository: ghcr.io/acornops/execution-engine
-      tag: 0.0.1-experimental.18
+      tag: 0.0.1-experimental.19
       pullPolicy: IfNotPresent
     service:
       port: 8080
@@ -803,7 +803,7 @@ components:
       requireRedisInProduction: true
     image:
       repository: ghcr.io/acornops/llm-gateway
-      tag: 0.0.1-experimental.22
+      tag: 0.0.1-experimental.23
       pullPolicy: IfNotPresent
     service:
       port: 8001
