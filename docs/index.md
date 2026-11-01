@@ -33,6 +33,8 @@ This `docs/` tree is the repository-local system of record for deployment orches
 
 ## Plans And Debt
 
+- [Coordinated experimental release and demo upgrade](/docs/exec-plans/completed/2026-11-02-platform-release.md)
+
 - [Plans](/docs/PLANS.md)
 - [Active Plans](/docs/exec-plans/active/README.md)
 - [Remove Automation Rollout Configuration](/docs/exec-plans/active/2026-10-31-remove-automation-rollout.md)

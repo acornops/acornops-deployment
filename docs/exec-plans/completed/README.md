@@ -1,5 +1,7 @@
 # Completed Execution Plans
 
+- [Coordinated experimental release and demo upgrade](2026-11-02-platform-release.md) — Released component artifacts and verified demo revision 17.
+
 - [Approval resume and compact capabilities release](approval-resume-release.md) —
   Verified chart `.29`, retained demo data/credentials and demo-only database
   memory correction; installed-VM and production acceptance remain separate.

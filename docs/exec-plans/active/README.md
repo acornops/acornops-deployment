@@ -1,6 +1,5 @@
 # Active Execution Plans
 
-- [Coordinated experimental release and demo upgrade](2026-11-02-platform-release.md) — Publish current reviewed components and preserve the existing demo during upgrade.
 
 - [Remove Automation Rollout Configuration](2026-10-31-remove-automation-rollout.md) — Remove retired mode settings; compatible control-plane release and image pins required before deployment.
 
