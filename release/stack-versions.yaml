@@ -2,7 +2,7 @@ apiVersion: acornops.dev/v1alpha1
 kind: StackVersionMatrix
 metadata:
   name: acornops-stack
-  updatedAt: "2026-10-31"
+  updatedAt: "2026-11-02"
 
 stacks:
   - name: local-dev
@@ -23,29 +23,32 @@ stacks:
     executionContractVersion: 2
     databaseSchemaEpoch: greenfield-1
     components:
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.45
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.43
-      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.18
-      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.22
-      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.13
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.46
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.44
+      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.19
+      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.23
+      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.15
 
   - name: k8s-platform-v1
     description: Pinned greenfield Kubernetes stack deployed with the acornops-platform Helm chart.
     executionContractVersion: 2
     databaseSchemaEpoch: greenfield-1
     chart:
-      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.30
-      acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.15
+      acornopsPlatform: oci://ghcr.io/acornops/charts/acornops-platform:0.0.1-experimental.31
+      acornopsAgentK: oci://ghcr.io/acornops/charts/acornops-agentk:0.0.1-experimental.16
     components:
-      platformAdminConsole: ghcr.io/acornops/platform-admin-console:0.0.1-experimental.7
-      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.45
-      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.43
-      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.18
-      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.22
-      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.13
+      platformAdminConsole: ghcr.io/acornops/platform-admin-console:0.0.1-experimental.8
+      managementConsole: ghcr.io/acornops/management-console:0.0.1-experimental.46
+      controlPlane: ghcr.io/acornops/control-plane:0.0.1-experimental.44
+      executionEngine: ghcr.io/acornops/execution-engine:0.0.1-experimental.19
+      llmGateway: ghcr.io/acornops/llm-gateway:0.0.1-experimental.23
+      agentV: https://github.com/acornops/agentv/releases/tag/v0.0.1-experimental.15
 
 compatibility:
   notes:
+    - Platform chart v0.0.1-experimental.31 coordinates control-plane .44, management-console .46, execution-engine .19, llm-gateway .23, admin console .8, AgentK .16 and Linux AgentV .15. Windows enrollment remains disabled and Windows release artifacts are not published; native qualification gates remain open.
+    - From control-plane .42, apply forward migrations 013-015 after verifying migration history and taking a database backup. They add indexes and target-observation columns; no database reset is required. This release includes retention limits, bounded schema validation, admin loading fixes, agent recovery and heartbeat freshness. Preserve execution contract 2 and schema epoch greenfield-1.
+    - Installed agents require an explicit host or cluster upgrade. New Linux installer and AgentK chart pins select generated commands; publishing this matrix does not upgrade registered agents. See docs/exec-plans/active/2026-11-02-platform-release.md for release evidence and demo rollback.
     - Control-plane v0.0.1-experimental.43 removes workflow rollout-mode configuration, enables eligible dispatch by default, and repairs capacity-maintenance workflow summaries without redispatching expired work. Keep explicit workspace admission/dispatch pauses for maintenance and remove retired mode/canary overrides. The workflow repair adds no schema or engine protocol change; this image also includes the separately merged forward migration 013 for target-delete indexes. Run the normal migration initializer before starting the new control plane.
     - Platform chart v0.0.1-experimental.30 coordinates graceful rolling restarts with control-plane .42, execution-engine .18, llm-gateway .22, and management-console .45. Complete first-cutover quiescence before replacing older binaries; verify termination budgets and old pod disappearance using docs/rolling-restarts.md. This release adds no migrations or protocol changes.
     - AgentV v0.0.1-experimental.6 onboarding was introduced with control-plane v0.0.1-experimental.34 and management-console v0.0.1-experimental.35; this matrix pins their coordinated successors, not the historical minimum release set.
