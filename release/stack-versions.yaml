@@ -2,7 +2,7 @@ apiVersion: acornops.dev/v1alpha1
 kind: StackVersionMatrix
 metadata:
   name: acornops-stack
-  updatedAt: "2026-10-31"
+  updatedAt: "2026-11-02"
 
 stacks:
   - name: local-dev
